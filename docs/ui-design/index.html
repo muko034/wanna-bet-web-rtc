@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wanna Bet — UI Prototype</title>
+<style>
+  /* ---------- Base / reset ---------- */
+  :root {
+    --ink: #14151a;
+    --paper: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  #app { min-height: 100vh; }
+  button { font-family: inherit; cursor: pointer; }
+  input { font-family: inherit; }
+  h1, h2, h3, p { margin: 0; }
+
+  /* ================= VARIANT B — Big State (full-bleed, mobile-first) =================
+     One dominant idea per screen: no cards, no small controls — giant
+     centered type, full color-block backgrounds that shift per game state,
+     and giant tap zones instead of small toggle buttons. Radically
+     different primary affordance from A (compact scrollable card). */
+  .vb { min-height: 100vh; display: flex; justify-content: center; }
+  .vb-phone {
+    width: 100%; max-width: 430px; min-height: 100vh; color: #fff;
+    display: flex; flex-direction: column; position: relative;
+    transition: background .25s ease;
+  }
+  .vb-bg-home { background: linear-gradient(160deg,#6c5ce7,#3d2b9e); }
+  .vb-bg-form { background: linear-gradient(160deg,#4b3fae,#241c66); }
+  .vb-bg-lobby { background: linear-gradient(160deg,#2b2350,#14102b); }
+  .vb-bg-wait { background: linear-gradient(160deg,#232335,#0a0a10); }
+  .vb-bg-bet { background: linear-gradient(160deg,#ff9f43,#c96f13); }
+  .vb-bg-judge { background: linear-gradient(160deg,#14151a,#000); }
+  .vb-bg-success { background: linear-gradient(160deg,#22b06b,#0d5c33); }
+  .vb-bg-fail { background: linear-gradient(160deg,#e5534b,#7a1e19); }
+  .vb-topbar { padding: 18px 20px 0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; opacity: .75; }
+  .vb-back-fab { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: #fff; font-size: 18px; }
+  .vb-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px 26px 40px; }
+  .vb-eyebrow2 { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .65; margin-bottom: 10px; }
+  .vb-giant-title { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 10px; line-height: 1.15; }
+  .vb-giant-sub { font-size: 14px; opacity: .8; margin-bottom: 26px; line-height: 1.5; max-width: 320px; }
+  .vb-giant-number { font-size: 56px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+  .vb-code-giant { font-size: 34px; font-weight: 900; letter-spacing: .14em; background: rgba(255,255,255,0.12); padding: 16px 22px; border-radius: 18px; margin-bottom: 22px; }
+  .vb-avatar-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 26px; flex-wrap: wrap; }
+  .vb-avatar { min-width: 84px; padding: 10px 14px; border-radius: 16px; background: rgba(255,255,255,0.12); font-weight: 700; font-size: 12px; }
+  .vb-avatar.me { background: #fff; color: #14151a; }
+  .vb-cta { width: 100%; border: none; border-radius: 18px; padding: 18px; font-size: 16px; font-weight: 800; background: #fff; color: #14151a; }
+  .vb-cta:disabled { opacity: .35; }
+  .vb-cta-outline { width: 100%; border: none; border-radius: 18px; padding: 16px; font-size: 14px; font-weight: 700; background: rgba(255,255,255,0.14); color: #fff; margin-top: 10px; }
+  .vb-input-white { width: 100%; padding: 16px; border-radius: 16px; border: none; font-size: 16px; margin-bottom: 12px; text-align: center; font-weight: 700; outline: none; }
+  .vb-tapzones { display: flex; width: 100%; gap: 12px; margin: 8px 0 18px; }
+  .vb-tapzone { flex: 1; border: none; border-radius: 24px; padding: 34px 12px; font-size: 20px; font-weight: 900; color: #fff; }
+  .vb-tapzone:active { transform: scale(0.97); }
+  .vb-tapzone.yes, .vb-tapzone.success { background: rgba(34,176,107,0.9); }
+  .vb-tapzone.no, .vb-tapzone.fail { background: rgba(229,83,75,0.9); }
+  .vb-tapzone.chosen { outline: 3px solid #fff; }
+  .vb-slider-white { width: 100%; accent-color: #fff; margin: 6px 0 4px; }
+  .vb-status-pill { background: rgba(255,255,255,0.14); border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .vb-auto-advance { animation: vb-pulse 1.4s ease-in-out infinite; }
+  @keyframes vb-pulse { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
+  .vb-score-list { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .vb-score-row2 { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); border-radius: 14px; padding: 12px 16px; font-size: 13px; text-align: left; }
+  .vb-score-row2 .name { font-weight: 700; }
+  .vb-score-row2 .sub { display: block; font-size: 11px; opacity: .65; margin-top: 2px; }
+  .vb-delta.pos { color: #7CFFB2; font-weight: 800; }
+  .vb-delta.neg { color: #FFAFA9; font-weight: 800; }
+
+  /* ================= Persistent scoreboard: rank badge + sheet (correction #1, v2) =================
+     A single small badge sits in the top bar showing only YOUR current
+     rank/points — it never reveals anyone's bet. Tapping it slides up a
+     full leaderboard sheet on demand, so the giant single-focus screen
+     stays uncluttered until you actually want to check standings. */
+  .vb-rank-badge {
+    display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.16);
+    border: none; border-radius: 999px; padding: 6px 12px; font-size: 12px;
+    font-weight: 800; color: #fff; white-space: nowrap;
+  }
+  .vb-rank-badge .medal { font-size: 13px; }
+  .vb-rank-sheet-backdrop {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: flex-end; z-index: 5;
+  }
+  .vb-rank-sheet {
+    width: 100%; background: #191a22; border-radius: 22px 22px 0 0;
+    padding: 10px 20px 26px; max-height: 70vh; overflow-y: auto;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  }
+  .vb-rank-sheet-handle {
+    width: 36px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.25);
+    margin: 6px auto 14px;
+  }
+  .vb-rank-sheet-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin-bottom: 12px; }
+  .vb-rank-sheet-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08); color: #fff; font-size: 14px; font-weight: 700;
+  }
+  .vb-rank-sheet-row:last-child { border-bottom: none; }
+  .vb-rank-sheet-row .place { width: 26px; opacity: .55; font-weight: 800; }
+  .vb-rank-sheet-row .pname { flex: 1; }
+  .vb-rank-sheet-row.me { color: #7CD1FF; }
+
+  /* ================= Task card (correction #3) =================
+     The challenge is only ever shown to bettors (never the active player,
+     see correction #2), presented as a distinct floating card rather than
+     being merged into the giant background type. */
+  .vb-task-card {
+    width: 100%; text-align: left; background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.28); border-radius: 20px;
+    padding: 18px 20px; margin-bottom: 20px;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+    backdrop-filter: blur(6px);
+  }
+  .vb-task-card .vb-task-label {
+    display: block; font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .08em; opacity: .7; margin-bottom: 8px;
+  }
+  .vb-task-card .vb-task-text { font-size: 19px; font-weight: 800; line-height: 1.4; }
+  .vb-task-card.vb-task-hidden { text-align: center; opacity: .8; }
+  .vb-task-card.vb-task-hidden .vb-task-text { font-size: 14px; font-weight: 600; opacity: .9; }
+
+  /* ================= Shared prototype tooling ================= */
+  #proto-tag {
+    position: fixed; top: 10px; left: 10px; z-index: 9999;
+    background: #ffce3d; color: #14151a; font-weight: 800; font-size: 11px;
+    padding: 4px 10px; border-radius: 999px; letter-spacing: .04em;
+    font-family: -apple-system, sans-serif;
+  }
+  #device-switcher {
+    position: fixed; top: 40px; left: 10px;
+    z-index: 9999;
+    background: #14151a; color: #fff;
+    border-radius: 16px; padding: 8px 10px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+    max-width: 190px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 0 4px rgba(108,92,231,0.55);
+    font-family: -apple-system, sans-serif; font-size: 12px;
+  }
+  #device-switcher .ds-label { font-weight: 700; opacity: .7; white-space: nowrap; }
+  #device-switcher .ds-chip {
+    border: none; border-radius: 999px; padding: 6px 12px; font-size: 12px;
+    font-weight: 700; background: rgba(255,255,255,0.12); color: #cfcfe0; white-space: nowrap;
+    width: 100%; text-align: left;
+  }
+  #device-switcher .ds-chip.active { background: #6c5ce7; color: #fff; }
+  body.has-device-switcher #app { padding-top: 190px; }
+</style>
+</head>
+<body>
+<div id="proto-tag">PROTOTYPE — throwaway</div>
+<div id="app"></div>
+
+<script>
+/* =========================================================================
+   SHARED MOCK GAME ENGINE — in-memory only, resets on reload.
+   Not the validated game logic; just enough state to make the UI feel real.
+   ========================================================================= */
+const CHALLENGES = [
+  "Do 10 push-ups in under 20 seconds",
+  "Name 5 countries starting with 'B' in 15 seconds",
+  "Balance a spoon on your nose for 10 seconds",
+  "Say the alphabet backwards from Z to Q, no mistakes",
+  "Hold a plank for 45 seconds",
+  "Juggle two objects for 10 seconds",
+  "Recite the last 5 digits of pi",
+  "Touch your toes without bending your knees",
+];
+
+function randomChallenge() {
+  return CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)];
+}
+function randomRoomCode() {
+  return Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+// Bots are simulated players, not real devices — used to auto-play their
+// bets so the tester doesn't have to switch to a bot's phone by hand.
+function isBot(player) {
+  return player.name.includes("(bot)");
+}
+
+const STATE = {
+  screen: "home",        // home | lobby | round | resolved
+  mode: null,             // 'create' | 'join'
+  roomCode: null,
+  myName: "",
+  players: [],            // [{id,name,points}] — players[0] is always the host
+  activeIndex: 0,
+  round: 1,
+  challenge: "",
+  bets: {},               // playerId -> {amount, prediction, locked} — each player only ever edits their OWN entry
+  outcome: null,          // null | 'YES' | 'NO'
+  lastDeltas: {},          // playerId -> delta applied last resolution
+  viewerId: null,          // which player's PHONE we're currently simulating (see device switcher)
+  rankSheetOpen: false,    // whether the tap-to-expand leaderboard sheet is showing
+};
+
+const STARTING_POINTS = 100;
+const NEXT_ROUND_DELAY_MS = 2200;   // auto-advance to the next round after a result shows
+const BOT_JUDGE_DELAY_MS = 1400;    // a bot "attempting" the challenge auto-resolves after a beat
+
+function resetGame() {
+  STATE.screen = "home";
+  STATE.mode = null;
+  STATE.roomCode = null;
+  STATE.myName = "";
+  STATE.players = [];
+  STATE.activeIndex = 0;
+  STATE.round = 1;
+  STATE.challenge = "";
+  STATE.bets = {};
+  STATE.outcome = null;
+  STATE.lastDeltas = {};
+  STATE.viewerId = null;
+  STATE.rankSheetOpen = false;
+}
+
+const Engine = {
+  goHome() { resetGame(); render(); },
+
+  startCreate() { STATE.screen = "home"; STATE.mode = "create"; render(); },
+  startJoin() { STATE.screen = "home"; STATE.mode = "join"; render(); },
+  cancelMode() { STATE.mode = null; render(); },
+
+  createRoom(name) {
+    name = (name || "Player 1").trim() || "Player 1";
+    STATE.roomCode = randomRoomCode();
+    STATE.myName = name;
+    STATE.players = [
+      { id: "p0", name, points: STARTING_POINTS },     // p0 is always the host
+      { id: "p1", name: "Sam (bot)", points: STARTING_POINTS },
+      { id: "p2", name: "Alex (bot)", points: STARTING_POINTS },
+    ];
+    STATE.activeIndex = 0;
+    STATE.viewerId = "p0"; // you're simulating your own phone by default
+    STATE.screen = "lobby";
+    render();
+  },
+
+  joinRoom(code, name) {
+    name = (name || "Guest").trim() || "Guest";
+    STATE.roomCode = (code || "ABCD").trim().toUpperCase() || "ABCD";
+    STATE.myName = name;
+    STATE.players = [
+      { id: "p0", name: "Jordan (host)", points: STARTING_POINTS },
+      { id: "p1", name: "Sam (bot)", points: STARTING_POINTS },
+      { id: "p2", name, points: STARTING_POINTS },
+    ];
+    STATE.activeIndex = 0;
+    STATE.viewerId = "p2"; // you're simulating your own phone by default
+    STATE.screen = "lobby";
+    render();
+  },
+
+  // Prototype-only: lets you preview what any player's OWN phone looks like
+  // right now. In the real app there is no such switch — each phone only
+  // ever renders its own owner's state.
+  setViewer(id) { STATE.viewerId = id; render(); },
+
+  startRound() {
+    STATE.challenge = randomChallenge();
+    STATE.bets = {};
+    STATE.outcome = null;
+    STATE.lastDeltas = {};
+    STATE.rankSheetOpen = false;
+    STATE.screen = "round";
+    // Bots aren't real testers switching devices — auto-lock a plausible
+    // bet for them immediately so the only device you ever need to drive
+    // by hand is your own (and the active player's, to judge).
+    STATE.players.forEach((p, i) => {
+      if (i === STATE.activeIndex || !isBot(p)) return;
+      const max = Engine.maxBet(p.id);
+      STATE.bets[p.id] = {
+        amount: 1 + Math.floor(Math.random() * max),
+        prediction: Math.random() < 0.5 ? "YES" : "NO",
+        locked: true,
+      };
+    });
+    render();
+    Engine.maybeAutoResolveBotRound();
+  },
+
+  // Every non-active player independently edits ONLY their own bet — there
+  // is no shared "whose turn is it" state, because there's no shared device.
+  setPrediction(playerId, prediction) {
+    if (playerId === STATE.players[STATE.activeIndex].id) return; // active player doesn't bet
+    if (STATE.bets[playerId] && STATE.bets[playerId].locked) return; // already locked in
+    const existing = STATE.bets[playerId] || { amount: Math.min(10, Engine.maxBet(playerId)), prediction: null, locked: false };
+    existing.prediction = prediction;
+    STATE.bets[playerId] = existing;
+    render();
+  },
+
+  setAmount(playerId, amount) {
+    if (playerId === STATE.players[STATE.activeIndex].id) return;
+    if (STATE.bets[playerId] && STATE.bets[playerId].locked) return;
+    const player = STATE.players.find(p => p.id === playerId);
+    const max = Math.max(1, Math.floor(player.points / 2));
+    let amt = parseInt(amount, 10);
+    if (isNaN(amt) || amt < 1) amt = 1;
+    if (amt > max) amt = max;
+    const existing = STATE.bets[playerId] || { amount: 10, prediction: null, locked: false };
+    existing.amount = amt;
+    STATE.bets[playerId] = existing;
+    render();
+  },
+
+  confirmBet(playerId) {
+    const bet = STATE.bets[playerId];
+    if (!bet || !bet.prediction) return; // must pick YES or NO first
+    bet.locked = true;
+    render();
+    Engine.maybeAutoResolveBotRound();
+  },
+
+  // If the active player this round is a bot, there's no real device for
+  // them to judge on — so once every bet is locked in, simulate their
+  // attempt automatically after a short "thinking" beat.
+  maybeAutoResolveBotRound() {
+    const active = STATE.players[STATE.activeIndex];
+    if (!isBot(active) || STATE.screen !== "round" || !Engine.allLocked()) return;
+    setTimeout(() => {
+      if (STATE.screen === "round" && Engine.allLocked()) {
+        Engine.resolve(Math.random() < 0.6 ? "YES" : "NO");
+      }
+    }, BOT_JUDGE_DELAY_MS);
+  },
+
+  maxBet(playerId) {
+    const player = STATE.players.find(p => p.id === playerId);
+    return Math.max(1, Math.floor(player.points / 2));
+  },
+
+  // How many non-active players have locked in their bet, and how many total.
+  lockCounts() {
+    const bettors = STATE.players.filter((p, i) => i !== STATE.activeIndex);
+    const locked = bettors.filter(p => STATE.bets[p.id] && STATE.bets[p.id].locked).length;
+    return { locked, total: bettors.length };
+  },
+
+  allLocked() {
+    const c = Engine.lockCounts();
+    return c.total === 0 || c.locked === c.total;
+  },
+
+  resolve(outcome) {
+    STATE.outcome = outcome;
+    const activePlayer = STATE.players[STATE.activeIndex];
+    const deltas = {};
+    STATE.players.forEach((p, i) => {
+      if (i === STATE.activeIndex) return;
+      const bet = STATE.bets[p.id];
+      if (!bet || !bet.prediction) return;
+      const won = bet.prediction === outcome;
+      deltas[p.id] = won ? bet.amount : -bet.amount;
+      p.points += deltas[p.id];
+    });
+    deltas[activePlayer.id] = outcome === "YES" ? 10 : -10;
+    activePlayer.points += deltas[activePlayer.id];
+    STATE.lastDeltas = deltas;
+    STATE.screen = "resolved";
+    render();
+    // The round advances on its own — nobody has to tap anything. Only
+    // starting the very first round is a deliberate host action.
+    setTimeout(() => {
+      if (STATE.screen === "resolved") Engine.nextRound();
+    }, NEXT_ROUND_DELAY_MS);
+  },
+
+  nextRound() {
+    STATE.activeIndex = (STATE.activeIndex + 1) % STATE.players.length;
+    STATE.round += 1;
+    Engine.startRound();
+  },
+
+  toggleRankSheet() { STATE.rankSheetOpen = !STATE.rankSheetOpen; render(); },
+};
+
+/* =========================================================================
+   DEVICE SWITCHER — prototype-only "which phone am I looking at" simulator.
+   In the real app there's exactly one device per player and no such
+   switch — this exists purely so a single browser tab can preview every
+   player's private screen (each of which only ever shows its own bet).
+   ========================================================================= */
+function renderDeviceSwitcher() {
+  if (!STATE.players.length) return;
+  const el = document.createElement("div");
+  el.id = "device-switcher";
+  el.innerHTML = `
+    <span class="ds-label">📱 Simulate device:</span>
+    ${STATE.players.map(p => `
+      <button class="ds-chip ${p.id === STATE.viewerId ? 'active' : ''}" data-action="setViewer" data-arg="${p.id}">
+        ${esc(p.name)}${p.id === STATE.players[0].id ? " 👑" : ""}
+      </button>
+    `).join("")}
+  `;
+  el.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-action='setViewer']");
+    if (!btn) return;
+    Engine.setViewer(btn.dataset.arg);
+  });
+  document.body.appendChild(el);
+}
+
+/* =========================================================================
+   RENDER
+   ========================================================================= */
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = renderVariantB(STATE);
+  bindActions(app);
+  const oldDeviceBar = document.getElementById("device-switcher");
+  if (oldDeviceBar) oldDeviceBar.remove();
+  renderDeviceSwitcher();
+  document.body.classList.toggle("has-device-switcher", STATE.players.length > 0);
+}
+
+/* Generic event delegation: any element with data-action gets wired up.
+   data-action="fn" data-arg="literal" data-arg2="literal2" OR
+   data-action="fn" data-arg-from-input="#selectorForValue" */
+function bindActions(root) {
+  root.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-action]");
+    if (!el) return;
+    const action = el.dataset.action;
+    const arg = el.dataset.arg;
+    const arg2 = el.dataset.arg2;
+    const argFromInput = el.dataset.argFromInput
+      ? root.querySelector(el.dataset.argFromInput)?.value
+      : undefined;
+    const arg2FromInput = el.dataset.arg2FromInput
+      ? root.querySelector(el.dataset.arg2FromInput)?.value
+      : undefined;
+    if (Engine[action]) {
+      Engine[action](argFromInput ?? arg, arg2FromInput ?? arg2);
+    }
+  });
+  root.addEventListener("input", (e) => {
+    const el = e.target.closest("[data-live-action]");
+    if (!el) return;
+    Engine[el.dataset.liveAction](el.dataset.liveArg, el.value);
+  });
+}
+
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* =========================================================================
+   VARIANT B — Big State (mobile-first, full-bleed)
+   No cards for the whole screen, but the challenge itself lives in its own
+   floating card (see correction #3) so it reads as a distinct object from
+   the giant background type. A persistent rank strip is shown throughout
+   the round so every player can see their current placement (#1). The
+   active player never sees the challenge text on their own device (#2) —
+   only the other (betting) players do. Each player's own phone only ever
+   shows their own bet — never anyone else's.
+   ========================================================================= */
+function renderRankBadge(s) {
+  const ranked = [...s.players].sort((a, b) => b.points - a.points);
+  const myRank = ranked.findIndex(p => p.id === s.viewerId) + 1;
+  const me = s.players.find(p => p.id === s.viewerId);
+  const medal = myRank === 1 ? "🥇" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🎯";
+  return `<button class="vb-rank-badge" data-action="toggleRankSheet">
+    <span class="medal">${medal}</span>#${myRank} &middot; ${me.points} pts
+  </button>`;
+}
+
+function renderRankSheet(s) {
+  if (!s.rankSheetOpen) return "";
+  const ranked = [...s.players].sort((a, b) => b.points - a.points);
+  return `<div class="vb-rank-sheet-backdrop" data-action="toggleRankSheet">
+    <div class="vb-rank-sheet" onclick="event.stopPropagation()">
+      <div class="vb-rank-sheet-handle"></div>
+      <div class="vb-rank-sheet-title">Leaderboard</div>
+      ${ranked.map((p, i) => `
+        <div class="vb-rank-sheet-row ${p.id === s.viewerId ? 'me' : ''}">
+          <span class="place">#${i + 1}</span>
+          <span class="pname">${esc(p.name)}${p.id === s.viewerId ? " (you)" : ""}</span>
+          <span>${p.points} pts</span>
+        </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function renderVariantB(s) {
+  let bg = "vb-bg-home";
+  let topLeft = "";
+  let stage = "";
+  let rankBadge = "";
+  let rankSheet = "";
+
+  if (s.screen === "home" && !s.mode) {
+    bg = "vb-bg-home";
+    stage = `
+      <div class="vb-eyebrow2">Wanna Bet</div>
+      <div class="vb-giant-title">Ready to<br>play?</div>
+      <div class="vb-giant-sub">Create a room for your friends, or join one with a code.</div>
+      <button class="vb-cta" data-action="startCreate">Create a game</button>
+      <button class="vb-cta-outline" data-action="startJoin">Join a game</button>`;
+  } else if (s.screen === "home" && s.mode === "create") {
+    bg = "vb-bg-form";
+    topLeft = `<button class="vb-back-fab" data-action="cancelMode">&larr;</button>`;
+    stage = `
+      <div class="vb-giant-title" style="font-size:24px;">Create a game</div>
+      <div class="vb-giant-sub">Pick a name — you'll get a room code to share.</div>
+      <input class="vb-input-white" id="vb-name" placeholder="Your name" autofocus />
+      <button class="vb-cta" data-action="createRoom" data-arg-from-input="#vb-name">Create room</button>`;
+  } else if (s.screen === "home" && s.mode === "join") {
+    bg = "vb-bg-form";
+    topLeft = `<button class="vb-back-fab" data-action="cancelMode">&larr;</button>`;
+    stage = `
+      <div class="vb-giant-title" style="font-size:24px;">Join a game</div>
+      <div class="vb-giant-sub">Enter the room code and your name.</div>
+      <input class="vb-input-white" id="vb-code" placeholder="Room code" style="text-transform:uppercase" />
+      <input class="vb-input-white" id="vb-name2" placeholder="Your name" />
+      <button class="vb-cta" data-action="joinRoom" data-arg-from-input="#vb-code" data-arg2-from-input="#vb-name2">Join room</button>`;
+  } else if (s.screen === "lobby") {
+    bg = "vb-bg-lobby";
+    const viewer = s.players.find(p => p.id === s.viewerId);
+    const isHost = viewer.id === s.players[0].id;
+    stage = `
+      <div class="vb-eyebrow2">Room code</div>
+      <div class="vb-code-giant">${esc(s.roomCode)}</div>
+      <div class="vb-avatar-row">
+        ${s.players.map(p => `<div class="vb-avatar ${p.id === viewer.id ? 'me' : ''}">${esc(p.name)}${p.id === viewer.id ? " (you)" : ""}<br>${p.points} pts</div>`).join("")}
+      </div>
+      ${isHost
+        ? `<button class="vb-cta" data-action="startRound">Start game</button>`
+        : `<div class="vb-status-pill">Waiting for the host to start&hellip;</div>`}`;
+  } else if (s.screen === "round") {
+    rankBadge = renderRankBadge(s);
+    rankSheet = renderRankSheet(s);
+    const viewer = s.players.find(p => p.id === s.viewerId);
+    const active = s.players[s.activeIndex];
+    const isActive = viewer.id === active.id;
+    const counts = Engine.lockCounts();
+
+    if (isActive && !Engine.allLocked()) {
+      bg = "vb-bg-wait";
+      stage = `
+        <div class="vb-eyebrow2">Round ${s.round} &middot; your turn</div>
+        <div class="vb-task-card vb-task-hidden">
+          <span class="vb-task-label">🙈 Hidden from you</span>
+          <span class="vb-task-text">The other players can see the challenge — you'll find out live.</span>
+        </div>
+        <div class="vb-giant-number">${counts.locked}/${counts.total}</div>
+        <div class="vb-giant-sub">players have locked in a bet. Nobody can see any pick yet — including you.</div>
+        <div class="vb-status-pill">Get ready to attempt it&hellip;</div>`;
+    } else if (isActive && Engine.allLocked()) {
+      bg = "vb-bg-judge";
+      stage = `
+        <div class="vb-eyebrow2">Round ${s.round}</div>
+        <div class="vb-giant-title" style="font-size:24px;">Did you pull it off?</div>
+        <div class="vb-giant-sub">Judge yourself honestly — every bet is already locked in.</div>
+        <div class="vb-tapzones">
+          <button class="vb-tapzone success" data-action="resolve" data-arg="YES">✅<br>Success</button>
+          <button class="vb-tapzone fail" data-action="resolve" data-arg="NO">❌<br>Fail</button>
+        </div>`;
+    } else {
+      const bet = s.bets[viewer.id];
+      const max = Engine.maxBet(viewer.id);
+      const taskCard = `
+        <div class="vb-task-card">
+          <span class="vb-task-label">🎯 The challenge</span>
+          <span class="vb-task-text">${esc(s.challenge)}</span>
+        </div>`;
+      if (!bet || !bet.locked) {
+        bg = "vb-bg-bet";
+        const draft = bet || { amount: Math.min(10, max), prediction: null };
+        stage = `
+          <div class="vb-eyebrow2">Round ${s.round} &middot; ${esc(active.name)} attempts</div>
+          ${taskCard}
+          <div class="vb-giant-sub" style="margin-top:-14px;">Will they pull it off?</div>
+          <div class="vb-tapzones">
+            <button class="vb-tapzone yes ${draft.prediction === 'YES' ? 'chosen' : ''}" data-action="setPrediction" data-arg="${viewer.id}" data-arg2="YES">YES</button>
+            <button class="vb-tapzone no ${draft.prediction === 'NO' ? 'chosen' : ''}" data-action="setPrediction" data-arg="${viewer.id}" data-arg2="NO">NO</button>
+          </div>
+          <div class="vb-giant-number" style="font-size:36px;">${draft.amount} pts</div>
+          <input type="range" class="vb-slider-white" min="1" max="${max}" value="${draft.amount}" style="width:100%" data-live-action="setAmount" data-live-arg="${viewer.id}" />
+          <div class="vb-giant-sub" style="margin:6px 0 18px;">Max ${max} &middot; you have ${viewer.points} pts</div>
+          <button class="vb-cta" ${draft.prediction ? "" : "disabled"} data-action="confirmBet" data-arg="${viewer.id}">Lock in bet</button>`;
+      } else {
+        bg = "vb-bg-wait";
+        stage = `
+          <div class="vb-eyebrow2">Round ${s.round}</div>
+          ${taskCard}
+          <div class="vb-giant-title" style="font-size:24px;">Locked in 🔒</div>
+          <div class="vb-status-pill">You bet ${bet.amount} pts on ${bet.prediction}</div>
+          <div class="vb-giant-sub" style="margin-top:14px;">Waiting on ${counts.total - counts.locked} more player${counts.total - counts.locked === 1 ? "" : "s"}&hellip;</div>`;
+      }
+    }
+  } else if (s.screen === "resolved") {
+    const viewer = s.players.find(p => p.id === s.viewerId);
+    const active = s.players[s.activeIndex];
+    bg = s.outcome === "YES" ? "vb-bg-success" : "vb-bg-fail";
+    const ranked = [...s.players].sort((a, b) => b.points - a.points);
+    stage = `
+      <div class="vb-eyebrow2">Round ${s.round} result</div>
+      <div class="vb-giant-title">${esc(active.name)}<br>${s.outcome === 'YES' ? 'succeeded! 🎉' : 'failed 💥'}</div>
+      <div class="vb-score-list">
+        ${ranked.map((p) => {
+          const i = s.players.indexOf(p);
+          const rank = ranked.indexOf(p) + 1;
+          const d = s.lastDeltas[p.id] || 0;
+          const bet = s.bets[p.id];
+          const sub = i === s.activeIndex ? "Active player" : (bet ? `Bet ${bet.amount} on ${bet.prediction}` : "No bet");
+          return `<div class="vb-score-row2"><span class="name">#${rank} ${esc(p.name)}${p.id === viewer.id ? " (you)" : ""}<span class="sub">${sub}</span></span><span>${p.points} <span class="vb-delta ${d >= 0 ? 'pos' : 'neg'}">${d >= 0 ? '+' : ''}${d}</span></span></div>`;
+        }).join("")}
+      </div>
+      <div class="vb-status-pill vb-auto-advance">Next round starting automatically&hellip;</div>
+      <button class="vb-cta-outline" data-action="goHome">Leave game</button>`;
+  }
+
+  return `<div class="vb"><div class="vb-phone ${bg}">
+      <div class="vb-topbar">${topLeft}<span>${s.roomCode ? "Room " + esc(s.roomCode) : ""}</span>${rankBadge || "<span></span>"}</div>
+      <div class="vb-stage">${stage}</div>
+      ${rankSheet}
+    </div></div>`;
+}
+
+/* Initial render */
+render();
+</script>
+</body>
+</html>
