@@ -9,7 +9,7 @@ TDD is the red → green loop: write a failing test, then only the code that tur
 producing tests worth keeping — where tests go, what a good one looks like, and the anti-patterns that make a test
 worthless despite passing. Consult it before you write each test, not after.
 
-When exploring the codebase, read `docs/domain-glossary.md` (if it exists) so test names and interface vocabulary match
+When exploring the codebase, read `../../../docs/domain-glossary.md` (if it exists) so test names and interface vocabulary match
 the project's domain language, and respect ADRs in the area you're touching and existing conventions.
 
 ## Seams — where tests go
