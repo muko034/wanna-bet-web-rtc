@@ -1,5 +1,9 @@
 # Multiplayer Board Game
 
+> **Note**: This is an early research/brainstorm doc. §5's message protocol sketch (`move`, `ts`-based staleness
+> detection, single ID sent with every message) has been superseded by the actual Host↔Guest contract in
+> `docs/message-protocol.md` and ADR 0003 — refer to those, not this section, for the wire format.
+
 ## 1. Overview
 
 A simple turn-based, multiplayer board game played by friends/family, each on their own device, over the web. Goal:

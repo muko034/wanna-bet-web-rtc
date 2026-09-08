@@ -48,19 +48,25 @@ accidental page reload lets them rejoin the same player slot instead of appearin
   `onConnectionChange`, `onDisconnect`). The Round Engine (`round-engine` slice), Host Admin (`host-admin` slice), and
   Host Persistence (`host-persistence` slice) must depend only on this interface's message/state shapes, never on PeerJS
   directly.
-- **Message envelope**: JSON messages per `docs/research/ARCHITECTURE.md` §5 (`join`, `leave`, `move`, `state`),
-  extended with a `reconnect` message type carrying the Guest's persistent player ID so the Host can re-attach rather
-  than register a new player.
-- **Persistent player ID**: a random ID (e.g. UUID) generated client-side on first join, stored in the Guest's own
-  `localStorage`, sent with every outgoing message so the Host can identify the sender unambiguously across reconnects.
-- **Host-side connection registry**: the Host maintains a mapping of `playerId -> { peerConnection, connectionStatus }`
-  separate from the Game State's player list (Points, order, etc. — owned by `round-engine`). This registry is what
-  `room-lifecycle` owns and tests.
+- **Message envelope and catalog**: see `docs/message-protocol.md` (the canonical wire-level reference) and ADR 0003 for
+  the full rationale. In summary: `{ type, seq, payload }` envelopes; Guest→Host messages are `join`, `rejoin`,
+  `placeBet`, `leave`; Host→one-Guest messages are `welcome` and `rejected`; Host→all-Guests is a single unified
+  `state` snapshot. There is no `move` message type (superseded — that was a placeholder from the early
+  `docs/research/ARCHITECTURE.md` sketch, before the game's actual actions (`placeBet`, etc.) were defined).
+- **Public/private identity split**: a Guest is assigned a public `playerId` (safe to broadcast — appears in every
+  `state` snapshot) and a private `reconnectToken` (a secret, delivered once via `welcome`, presented only in
+  `rejoin`, never rebroadcast). This replaces an earlier "single ID sent with every message" design, which would have
+  let any Guest read another player's ID straight out of a `state` broadcast and impersonate them on reconnect — see ADR
+  0003 and `docs/spec/room-lifecycle/03-persistent-player-id-and-reconnect.md`.
+- **Host-side connection registry**: the Host maintains a mapping of `reconnectToken -> { peerConnection,
+  connectionStatus }` separate from the Game State's player list (Points, order, etc. — owned by `round-engine`). This
+  registry is what `room-lifecycle` owns and tests. Every message after the handshake is attributed to whichever
+  connection it arrived on — Guest action messages carry no identity field to trust or spoof.
 - **Room capacity**: enforced Host-side at join time — minimum 2, maximum 6 total players (Host counts as one).
-- **Every broadcast `state` message carries a monotonically increasing `ts` (timestamp)** so Guests can detect and
-  ignore stale/out-of-order updates.
+- **Every `state` broadcast carries a monotonically increasing `seq`** (Host-owned, not a timestamp — see ADR 0003)
+  so Guests can detect and ignore stale/out-of-order updates, e.g. across a reconnect race.
 - **Name collision handling**: on collision, the Host appends a disambiguating suffix (e.g. "Alex (2)") to the newer
-  joiner's display name; this does not affect the underlying persistent player ID.
+  joiner's display name; this does not affect the underlying `playerId`/`reconnectToken`.
 - Room/lobby, join, and reconnect screens follow the "Big State" visual design already validated in
   `docs/ui-design/index.html` and its README — this spec does not re-litigate visual design, only the data/connection
   flow behind it.

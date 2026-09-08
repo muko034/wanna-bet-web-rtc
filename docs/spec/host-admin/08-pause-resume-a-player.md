@@ -13,4 +13,5 @@ resolve.
 - [ ] A round resolves without waiting on a paused player's Bet.
 - [ ] The Host can resume a paused player, after which they're eligible for rotation and betting again.
 - [ ] Paused players are visually distinguished (e.g. grayed out) on the scoreboard for all players.
-- [ ] A player's connection dropping (disconnect) does NOT by itself change their status — only an explicit Host action does.
+- [ ] A player's connection dropping (disconnect) does NOT by itself change their status — only an explicit action does
+  (a Host Pause/Remove, or the player's own Leave — see `docs/domain-glossary.md`).
