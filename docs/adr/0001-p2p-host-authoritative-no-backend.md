@@ -1,6 +1,6 @@
 # Peer-to-peer, Host-authoritative architecture with no backend
 
-We're building for personal-use scale (2–6 friends/family per Room), so we chose WebRTC via PeerJS for direct
+We're building for personal-use scale (2–20 friends/family per Room), so we chose WebRTC via PeerJS for direct
 browser-to-browser play instead of a client-server backend: one player's browser (the Host) holds the single
 authoritative Game State and validates every action, and Guests connect directly to the Host's data channel. The only
 non-P2P piece is a public, free PeerServer used solely for connection bootstrap (signaling) — it never sees or stores

@@ -24,7 +24,7 @@ accidental page reload lets them rejoin the same player slot instead of appearin
    game state.
 6. As a Host, I want the Room to require at least 2 total players before the game can start, so that the game rules
    (which need at least one Bettor) are satisfiable.
-7. As a Host, I want the Room capped at 6 total players, so that the game stays at the personal-use scale it's designed
+7. As a Host, I want the Room capped at 20 total players, so that the game stays at the personal-use scale it's designed
    for.
 8. As a Host, I want to be notified when a Guest disconnects, so that I can see who's currently online.
 9. As a Guest, I want to reconnect using the same link after a dropped connection or page reload, so that I resume as my
@@ -33,7 +33,7 @@ accidental page reload lets them rejoin the same player slot instead of appearin
     that no duplicate players are created.
 11. As a Guest, I want to see a clear error if the Room link is invalid or the Host is unreachable, so that I know I
     can't join.
-12. As a Guest, I want to see a clear message if the Room is already full (6 players), so that I understand why I can't
+12. As a Guest, I want to see a clear message if the Room is already full (20 players), so that I understand why I can't
     join.
 13. As any player, I want to see other players' connection status (connected/disconnected) reflected somewhere in the
     shared UI, so that I understand why a round might be waiting.
@@ -62,7 +62,7 @@ accidental page reload lets them rejoin the same player slot instead of appearin
   connectionStatus }` separate from the Game State's player list (Points, order, etc. — owned by `round-engine`). This
   registry is what `room-lifecycle` owns and tests. Every message after the handshake is attributed to whichever
   connection it arrived on — Guest action messages carry no identity field to trust or spoof.
-- **Room capacity**: enforced Host-side at join time — minimum 2, maximum 6 total players (Host counts as one).
+- **Room capacity**: enforced Host-side at join time — minimum 2, maximum 20 total players (Host counts as one).
 - **Every `state` broadcast carries a monotonically increasing `seq`** (Host-owned, not a timestamp — see ADR 0003)
   so Guests can detect and ignore stale/out-of-order updates, e.g. across a reconnect race.
 - **Name collision handling**: on collision, the Host appends a disambiguating suffix (e.g. "Alex (2)") to the newer
@@ -80,6 +80,10 @@ accidental page reload lets them rejoin the same player slot instead of appearin
 - No end-to-end browser tests against real WebRTC — too flaky/heavy for this project's scale; the fake-transport unit
   tests are the primary safety net, consistent with keeping the number of test seams to one (the Transport interface)
   rather than one per consuming slice.
+- **Deferred**: a separate, distinct smoke-test suite for the real PeerJS-backed `Transport` implementation, run
+  against a live/local `peerjs-server`. This would validate the adapter itself (does it correctly speak PeerJS), not
+  Room/Connection Manager logic — it stays out of the fake-transport unit suite above and is not part of this slice's
+  TDD loop. Not yet built; noted here for later.
 
 ## Out of Scope
 

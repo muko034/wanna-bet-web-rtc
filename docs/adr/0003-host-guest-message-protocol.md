@@ -5,7 +5,7 @@ deltas/patches) sent identically to every Guest after any change, plus a **small
 (`join`, `rejoin`, `placeBet`, `leave`) — Host-only actions (start round, submit outcome, Pause/Remove) are never wire
 messages, since their effects simply appear in the next snapshot. Full details live in `docs/message-protocol.md`.
 
-We considered splitting broadcasts by concern (`roomState`/`roundState`/`adminState`) for smaller payloads, but at 2-6
+We considered splitting broadcasts by concern (`roomState`/`roundState`/`adminState`) for smaller payloads, but at 2-20
 players this reintroduces exactly the coordination bug full-snapshot broadcasting avoids: independently-ordered streams
 that can disagree with each other (e.g. `adminState` says a player was removed while a stale `roundState`
 still shows them as an active Bettor). One snapshot, one `seq` (Host-owned, monotonic — safe by construction since the

@@ -7,7 +7,7 @@
 ## 1. Overview
 
 A simple turn-based, multiplayer board game played by friends/family, each on their own device, over the web. Goal:
-**zero infrastructure cost**, minimal ops burden, personal-use scale (2–6 players per session).
+**zero infrastructure cost**, minimal ops burden, personal-use scale (2–20 players per session).
 
 Design choice: **peer-to-peer (P2P) via WebRTC**, using **PeerJS** for connection setup. No application backend server,
 no database. Only static file hosting is required.
