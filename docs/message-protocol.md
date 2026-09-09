@@ -65,7 +65,8 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 ## `GameState` shape
 
 One canonical shape, shared by the `state` message payload and the persisted `localStorage` snapshot (the latter wraps
-it as `{ schemaVersion, savedAt, state }` — see host-persistence spec and ADR 0003).
+it as `{ schemaVersion, savedAt, state }` — see host-persistence spec and ADR 0003). `GameState` carries only data a
+Guest needs to render — it is not a dumping ground for Host-internal bookkeeping (see `challengeHistory` below).
 
 ```ts
 type GameState = {
@@ -85,7 +86,8 @@ type Player = {
 
 type RoundState = {
   activePlayerId: string;
-  challenge: string;       // sent identically to everyone; the Active Player's own client hides it locally
+  challengeId: string;     // Challenge Bank id, identical for everyone; each client resolves its own Display
+                            // Language content locally (see ADR 0005); the Active Player's own client hides it
   bets: Bet[];
   outcome: 'YES' | 'NO' | null;
 };
@@ -103,3 +105,6 @@ Notes:
   showing them (see host-admin spec).
 - Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
+- `challengeHistory` (Challenge Bank ids already drawn this game, see Challenge History) is **not** part of
+  `GameState` and is never broadcast — no Guest reads it. It exists only inside the Host's persisted `localStorage`
+  snapshot, alongside (not inside) `state`: `{ schemaVersion, savedAt, state, challengeHistory }`.

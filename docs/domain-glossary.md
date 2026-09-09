@@ -30,7 +30,25 @@ the two can be different players)
 A non-Active Player who places a Bet in the current Round. _Avoid_: Other players, non-active player
 
 **Challenge**:
-The task presented to the Active Player for a Round, judged as succeeded or failed. _Avoid_: Task, dare
+The task presented to the Active Player for a Round, judged as succeeded or failed. Drawn from the Challenge Bank, not
+authored freehand. _Avoid_: Task, dare
+
+**Challenge Bank**:
+The fixed, bundled collection of pre-written Challenges every client ships with, each recorded once with parallel
+Polish and English wording (see Display Language) and an optional Illustration. A Round's Challenge is always drawn
+from here. _Avoid_: Task bank, question bank, deck
+
+**Challenge History**:
+The set of Challenge Bank entries already drawn during a Room's current game, kept so a Round doesn't repeat one
+still in rotation. Resets once every entry in the Challenge Bank has been drawn. _Avoid_: Used challenges, seen list
+
+**Illustration**:
+An optional image attached to a Challenge Bank entry, shared unchanged across every Display Language. Hidden from the
+Active Player under the same rule as Challenge text. _Avoid_: Image, picture
+
+**Display Language**:
+A player's own choice of Polish or English for everything their client renders, set independently per player/device
+and never synced as part of the Room's Game State. _Avoid_: Locale, language setting
 
 **Bet**:
 A Bettor's wager for a Round: an amount of Points and a Prediction. Capped at `floor(current Points / 2)`, minimum 1.
