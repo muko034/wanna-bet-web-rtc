@@ -1,111 +1,201 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+html,
+body {
   margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: #fafafa;
+  color: #14151a;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
+#app {
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* ================= "Big State" layout — see docs/ui-design =================
+   Full-bleed color-block screens, giant type, giant tap zones: one dominant idea
+   fills the whole phone-width frame at a time instead of small cards/toggles. */
+.vb {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+.vb-phone {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: background 0.25s ease;
+}
+.vb-bg-home {
+  background: linear-gradient(160deg, #6c5ce7, #3d2b9e);
+}
+.vb-bg-form {
+  background: linear-gradient(160deg, #4b3fae, #241c66);
+}
+.vb-bg-lobby {
+  background: linear-gradient(160deg, #2b2350, #14102b);
+}
+.vb-bg-wait {
+  background: linear-gradient(160deg, #232335, #0a0a10);
+}
+.vb-topbar {
+  padding: 18px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.vb-back-fab {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.vb-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 26px 40px;
+  width: 100%;
+}
+.vb-eyebrow2 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  margin-bottom: 10px;
+}
+.vb-giant-title {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+  line-height: 1.15;
+}
+.vb-giant-sub {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 26px;
+  line-height: 1.5;
+  max-width: 320px;
+}
+.vb-code-giant {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 16px 22px;
+  border-radius: 18px;
+  margin-bottom: 22px;
+}
+.vb-share-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 26px;
+  max-width: 100%;
+}
+.vb-share-link code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.vb-avatar-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+.vb-avatar {
+  min-width: 84px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 700;
+  font-size: 12px;
+}
+.vb-cta,
+.vb-cta-outline {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  text-decoration: none;
+  text-align: center;
+}
+.vb-cta {
+  padding: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  background: #fff;
+  color: #14151a;
+}
+.vb-cta:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.vb-cta-outline {
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  margin-top: 10px;
+}
+.vb-cta-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.vb-input-white {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  font-size: 16px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 700;
+  outline: none;
+}
+.vb-status-pill {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
