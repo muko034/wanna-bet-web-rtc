@@ -3,6 +3,12 @@ export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const ROOM_CODE_LENGTH = 6;
 
+/**
+ * Namespaces the deterministic Transport ID derived from a Room Code, reducing (not
+ * eliminating) accidental collision with unrelated peers on the shared public PeerServer.
+ */
+const TRANSPORT_ID_PREFIX = 'wannabet-';
+
 function generateCode(): string {
   let code = '';
   for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
@@ -12,30 +18,26 @@ function generateCode(): string {
 }
 
 /**
- * Resolves Room Codes to Transport IDs. Generates a fresh Room Code per registration,
- * retrying on collision with an already-registered code.
+ * Generates Room Codes and derives the Transport ID a Room's Host is reachable under.
+ * Holds no lookup state — a Room Code's Transport ID is a pure function of the code
+ * itself, so any device can resolve it locally, without a shared registry no device
+ * other than the Host could ever see (there is no backend to hold one — see ADR 0001).
  */
 export class RoomRegistry {
-  private readonly transportIdsByCode = new Map<string, string>();
   private readonly generateRoomCode: () => string;
 
   constructor(generateRoomCode: () => string = generateCode) {
     this.generateRoomCode = generateRoomCode;
   }
 
-  /** Registers `transportId` under a newly generated Room Code and returns that code. */
-  register(transportId: string): string {
-    let code: string;
-    do {
-      code = this.generateRoomCode();
-    } while (this.transportIdsByCode.has(code));
-
-    this.transportIdsByCode.set(code, transportId);
-    return code;
+  /** Generates a fresh Room Code. */
+  generate(): string {
+    return this.generateRoomCode();
   }
 
-  /** Returns the Transport ID registered under `code`, or `undefined` if none is. */
-  resolve(code: string): string | undefined {
-    return this.transportIdsByCode.get(code);
+  /** Deterministically derives the Transport ID `code`'s Host can be reached at. */
+  transportIdFor(code: string): string {
+    return `${TRANSPORT_ID_PREFIX}${code.toLowerCase()}`;
   }
 }
+

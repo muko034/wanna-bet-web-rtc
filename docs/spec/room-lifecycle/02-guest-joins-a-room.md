@@ -1,5 +1,7 @@
 **Blocked by**: 1 (Host creates a Room)
 
+**Status**: Implemented — all acceptance criteria below are met.
+
 ## What to build
 
 A Guest opens the Host's shared link (`/room/<CODE>`, the canonical Room link introduced in
@@ -11,8 +13,8 @@ an unreachable Host, or a full Room. Colliding display names are disambiguated a
 
 ## Acceptance criteria
 
-- [ ] A Guest can open the Room link, enter a name, and connect; the Host's lobby list updates to show them.
-- [ ] A Guest attempting to join a Room already at 20 total players sees a clear "Room is full" message and does not connect.
-- [ ] A Guest opening an invalid or unreachable Room link sees a clear error message.
-- [ ] A Host cannot start the game (in a later slice) with fewer than 2 total players — this task only needs to expose that count/state, not gate an actual "start game" action yet.
-- [ ] Two Guests joining with the same display name are both connected, with the second joiner's displayed name automatically disambiguated (e.g. a suffix); their underlying identities remain distinct.
+- [x] A Guest can open the Room link, enter a name, and connect; the Host's lobby list updates to show them.
+- [x] A Guest attempting to join a Room already at 20 total players sees a clear "Room is full" message and does not connect.
+- [x] A Guest opening an invalid or unreachable Room link sees a clear error message.
+- [x] A Host cannot start the game (in a later slice) with fewer than 2 total players — this task only needs to expose that count/state, not gate an actual "start game" action yet.
+- [x] Two Guests joining with the same display name are both connected, with the second joiner's displayed name automatically disambiguated (e.g. a suffix); their underlying identities remain distinct.
