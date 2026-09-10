@@ -1,4 +1,4 @@
-import type { Transport } from '../transport/transport';
+import { RequestedIdTakenError, type Transport } from '../transport/transport';
 import type { RoomRegistry } from './room-registry';
 
 export type Player = {
@@ -20,14 +20,24 @@ export const MAX_ROOM_PLAYERS = 20;
 
 /**
  * Creates a new Room: the caller becomes its Host. The returned `code` is the shareable
- * Room Code Guests use to connect, registered against the Transport's own connection id
- * via `registry`. No Guests are connected yet, but the Host itself counts toward
- * `playerCount` from the start.
+ * Room Code Guests use to connect — its Transport ID is deterministically derived via
+ * `registry`, not looked up, so any Guest device can resolve it from the code alone (see
+ * ADR 0001: there is no backend to hold a shared lookup). Retries with a fresh code if
+ * that derived id is already claimed by an unrelated peer. No Guests are connected yet,
+ * but the Host itself counts toward `playerCount` from the start.
  */
 export async function createRoom(transport: Transport, registry: RoomRegistry): Promise<Room> {
-  const transportId = await transport.connect();
-  const code = registry.register(transportId);
-  return { code, players: [], playerCount: 1, started: false };
+  for (;;) {
+    const code = registry.generate();
+    try {
+      await transport.connect(undefined, registry.transportIdFor(code));
+      return { code, players: [], playerCount: 1, started: false };
+    } catch (error) {
+      if (!(error instanceof RequestedIdTakenError)) {
+        throw error;
+      }
+    }
+  }
 }
 
 /** Starts `room`'s game. Requires at least one Guest to have joined. */

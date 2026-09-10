@@ -1,7 +1,8 @@
 import { RoomRegistry } from './room-registry';
 
 /**
- * Shared Room Registry for this device's session — a Host device only ever hosts one
- * Room per app instance, so a single module-level registry is sufficient.
+ * Shared `RoomRegistry` instance for this app. It holds no per-session state itself (Room
+ * Code generation is random, and a code's Transport ID is a pure function of the code) —
+ * this single instance just avoids constructing a fresh one at every call site.
  */
 export const roomRegistry = new RoomRegistry();

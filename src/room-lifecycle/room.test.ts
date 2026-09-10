@@ -11,14 +11,24 @@ describe('createRoom', () => {
     expect(room.players).toEqual([]);
   });
 
-  it('generates a Room Code distinct from the underlying Transport ID, via the Room Registry', async () => {
+  it("derives the Room Code's Transport ID deterministically, so any device can resolve it without a shared lookup", async () => {
     const registry = new RoomRegistry();
 
     const room = await createRoom(new FakeTransport(), registry);
-    const transportId = registry.resolve(room.code);
 
-    expect(transportId).toEqual(expect.any(String));
-    expect(transportId).not.toBe(room.code);
+    expect(registry.transportIdFor(room.code)).toEqual(expect.any(String));
+    expect(registry.transportIdFor(room.code)).not.toBe(room.code);
+  });
+
+  it('retries with a fresh Room Code when the derived Transport ID is already taken', async () => {
+    const codes = ['AAAAAA', 'BBBBBB'];
+    const registry = new RoomRegistry(() => codes.shift() ?? 'FALLBACK');
+    const collidingHost = new FakeTransport();
+    await collidingHost.connect(undefined, registry.transportIdFor('AAAAAA'));
+
+    const room = await createRoom(new FakeTransport(), registry);
+
+    expect(room.code).toBe('BBBBBB');
   });
 
   it('counts the Host toward the Room\'s total player count from the moment it is created', async () => {

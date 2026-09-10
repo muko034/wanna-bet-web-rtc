@@ -1,6 +1,7 @@
 import type { Transport } from './transport';
+import { PeerUnavailableError, RequestedIdTakenError } from './transport';
 
-type MessageHandler = (message: unknown) => void;
+type MessageHandler = (message: unknown, peerId: string) => void;
 type ConnectionChangeHandler = (peerId: string, connected: boolean) => void;
 
 let nextId = 1;
@@ -10,22 +11,27 @@ let nextId = 1;
 const network = new Map<string, FakeTransport>();
 
 /**
- * In-memory `Transport` double for tests — no real networking.
+ * In-memory `Transport` double for tests — no real networking. Supports many simultaneous
+ * peers (a Host side with several Guests), same as the real PeerJS-backed implementation.
  */
 export class FakeTransport implements Transport {
   private id: string | undefined;
-  private peer: FakeTransport | undefined;
+  private peers = new Map<string, FakeTransport>();
   private messageHandlers: MessageHandler[] = [];
   private connectionChangeHandlers: ConnectionChangeHandler[] = [];
 
-  async connect(remoteId?: string): Promise<string> {
-    this.id = `fake-peer-${nextId++}`;
+  async connect(remoteId?: string, requestedId?: string): Promise<string> {
+    const id = requestedId ?? `fake-peer-${nextId++}`;
+    if (network.has(id)) {
+      throw new RequestedIdTakenError(`FakeTransport: id "${id}" is already taken`);
+    }
+    this.id = id;
     network.set(this.id, this);
 
     if (remoteId) {
       const remote = network.get(remoteId);
       if (!remote) {
-        throw new Error(`FakeTransport: no peer registered for id "${remoteId}"`);
+        throw new PeerUnavailableError(`FakeTransport: no peer registered for id "${remoteId}"`);
       }
       this.linkTo(remote);
       remote.linkTo(this);
@@ -35,8 +41,14 @@ export class FakeTransport implements Transport {
     return this.id;
   }
 
-  send(message: unknown): void {
-    this.peer?.receive(message);
+  send(message: unknown, peerId?: string): void {
+    if (peerId !== undefined) {
+      this.peers.get(peerId)?.receive(message, this.id!);
+      return;
+    }
+    for (const peer of this.peers.values()) {
+      peer.receive(message, this.id!);
+    }
   }
 
   onMessage(handler: MessageHandler): void {
@@ -48,12 +60,12 @@ export class FakeTransport implements Transport {
   }
 
   private linkTo(peer: FakeTransport): void {
-    this.peer = peer;
+    this.peers.set(peer.id!, peer);
   }
 
-  private receive(message: unknown): void {
+  private receive(message: unknown, fromPeerId: string): void {
     for (const handler of this.messageHandlers) {
-      handler(message);
+      handler(message, fromPeerId);
     }
   }
 

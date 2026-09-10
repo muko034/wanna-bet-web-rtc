@@ -2,40 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { RoomRegistry, ROOM_CODE_ALPHABET } from './room-registry';
 
 describe('RoomRegistry', () => {
-  it('registers a Transport ID under a 6-character, unambiguous-alphabet Room Code', () => {
+  it('generates a 6-character, unambiguous-alphabet Room Code', () => {
     const registry = new RoomRegistry();
 
-    const code = registry.register('transport-1');
+    const code = registry.generate();
 
     expect(code).toHaveLength(6);
-    expect(code).toMatch(/^[A-Z0-9]+$/);
     for (const char of code) {
       expect(ROOM_CODE_ALPHABET).toContain(char);
     }
   });
 
-  it('resolves a registered Room Code back to its Transport ID', () => {
+  it('derives the same Transport ID from a Room Code every time, with no lookup involved', () => {
     const registry = new RoomRegistry();
 
-    const code = registry.register('transport-1');
-
-    expect(registry.resolve(code)).toBe('transport-1');
+    expect(registry.transportIdFor('ABCDEF')).toBe(registry.transportIdFor('ABCDEF'));
   });
 
-  it('returns undefined when resolving a Room Code that was never registered', () => {
+  it('derives a Transport ID distinct from the Room Code itself', () => {
     const registry = new RoomRegistry();
 
-    expect(registry.resolve('ZZZZZZ')).toBeUndefined();
+    expect(registry.transportIdFor('ABCDEF')).not.toBe('ABCDEF');
   });
 
-  it('retries generation when a freshly generated code collides with one already registered', () => {
-    const codes = ['AAAAAA', 'AAAAAA', 'BBBBBB'];
-    const registry = new RoomRegistry(() => codes.shift() ?? 'FALLBACK');
+  it('derives different Transport IDs for different Room Codes', () => {
+    const registry = new RoomRegistry();
 
-    registry.register('transport-1');
-    const secondCode = registry.register('transport-2');
-
-    expect(secondCode).toBe('BBBBBB');
-    expect(registry.resolve('BBBBBB')).toBe('transport-2');
+    expect(registry.transportIdFor('AAAAAA')).not.toBe(registry.transportIdFor('BBBBBB'));
   });
 });
