@@ -89,9 +89,10 @@ accidental page reload lets them rejoin the same player slot instead of appearin
   tests are the primary safety net, consistent with keeping the number of test seams to one (the Transport interface)
   rather than one per consuming slice.
 - **Deferred**: a separate, distinct smoke-test suite for the real PeerJS-backed `Transport` implementation, run
-  against a live/local `peerjs-server`. This would validate the adapter itself (does it correctly speak PeerJS), not
-  Room/Connection Manager logic — it stays out of the fake-transport unit suite above and is not part of this slice's
-  TDD loop. Not yet built; noted here for later.
+  against a live/local `peerjs-server`. This validates the adapter itself (does it correctly speak PeerJS), not
+  Room/Connection Manager logic, and stays out of the fake-transport unit suite and this slice's TDD loop. See
+  [06-peerjs-transport-smoke-tests.md](06-peerjs-transport-smoke-tests.md); it is blocked by room-lifecycle item 1
+  and is not yet built.
 
 ## Out of Scope
 
