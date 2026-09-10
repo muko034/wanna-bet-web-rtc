@@ -6,8 +6,29 @@ the others predict and wager on the outcome.
 ## Language
 
 **Room**:
-A single play session tying one Host and its connected Guests together, identified by a shareable link/code. _Avoid_:
-Game, session, lobby
+A single play session tying one Host and its connected Guests together, identified by a shareable Room Code. _Avoid_:
+Game, session (a "Lobby" is a distinct, valid term — see below — for the pre-game view of a Room; don't conflate the
+Room-the-session with that view when naming either one)
+
+**Room Code**:
+The 6-character, uppercase, human-enterable public identifier for a Room, generated with a restricted alphabet that
+excludes visually ambiguous characters. Distinct from the Transport ID: the Room Code is what players see, share, and
+type; it is never itself the underlying connection identifier. _Avoid_: Room ID, code (ambiguous on its own)
+
+**Transport ID**:
+The underlying peer-to-peer connection identifier a Guest's device actually connects to. Never shown to players and
+never used as the Room Code, even though today's implementation happens to generate a Room Code that maps to exactly
+one Transport ID. _Avoid_: Peer ID, connection ID (when used loosely to mean the Room Code)
+
+**Room Registry**:
+The lookup that resolves a Room Code to its Transport ID, generating a fresh Room Code (retrying on collision) when a
+Room is created. _Avoid_: Room map, code table
+
+**Lobby**:
+The pre-game view of a Room, shown to the Host (and, once joining exists, to Guests) after the Room is created and
+before the Host starts play. Displays the Room Code/link and the connected Guests. Not itself the Room — the Lobby is
+one view of a Room's lifecycle, alongside the started-game view. _Avoid_: Waiting room (when used to mean something
+other than this view)
 
 **Host**:
 The player whose device holds the authoritative Game State for the Room and validates every action. _Avoid_: Server,

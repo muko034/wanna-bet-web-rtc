@@ -2,10 +2,12 @@
 
 ## What to build
 
-A Guest opens the Host's shared link, enters a display name, and connects directly to the Host over the `Transport`
-interface. The Host's lobby updates live to show the new Guest. The Room enforces a minimum of 2 and maximum of 20
-total players, and gives clear feedback for an invalid link, an unreachable Host, or a full Room. Colliding display
-names are disambiguated automatically.
+A Guest opens the Host's shared link (`/room/<CODE>`, the canonical Room link introduced in
+`01-host-creates-a-room.md`), enters a display name, and connects directly to the Host over the `Transport` interface.
+Since that route also serves the Host's own Lobby, an unrecognized visitor to `/room/<CODE>` sees the Guest join form
+instead, disambiguated by local identity rather than a separate URL. The Host's lobby updates live to show the new
+Guest. The Room enforces a minimum of 2 and maximum of 20 total players, and gives clear feedback for an invalid link,
+an unreachable Host, or a full Room. Colliding display names are disambiguated automatically.
 
 ## Acceptance criteria
 

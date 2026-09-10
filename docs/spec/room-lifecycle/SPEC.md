@@ -63,6 +63,14 @@ accidental page reload lets them rejoin the same player slot instead of appearin
   registry is what `room-lifecycle` owns and tests. Every message after the handshake is attributed to whichever
   connection it arrived on — Guest action messages carry no identity field to trust or spoof.
 - **Room capacity**: enforced Host-side at join time — minimum 2, maximum 20 total players (Host counts as one).
+- **Room Code / Transport ID / Room Registry**: a Room's shareable identifier is a 6-character, uppercase **Room
+  Code** (unambiguous alphabet — excludes `0`, `O`, `1`, `I`), kept distinct from the underlying `Transport` connection
+  ID (the **Transport ID**). A **Room Registry** maps Room Code → Transport ID, generated at Room-creation time with
+  retry on collision. `/room/<CODE>` is the canonical shareable link — no separate join-specific route.
+- **Client-side routing**: the app uses `preact-router` for `/` (Home), `/room` (Create room), `/room/<CODE>` (Lobby),
+  and `/room/<CODE>/play` (placeholder started-game view), plus a not-found view for unmatched routes. `/room/<CODE>`
+  doubles as the eventual Guest join entry point (`02-guest-joins-a-room.md`), disambiguated by local identity: the
+  Room's creator sees the Host Lobby, an unrecognized visitor sees the Guest join form.
 - **Every `state` broadcast carries a monotonically increasing `seq`** (Host-owned, not a timestamp — see ADR 0003)
   so Guests can detect and ignore stale/out-of-order updates, e.g. across a reconnect race.
 - **Name collision handling**: on collision, the Host appends a disambiguating suffix (e.g. "Alex (2)") to the newer
