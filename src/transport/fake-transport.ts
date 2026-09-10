@@ -10,8 +10,7 @@ let nextId = 1;
 const network = new Map<string, FakeTransport>();
 
 /**
- * In-memory `Transport` double for tests — no real networking. See
- * docs/spec/room-lifecycle/SPEC.md's Testing Decisions.
+ * In-memory `Transport` double for tests — no real networking.
  */
 export class FakeTransport implements Transport {
   private id: string | undefined;

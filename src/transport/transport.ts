@@ -1,6 +1,6 @@
 /**
  * Wraps the underlying peer-to-peer networking (PeerJS in production) so that no other
- * slice depends on it directly. See docs/spec/room-lifecycle/SPEC.md.
+ * slice depends on it directly.
  */
 export interface Transport {
   /**

@@ -4,7 +4,7 @@ import { createRoom, type Room } from './room';
 
 /**
  * The Host's lobby: shows the Room's shareable link/code and the list of connected
- * players (empty until a Guest joins — see docs/spec/room-lifecycle/01-host-creates-a-room.md).
+ * players (empty until a Guest joins).
  */
 export function HostLobby() {
   const [room, setRoom] = useState<Room | null>(null);

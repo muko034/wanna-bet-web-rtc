@@ -3,9 +3,8 @@ import type { Transport } from './transport';
 
 /**
  * Real, PeerJS-backed `Transport` implementation used by the app. Not covered by the
- * fake-transport unit suite (see docs/spec/room-lifecycle/SPEC.md's Testing Decisions) —
- * a distinct smoke-test suite against a live/local `peerjs-server` is deferred, noted
- * there for later.
+ * fake-transport unit suite — a distinct smoke-test suite against a live/local
+ * `peerjs-server` is deferred for later.
  */
 export class PeerJsTransport implements Transport {
   private connections = new Map<string, DataConnection>();

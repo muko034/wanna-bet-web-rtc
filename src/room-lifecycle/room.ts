@@ -13,7 +13,7 @@ export type Room = {
   playerCount: number;
 };
 
-/** Room capacity cap (Host counts as one) — personal-use scale, see ADR 0001. */
+/** Room capacity cap (Host counts as one) — sized for personal-use scale, not for horizontal growth. */
 export const MAX_ROOM_PLAYERS = 20;
 
 /**
