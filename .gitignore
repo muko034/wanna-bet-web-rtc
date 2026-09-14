@@ -231,3 +231,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Vitest browser mode artifacts (failure screenshots, etc.)
+.vitest/

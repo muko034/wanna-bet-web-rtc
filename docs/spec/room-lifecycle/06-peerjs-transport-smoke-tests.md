@@ -1,9 +1,6 @@
 **Blocked by**: 1 (Host creates a Room)
 
-## Status
-
-Deferred from the room-lifecycle TDD loop. This task is a later, manually run validation of the real PeerJS-backed
-`Transport` adapter.
+**Status**: Done
 
 ## What to build
 
@@ -23,15 +20,15 @@ shared `Transport` interface for this task.
 
 ## Acceptance criteria
 
-- [ ] A Host `PeerJsTransport` connects to the configured PeerJS server and returns a usable Transport ID.
-- [ ] A Guest `PeerJsTransport` connects to the Host's Transport ID.
-- [ ] Both sides report the connection-open event through `onConnectionChange(..., true)`.
-- [ ] Guest-to-Host and Host-to-Guest messages arrive unchanged through `onMessage`.
-- [ ] Host `send` delivers a message to every currently connected Guest.
-- [ ] Closing the concrete PeerJS-backed transports produces `onConnectionChange(..., false)` and releases resources.
-- [ ] Connecting with an unavailable or invalid server/peer surfaces an error or rejects `connect()` within the test timeout.
-- [ ] The adapter preserves its existing production defaults while allowing the smoke-test server's host, port, and path
+- [x] A Host `PeerJsTransport` connects to the configured PeerJS server and returns a usable Transport ID.
+- [x] A Guest `PeerJsTransport` connects to the Host's Transport ID.
+- [x] Both sides report the connection-open event through `onConnectionChange(..., true)`.
+- [x] Guest-to-Host and Host-to-Guest messages arrive unchanged through `onMessage`.
+- [x] Host `send` delivers a message to every currently connected Guest.
+- [x] Closing the concrete PeerJS-backed transports produces `onConnectionChange(..., false)` and releases resources.
+- [x] Connecting with an unavailable or invalid server/peer surfaces an error or rejects `connect()` within the test timeout.
+- [x] The adapter preserves its existing production defaults while allowing the smoke-test server's host, port, and path
   to be overridden.
-- [ ] A documented manual command runs the smoke suite against a live/local `peerjs-server`.
-- [ ] The smoke suite is separate from the fake-`Transport` unit suite and is not required for the room-lifecycle TDD
+- [x] A documented manual command runs the smoke suite against a live/local `peerjs-server`.
+- [x] The smoke suite is separate from the fake-`Transport` unit suite and is not required for the room-lifecycle TDD
   loop.
