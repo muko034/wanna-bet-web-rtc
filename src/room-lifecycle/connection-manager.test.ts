@@ -70,6 +70,7 @@ describe('ConnectionManager', () => {
     expect(received).toEqual([
       {
         type: 'welcome',
+        seq: 0,
         payload: { playerId: expect.any(String), reconnectToken: expect.any(String) },
       },
     ]);
@@ -90,7 +91,7 @@ describe('ConnectionManager', () => {
     guestTransport.onMessage((message) => received.push(message));
     guestTransport.send({ type: 'join', payload: { name: 'Overflow' } });
 
-    expect(received).toEqual([{ type: 'rejected', payload: { reason: 'ROOM_FULL', action: 'join' } }]);
+    expect(received).toEqual([{ type: 'rejected', seq: 0, payload: { reason: 'ROOM_FULL', action: 'join' } }]);
     expect(manager.room.players).toHaveLength(MAX_ROOM_PLAYERS - 1);
   });
 
@@ -120,7 +121,7 @@ describe('ConnectionManager', () => {
     rejoiningGuest.onMessage((message) => received.push(message));
     rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
 
-    expect(received).toEqual([{ type: 'welcome', payload: { playerId, reconnectToken } }]);
+    expect(received).toEqual([{ type: 'welcome', seq: 1, payload: { playerId, reconnectToken } }]);
     expect(manager.room.players).toEqual([expect.objectContaining({ playerId, name: 'Alex', connected: true })]);
     expect(rooms.at(-1)).toEqual(manager.room);
 
@@ -129,7 +130,7 @@ describe('ConnectionManager', () => {
     strangerGuest.onMessage((message) => strangerReceived.push(message));
     strangerGuest.send({ type: 'rejoin', payload: { reconnectToken: 'not-a-real-token' } });
 
-    expect(strangerReceived).toEqual([{ type: 'rejected', payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
+    expect(strangerReceived).toEqual([{ type: 'rejected', seq: 2, payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
     expect(manager.room.players).toHaveLength(1);
   });
 });
