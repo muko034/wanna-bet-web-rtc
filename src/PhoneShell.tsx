@@ -11,8 +11,8 @@ type Props = {
 };
 
 /**
- * Full-bleed, mobile-first phone frame shared by every screen — the "Big State" layout
- * from `docs/ui-design`: one giant color-block idea per screen instead of small cards.
+ * Full-bleed, mobile-first phone frame shared by every screen — the "Big State" layout:
+ * one giant color-block idea per screen instead of small cards.
  */
 export function PhoneShell({ background, roomCode, topLeft, children }: Props) {
   return (

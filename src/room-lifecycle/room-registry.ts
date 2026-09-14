@@ -21,7 +21,7 @@ function generateCode(): string {
  * Generates Room Codes and derives the Transport ID a Room's Host is reachable under.
  * Holds no lookup state — a Room Code's Transport ID is a pure function of the code
  * itself, so any device can resolve it locally, without a shared registry no device
- * other than the Host could ever see (there is no backend to hold one — see ADR 0001).
+ * other than the Host could ever see (there is no backend to hold one).
  */
 export class RoomRegistry {
   private readonly generateRoomCode: () => string;

@@ -25,7 +25,7 @@ input {
   font-family: inherit;
 }
 
-/* ================= "Big State" layout — see docs/ui-design =================
+/* ================= "Big State" layout =================
    Full-bleed color-block screens, giant type, giant tap zones: one dominant idea
    fills the whole phone-width frame at a time instead of small cards/toggles. */
 .vb {

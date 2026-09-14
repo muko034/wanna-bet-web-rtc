@@ -59,6 +59,13 @@ export class FakeTransport implements Transport {
     this.connectionChangeHandlers.push(handler);
   }
 
+  /** Test-only simulation of a dropped connection: notifies every linked peer that this one went offline. */
+  disconnect(): void {
+    for (const peer of this.peers.values()) {
+      peer.notifyConnectionChange(this.id!, false);
+    }
+  }
+
   private linkTo(peer: FakeTransport): void {
     this.peers.set(peer.id!, peer);
   }

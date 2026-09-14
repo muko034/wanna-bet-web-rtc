@@ -1,8 +1,9 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, type JoinResult } from './join-room';
+import { joinRoom, rejoinRoom, type JoinResult } from './join-room';
+import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 
 type Status =
   | { kind: 'form' }
+  | { kind: 'rejoining' }
   | { kind: 'joining' }
   | { kind: 'joined' }
   | { kind: 'error'; message: string };
@@ -25,11 +27,32 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
 /**
  * `/room/<CODE>`, shown to an unrecognized visitor (not this device's own Host Room): the
  * Guest join form. Enters a display name and connects directly to the Host over the
- * `Transport` interface.
+ * `Transport` interface. If this device already holds a stored identity for `code` (a
+ * prior join, before a dropped connection or page reload), it presents that
+ * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
+ * as their same existing player.
  */
 export function JoinRoom({ code }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
+
+  useEffect(() => {
+    if (!code) return;
+    const stored = loadIdentity(localStorage, code);
+    if (!stored) return;
+
+    setStatus({ kind: 'rejoining' });
+    rejoinRoom(new PeerJsTransport(), roomRegistry, code, stored.reconnectToken).then((result) => {
+      if (result.status === 'joined') {
+        saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
+        setStatus({ kind: 'joined' });
+      } else if (result.status === 'unknown-player') {
+        setStatus({ kind: 'form' });
+      } else {
+        setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
+      }
+    });
+  }, [code]);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,6 +60,7 @@ export function JoinRoom({ code }: Props) {
     setStatus({ kind: 'joining' });
     joinRoom(new PeerJsTransport(), roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
+        saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
       } else {
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
@@ -51,6 +75,16 @@ export function JoinRoom({ code }: Props) {
           You're in!
         </div>
         <div class="vb-giant-sub">Waiting for the Host to start the game.</div>
+      </PhoneShell>
+    );
+  }
+
+  if (status.kind === 'rejoining') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={code}>
+        <div class="vb-giant-title" style="font-size:24px">
+          Reconnecting…
+        </div>
       </PhoneShell>
     );
   }
