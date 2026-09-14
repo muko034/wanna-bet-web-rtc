@@ -81,3 +81,18 @@ export function rejoinRoom(transport: Transport, registry: RoomRegistry, code: s
     status: 'unknown-player',
   }));
 }
+
+/**
+ * Watches a Guest's own `transport` for its connection to the Host being lost. A dropped
+ * data channel is terminal here — this app never attempts an automatic reconnect — so a
+ * single `connected: false` notification is enough to call the Room over. There is no Host
+ * migration; `onSessionEnded` is the caller's cue to show a clear "session ended" state
+ * instead of leaving the Guest stuck on a stale screen.
+ */
+export function watchForSessionEnd(transport: Transport, onSessionEnded: () => void): void {
+  transport.onConnectionChange((_peerId, connected) => {
+    if (!connected) {
+      onSessionEnded();
+    }
+  });
+}

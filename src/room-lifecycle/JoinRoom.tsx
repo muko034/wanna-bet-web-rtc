@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, rejoinRoom, type JoinResult } from './join-room';
+import { joinRoom, rejoinRoom, watchForSessionEnd, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
 
@@ -16,6 +16,7 @@ type Status =
   | { kind: 'rejoining' }
   | { kind: 'joining' }
   | { kind: 'joined' }
+  | { kind: 'session-ended' }
   | { kind: 'error'; message: string };
 
 const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = {
@@ -42,10 +43,12 @@ export function JoinRoom({ code }: Props) {
     if (!stored) return;
 
     setStatus({ kind: 'rejoining' });
-    rejoinRoom(new PeerJsTransport(), roomRegistry, code, stored.reconnectToken).then((result) => {
+    const transport = new PeerJsTransport();
+    rejoinRoom(transport, roomRegistry, code, stored.reconnectToken).then((result) => {
       if (result.status === 'joined') {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
       } else if (result.status === 'unknown-player') {
         setStatus({ kind: 'form' });
       } else {
@@ -58,15 +61,28 @@ export function JoinRoom({ code }: Props) {
     event.preventDefault();
     if (!code) return;
     setStatus({ kind: 'joining' });
-    joinRoom(new PeerJsTransport(), roomRegistry, code, name).then((result) => {
+    const transport = new PeerJsTransport();
+    joinRoom(transport, roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
       } else {
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
   };
+
+  if (status.kind === 'session-ended') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={code}>
+        <div class="vb-giant-title" style="font-size:24px">
+          Session ended
+        </div>
+        <div class="vb-giant-sub">The Host's connection was lost, so this Room has ended.</div>
+      </PhoneShell>
+    );
+  }
 
   if (status.kind === 'joined') {
     return (
