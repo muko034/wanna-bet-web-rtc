@@ -1,6 +1,6 @@
 import { PhoneShell } from '../PhoneShell';
 
-/** Landing view: lets a player create a Room. Joining is not yet wired up. */
+/** Landing view: lets a player create a Room, or join one via a Room Code. */
 export function Home(_props: { path?: string }) {
   return (
     <PhoneShell background="vb-bg-home">
@@ -14,9 +14,9 @@ export function Home(_props: { path?: string }) {
       <a class="vb-cta" href="/room">
         Create a game
       </a>
-      <button class="vb-cta-outline" type="button" disabled title="Joining a game isn't available yet">
+      <a class="vb-cta-outline" href="/join">
         Join a game
-      </button>
+      </a>
     </PhoneShell>
   );
 }

@@ -2,6 +2,7 @@ import { Router, route } from 'preact-router';
 import { useRef, useState } from 'preact/hooks';
 import { Home } from './room-lifecycle/Home';
 import { CreateRoom } from './room-lifecycle/CreateRoom';
+import { JoinCode } from './room-lifecycle/JoinCode';
 import { Lobby } from './room-lifecycle/Lobby';
 import { JoinRoom } from './room-lifecycle/JoinRoom';
 import { StartedGame } from './room-lifecycle/StartedGame';
@@ -46,6 +47,7 @@ export function App() {
     <Router>
       <Home path="/" />
       <CreateRoom path="/room" onRoomCreated={handleRoomCreated} />
+      <JoinCode path="/join" />
       <RoomRoute path="/room/:code" room={room} onStart={handleStart} />
       <StartedGame path="/room/:code/play" room={room} />
       <NotFound default />

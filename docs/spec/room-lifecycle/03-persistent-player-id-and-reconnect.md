@@ -1,5 +1,7 @@
 **Blocked by**: 2 (Guest joins a Room)
 
+**Status**: Implemented
+
 ## What to build
 
 Each Guest is assigned two identifiers on first join, both stored in that Guest's own `localStorage`: a public
@@ -12,12 +14,12 @@ connection status (connected/disconnected), independent of this identity matchin
 
 ## Acceptance criteria
 
-- [ ] A Guest is assigned a public `playerId` and a private `reconnectToken` on first join, both stored in their own
+- [x] A Guest is assigned a public `playerId` and a private `reconnectToken` on first join, both stored in their own
   browser's `localStorage`.
-- [ ] Reloading the Guest's page and rejoining via the same link, presenting the stored `reconnectToken`, reconnects
+- [x] Reloading the Guest's page and rejoining via the same link, presenting the stored `reconnectToken`, reconnects
   them to their same existing player record (same name, no duplicate player created).
-- [ ] The `reconnectToken` never appears in any `state` broadcast, to its own owner or anyone else — only in the
+- [x] The `reconnectToken` never appears in any `state` broadcast, to its own owner or anyone else — only in the
   one-time `welcome` reply to the connection that generated it.
-- [ ] The Host's view reflects each player's live connection status (connected vs. disconnected).
-- [ ] A Guest whose connection drops and later reconnects is matched by their `reconnectToken`, not by name or by their
+- [x] The Host's view reflects each player's live connection status (connected vs. disconnected).
+- [x] A Guest whose connection drops and later reconnects is matched by their `reconnectToken`, not by name or by their
   public `playerId`.
