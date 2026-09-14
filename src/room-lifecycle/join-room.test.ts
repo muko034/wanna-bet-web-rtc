@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { joinRoom, rejoinRoom } from './join-room';
+import { joinRoom, rejoinRoom, watchForSessionEnd } from './join-room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players']): Room {
@@ -88,5 +88,36 @@ describe('rejoinRoom', () => {
     const result = await rejoinRoom(new FakeTransport(), registry, 'NOPE12', 'some-token');
 
     expect(result).toEqual({ status: 'invalid-room' });
+  });
+});
+
+describe('watchForSessionEnd', () => {
+  it('notifies the caller when the connection to the Host is lost, since there is no Host migration and the Room just ends', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+
+    const onSessionEnded = vi.fn();
+    watchForSessionEnd(guestTransport, onSessionEnded);
+    hostTransport.disconnect();
+
+    expect(onSessionEnded).toHaveBeenCalledOnce();
+  });
+
+  it('does not notify the caller while the connection to the Host is still up', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+
+    const onSessionEnded = vi.fn();
+    watchForSessionEnd(guestTransport, onSessionEnded);
+
+    expect(onSessionEnded).not.toHaveBeenCalled();
   });
 });
