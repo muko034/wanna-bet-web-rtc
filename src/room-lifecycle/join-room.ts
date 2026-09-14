@@ -7,6 +7,12 @@ export type JoinResult =
   | { status: 'unreachable' }
   | { status: 'room-full' };
 
+export type RejoinResult =
+  | { status: 'joined'; playerId: string; reconnectToken: string }
+  | { status: 'invalid-room' }
+  | { status: 'unreachable' }
+  | { status: 'unknown-player' };
+
 type WelcomeMessage = { type: 'welcome'; payload: { playerId: string; reconnectToken: string } };
 type RejectedMessage = { type: 'rejected'; payload: { reason: string; action: string } };
 
@@ -19,13 +25,18 @@ function isRejectedMessage(message: unknown): message is RejectedMessage {
 }
 
 /**
- * Guest-side join flow: derives `code`'s Transport ID via `registry` (a pure, local
- * computation — no shared lookup involved, see ADR 0001), connects, sends `join`, and
- * awaits the Host's `welcome`/`rejected` reply. Reports a clear, distinct result for an
- * invalid Room Code (no Host reachable under its derived id), an unreachable Host, and a
- * full Room, rather than leaving the caller to interpret a raw connection failure.
+ * Shared Guest-side connect flow underlying `joinRoom`/`rejoinRoom`: derives `code`'s
+ * Transport ID via `registry` (a pure, local computation — no shared lookup involved),
+ * connects, sends `firstMessage`, and awaits the Host's `welcome`/`rejected` reply —
+ * mapping a `rejected` reply's reason via `onRejected`.
  */
-export function joinRoom(transport: Transport, registry: RoomRegistry, code: string, name: string): Promise<JoinResult> {
+function connectAndSend<Result extends { status: string }>(
+  transport: Transport,
+  registry: RoomRegistry,
+  code: string,
+  firstMessage: unknown,
+  onRejected: (reason: string) => Result,
+): Promise<Result | { status: 'joined'; playerId: string; reconnectToken: string } | { status: 'invalid-room' } | { status: 'unreachable' }> {
   const transportId = registry.transportIdFor(code);
 
   return new Promise((resolve) => {
@@ -36,11 +47,37 @@ export function joinRoom(transport: Transport, registry: RoomRegistry, code: str
           if (isWelcomeMessage(message)) {
             resolve({ status: 'joined', playerId: message.payload.playerId, reconnectToken: message.payload.reconnectToken });
           } else if (isRejectedMessage(message)) {
-            resolve(message.payload.reason === 'ROOM_FULL' ? { status: 'room-full' } : { status: 'invalid-room' });
+            resolve(onRejected(message.payload.reason));
           }
         });
-        transport.send({ type: 'join', payload: { name } });
+        transport.send(firstMessage);
       })
       .catch((error) => resolve({ status: error instanceof PeerUnavailableError ? 'invalid-room' : 'unreachable' }));
   });
+}
+
+/**
+ * Guest-side join flow, for a Guest with no stored identity yet: sends `join` and awaits
+ * the Host's `welcome`/`rejected` reply. Reports a clear, distinct result for an invalid
+ * Room Code (no Host reachable under its derived id), an unreachable Host, and a full
+ * Room, rather than leaving the caller to interpret a raw connection failure.
+ */
+export function joinRoom(transport: Transport, registry: RoomRegistry, code: string, name: string): Promise<JoinResult> {
+  return connectAndSend(transport, registry, code, { type: 'join', payload: { name } }, (reason) =>
+    reason === 'ROOM_FULL' ? { status: 'room-full' } : { status: 'invalid-room' },
+  );
+}
+
+/**
+ * Guest-side rejoin flow, for a Guest presenting a `reconnectToken` stored from a prior
+ * session (a dropped connection or page reload): sends `rejoin` instead of `join`, so the
+ * Host matches it back to the existing player record rather than creating a new one. A
+ * `reconnectToken` the Host no longer recognizes resolves as `unknown-player`, distinct
+ * from an invalid Room Code, so the caller can fall back to a fresh `joinRoom` instead of
+ * showing a "Room doesn't exist" message.
+ */
+export function rejoinRoom(transport: Transport, registry: RoomRegistry, code: string, reconnectToken: string): Promise<RejoinResult> {
+  return connectAndSend(transport, registry, code, { type: 'rejoin', payload: { reconnectToken } }, () => ({
+    status: 'unknown-player',
+  }));
 }

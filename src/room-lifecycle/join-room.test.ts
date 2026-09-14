@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { joinRoom } from './join-room';
+import { joinRoom, rejoinRoom } from './join-room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players']): Room {
@@ -58,5 +58,35 @@ describe('joinRoom', () => {
     const result = await joinRoom(new FakeTransport(), registry, code, 'Overflow');
 
     expect(result).toEqual({ status: 'room-full' });
+  });
+});
+
+describe('rejoinRoom', () => {
+  it("reconnects to the Host and resolves with the same playerId, presenting a stored reconnectToken instead of a name", async () => {
+    const registry = new RoomRegistry();
+    const code = await hostRoom(registry);
+    const joined = await joinRoom(new FakeTransport(), registry, code, 'Alex');
+    if (joined.status !== 'joined') throw new Error('setup failed');
+
+    const result = await rejoinRoom(new FakeTransport(), registry, code, joined.reconnectToken);
+
+    expect(result).toEqual({ status: 'joined', playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+  });
+
+  it('resolves with a clear "not recognized" result when the Host does not recognize the presented reconnectToken', async () => {
+    const registry = new RoomRegistry();
+    const code = await hostRoom(registry);
+
+    const result = await rejoinRoom(new FakeTransport(), registry, code, 'a-stale-or-foreign-token');
+
+    expect(result).toEqual({ status: 'unknown-player' });
+  });
+
+  it('resolves with a clear error for a Room Code no Host is reachable under', async () => {
+    const registry = new RoomRegistry();
+
+    const result = await rejoinRoom(new FakeTransport(), registry, 'NOPE12', 'some-token');
+
+    expect(result).toEqual({ status: 'invalid-room' });
   });
 });

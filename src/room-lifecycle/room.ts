@@ -21,10 +21,10 @@ export const MAX_ROOM_PLAYERS = 20;
 /**
  * Creates a new Room: the caller becomes its Host. The returned `code` is the shareable
  * Room Code Guests use to connect — its Transport ID is deterministically derived via
- * `registry`, not looked up, so any Guest device can resolve it from the code alone (see
- * ADR 0001: there is no backend to hold a shared lookup). Retries with a fresh code if
- * that derived id is already claimed by an unrelated peer. No Guests are connected yet,
- * but the Host itself counts toward `playerCount` from the start.
+ * `registry`, not looked up, so any Guest device can resolve it from the code alone (there
+ * is no backend to hold a shared lookup). Retries with a fresh code if that derived id is
+ * already claimed by an unrelated peer. No Guests are connected yet, but the Host itself
+ * counts toward `playerCount` from the start.
  */
 export async function createRoom(transport: Transport, registry: RoomRegistry): Promise<Room> {
   for (;;) {

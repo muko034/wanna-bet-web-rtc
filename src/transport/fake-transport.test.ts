@@ -37,6 +37,19 @@ describe('FakeTransport', () => {
     expect(statusChanges).toEqual([{ peerId: guestId, connected: true }]);
   });
 
+  it('notifies the other peer\'s onConnectionChange handler with connected: false when a peer disconnects', async () => {
+    const host = new FakeTransport();
+    const hostId = await host.connect();
+    const guest = new FakeTransport();
+    const guestId = await guest.connect(hostId);
+
+    const statusChanges: Array<{ peerId: string; connected: boolean }> = [];
+    host.onConnectionChange((peerId, connected) => statusChanges.push({ peerId, connected }));
+    guest.disconnect();
+
+    expect(statusChanges).toEqual([{ peerId: guestId, connected: false }]);
+  });
+
   it('lets a Host stay connected to more than one Guest at once', async () => {
     const host = new FakeTransport();
     const hostId = await host.connect();
