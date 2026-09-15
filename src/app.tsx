@@ -17,18 +17,20 @@ type RoomRouteProps = {
   code?: string;
   room: Room | null;
   onStart: () => void;
+  onGameStarted: (code: string) => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, onStart }: RoomRouteProps) {
+function RoomRoute({ code, room, onStart, onGameStarted }: RoomRouteProps) {
   if (room && room.code === code) {
     return <Lobby code={code} room={room} onStart={onStart} />;
   }
-  return <JoinRoom code={code} />;
+  return <JoinRoom code={code} onGameStarted={onGameStarted} />;
 }
 
 export function App() {
   const [room, setRoom] = useState<Room | null>(null);
+  const [guestGameStartedCode, setGuestGameStartedCode] = useState<string | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
 
   const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
@@ -50,8 +52,8 @@ export function App() {
       <Home path={withBase('/')} />
       <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
       <JoinCode path={withBase('join')} />
-      <RoomRoute path={withBase('room/:code')} room={room} onStart={handleStart} />
-      <StartedGame path={withBase('room/:code/play')} room={room} />
+      <RoomRoute path={withBase('room/:code')} room={room} onStart={handleStart} onGameStarted={setGuestGameStartedCode} />
+      <StartedGame path={withBase('room/:code/play')} room={room} guestGameStartedCode={guestGameStartedCode} />
       <NotFound default />
     </Router>
   );
