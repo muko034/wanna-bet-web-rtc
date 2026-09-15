@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
+import { withBase } from '../base-path';
 
 type Props = {
   path?: string;
@@ -13,14 +14,14 @@ export function JoinCode(_props: Props) {
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
-    route(`/room/${code.trim().toUpperCase()}`);
+    route(withBase(`room/${code.trim().toUpperCase()}`));
   };
 
   return (
     <PhoneShell
       background="vb-bg-form"
       topLeft={
-        <a class="vb-back-fab" href="/">
+        <a class="vb-back-fab" href={withBase('/')}>
           &larr;
         </a>
       }

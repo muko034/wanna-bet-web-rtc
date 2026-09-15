@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
+import { withBase } from '../base-path';
 import { PeerJsTransport } from '../transport/peerjs-transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
@@ -27,7 +28,7 @@ export function CreateRoom({ onRoomCreated }: Props) {
     <PhoneShell
       background="vb-bg-form"
       topLeft={
-        <a class="vb-back-fab" href="/">
+        <a class="vb-back-fab" href={withBase('/')}>
           &larr;
         </a>
       }

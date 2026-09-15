@@ -1,4 +1,5 @@
 import { PhoneShell } from './PhoneShell';
+import { withBase } from './base-path';
 
 /** Rendered for any route that doesn't match one of the app's known paths. */
 export function NotFound(_props: { default?: boolean }) {
@@ -7,7 +8,7 @@ export function NotFound(_props: { default?: boolean }) {
       <div class="vb-giant-title" style="font-size:24px">
         Page not found
       </div>
-      <a class="vb-cta" href="/">
+      <a class="vb-cta" href={withBase('/')}>
         Back to Home
       </a>
     </PhoneShell>

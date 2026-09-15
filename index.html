@@ -8,11 +8,8 @@
   </head>
   <body>
     <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // https://github.com/rafgraph/spa-github-pages
-      // Reverses the redirect performed by 404.html: unpacks the original path from the query
-      // string and restores it via history.replaceState before the router mounts, so
-      // preact-router sees the real path (e.g. /room/ABC123) and the URL bar looks unchanged.
+      // Reverses the 404.html redirect: unpacks the original path from the query string and
+      // restores it via history.replaceState before the router mounts, so the URL looks unchanged.
       (function (l) {
         if (l.search[1] === '/') {
           var decoded = l.search

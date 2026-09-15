@@ -7,6 +7,7 @@ import { Lobby } from './room-lifecycle/Lobby';
 import { JoinRoom } from './room-lifecycle/JoinRoom';
 import { StartedGame } from './room-lifecycle/StartedGame';
 import { NotFound } from './NotFound';
+import { withBase } from './base-path';
 import { startGame, type Room } from './room-lifecycle/room';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import type { Transport } from './transport/transport';
@@ -33,23 +34,23 @@ export function App() {
   const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
     connectionManagerRef.current = new ConnectionManager(transport, createdRoom, setRoom);
     setRoom(createdRoom);
-    route(`/room/${createdRoom.code}`);
+    route(withBase(`room/${createdRoom.code}`));
   };
 
   const handleStart = () => {
     if (!room) return;
     const started = startGame(room);
     setRoom(started);
-    route(`/room/${started.code}/play`);
+    route(withBase(`room/${started.code}/play`));
   };
 
   return (
     <Router>
-      <Home path="/" />
-      <CreateRoom path="/room" onRoomCreated={handleRoomCreated} />
-      <JoinCode path="/join" />
-      <RoomRoute path="/room/:code" room={room} onStart={handleStart} />
-      <StartedGame path="/room/:code/play" room={room} />
+      <Home path={withBase('/')} />
+      <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
+      <JoinCode path={withBase('join')} />
+      <RoomRoute path={withBase('room/:code')} room={room} onStart={handleStart} />
+      <StartedGame path={withBase('room/:code/play')} room={room} />
       <NotFound default />
     </Router>
   );

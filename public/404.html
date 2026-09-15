@@ -4,14 +4,9 @@
     <meta charset="UTF-8" />
     <title>Wanna Bet</title>
     <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // https://github.com/rafgraph/spa-github-pages
-      // GitHub Pages has no server-side rewrites, so it serves this file for any unmatched path
-      // (e.g. a shared Room link like /wanna-bet-web-rtc/room/ABC123). We redirect back to the
-      // app root with the original path packed into the query string; index.html unpacks it via
-      // history.replaceState before the router mounts, so the app renders the right route and the
-      // address bar ends up showing the original clean path again.
-      var pathSegmentsToKeep = 1; // GitHub Pages project site: /<repo>/ prefix to preserve
+      // GitHub Pages has no server-side rewrites, so unmatched paths land here. Redirect back to
+      // the app root with the original path packed into the query string; index.html restores it.
+      var pathSegmentsToKeep = 1; // /<repo>/ prefix to preserve for a GitHub Pages project site
 
       var l = window.location;
       l.replace(

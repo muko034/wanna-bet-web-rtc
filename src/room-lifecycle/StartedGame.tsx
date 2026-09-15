@@ -2,6 +2,7 @@ import { route } from 'preact-router';
 import { useEffect } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
+import { withBase } from '../base-path';
 import type { Room } from './room';
 
 type Props = {
@@ -20,7 +21,7 @@ export function StartedGame({ code, room }: Props) {
 
   useEffect(() => {
     if (roomMatches && !hasStarted) {
-      route(`/room/${code}`, true);
+      route(withBase(`room/${code}`), true);
     }
   }, [roomMatches, hasStarted, code]);
 

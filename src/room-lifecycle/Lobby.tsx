@@ -1,5 +1,6 @@
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
+import { withBase } from '../base-path';
 import type { Room } from './room';
 
 type Props = {
@@ -18,7 +19,7 @@ export function Lobby({ room, code, onStart }: Props) {
     return <NotFound />;
   }
 
-  const link = `${window.location.origin}/room/${room.code}`;
+  const link = `${window.location.origin}${withBase(`room/${room.code}`)}`;
   const hasGuests = room.players.length > 0;
 
   return (
