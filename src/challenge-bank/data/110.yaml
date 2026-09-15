@@ -1,0 +1,10 @@
+id: 110
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wyrzucić 2 monety zza pleców w powietrze i złapać je?
+    (2 próby)
+  en: |-
+    Will the player manage to throw 2 coins into the air from behind their back and catch them?
+    (2 trials)
+timeLimit: NONE

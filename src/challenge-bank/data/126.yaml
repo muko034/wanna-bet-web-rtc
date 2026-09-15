@@ -1,0 +1,6 @@
+id: 126
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 30 sekund, podać 10 marek samochodów?
+  en: Will the player manage to name 10 car brands in 30 seconds?
+timeLimit: HALF_MINUTE

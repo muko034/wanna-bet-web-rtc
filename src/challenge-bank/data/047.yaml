@@ -1,0 +1,12 @@
+id: 47
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się zapamiętać 8-elementową kombinację liter "X" i "Y", którą inny gracz napisze na kartce?
+    (Przykład: XXYYXXYY)
+    Zawodnik może patrzeć na kartkę przez 15 sekund.
+  en: |-
+    Will the player be able to remember the 8-element combination of letters "X" and "Y" that another player writes on a piece of paper?
+    (Example: XXYYXXYY)
+    The player can look at the sheet for 15 seconds.
+timeLimit: QUARTER_MINUTE

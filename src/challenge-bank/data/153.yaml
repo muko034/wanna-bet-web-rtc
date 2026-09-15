@@ -1,0 +1,10 @@
+id: 153
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się odbić piłeczkę kolanem 4 razy?
+    (3 próby)
+  en: |-
+    Will the player manage to bounce the ball with their knee 4 times?
+    (3 attempts)
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 112
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wstać z pozycji leżącej na plecach nie używając przy tym rąk?
+    Żadna część rąk ani ramion nie może dotknąć podłoża.
+  en: |-
+    Will the player be able to get up from a lying position on their back without using their hands?
+    No part of the hands or arms may touch the ground.
+timeLimit: NONE

@@ -1,0 +1,8 @@
+id: 119
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się w pozycji leżącej na plecach utrzymać przez 1 minutę wyprostowane
+    nogi pod kątem 45 stopni w stosunku do podłoża?
+  en: Will the player be able to keep their legs straight at a 45-degree angle to
+    the ground for 1 minute while lying on their back?
+timeLimit: ONE_MINUTE

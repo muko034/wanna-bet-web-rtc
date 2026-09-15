@@ -1,0 +1,11 @@
+id: 11
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się odgadnąć, ile waży osoba po jego prawej stronie?
+    (+/- 5 kg)
+    Zawodnik, którego dotyczy pytanie, powinien zapisać swoją wagę, zanim będzie ona odgadywana.
+  en: |-
+    Will the player manage to guess how much the person to their right weighs (+/- 5 kg)?
+    The person on right should write down the answer before betting.
+timeLimit: NONE

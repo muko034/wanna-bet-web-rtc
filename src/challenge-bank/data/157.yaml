@@ -1,0 +1,13 @@
+id: 157
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wrzucić piłeczkę do pudełka od gry z odległości 3 metrów?
+    Piłeczka musi wpaść bezpośrednio do pudełka - bez odbijania od podłoża czy ścian. Piłeczka może wypaść z pudełka, ale musi się najpierw w nim znaleźć.
+    (3 udane próby z 5)
+  en: |-
+    Will the player manage to throw the ball into the game box from a distance of 3 meters?
+    The ball must go directly into the box - without bouncing off the ground or walls.
+    The ball may fall out of the box, but it must first be inside it.
+    3 successful attempts out of 5
+timeLimit: NONE

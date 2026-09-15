@@ -1,0 +1,10 @@
+id: 149
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w ciągu 30 sekund ustawić wieżę z co najmniej 7 różnych przedmiotów?
+    Wieża musi się utrzymać w pionie przynajmniej 5 sekund.
+  en: |-
+    Will the player manage to set up a tower with at least 7 different items in 30 seconds?
+    The tower must remain upright for at least 5 seconds.
+timeLimit: HALF_MINUTE

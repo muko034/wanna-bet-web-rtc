@@ -1,0 +1,8 @@
+id: 166
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się w ciągu 15 sekund podnieść stopą kostkę do gry i wrzucić
+    ją do kubka leżącego na stole?
+  en: Will the player manage to lift the game die with their foot within 15 seconds
+    and throw it into the cup on the table?
+timeLimit: QUARTER_MINUTE

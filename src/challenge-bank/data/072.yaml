@@ -1,0 +1,12 @@
+id: 72
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, trzymając zamknięte oczy, zetknąć swoje palce wskazujące?
+    Przed każdą próbą gracz musi szeroko rozłożyć ręce.
+    (3 udane próby z 5.)
+  en: |-
+    Will the player manage to touch their index fingers while keeping their eyes closed?
+    Before each attempt, the player must spread their arms wide.
+    3 successful attempts out of 5.
+timeLimit: NONE

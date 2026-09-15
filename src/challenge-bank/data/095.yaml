@@ -1,0 +1,19 @@
+id: 95
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi, w ciągu 1 minuty, uda się podać 8 nowych słów z liter jednego wybranego poniżej słowa?
+    (Wszystkie nowe słowa muszą coś oznaczać. Gracz ma do dyspozycji kartkę i długopis.)
+    ASTRONOMICZNY
+    NIEPEWNY
+    TEATRALNE
+    KLEPTOMAN
+  en: |-
+    Will the player be able to give 8 new words using the letters of one of the words chosen below within 1 minute?
+    All new words must mean something.
+    The player has a piece of paper and a pen at their disposal.
+    ASTRONOMICAL
+    REVOLUTIONARY
+    THEATRICAL
+    KLEPTOMANIAC
+timeLimit: ONE_MINUTE

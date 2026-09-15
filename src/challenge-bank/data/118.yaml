@@ -1,0 +1,10 @@
+id: 118
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, złapać, między kciuk i palec wskazujący, upuszczoną przez inną osobę kartę do gry?
+    (3 udane próby z 5)
+  en: |-
+    Will the player manage to catch the playing card dropped by another person between their thumb and index finger?
+    3 successful attempts out of 5
+timeLimit: NONE

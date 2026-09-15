@@ -1,0 +1,6 @@
+id: 71
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 1 minuty, zbudować trzypoziomowy domek z kart?
+  en: Will the player manage to build a three-level card house in 1 minute?
+timeLimit: ONE_MINUTE

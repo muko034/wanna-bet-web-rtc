@@ -1,0 +1,8 @@
+id: 187
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się utrzymać równowagę stojąc na jednej nodze i wiążąc but na drugiej nodze przez 30 sekund?
+  en: |-
+    Will the player maintain balance by standing on one leg and tying the shoe on the other leg for 30 seconds?
+timeLimit: HALF_MINUTE

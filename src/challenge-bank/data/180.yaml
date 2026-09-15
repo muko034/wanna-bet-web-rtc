@@ -1,0 +1,10 @@
+id: 180
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się podrzucić długopis i złapać go jednorącz tak, aby wykonał w powietrzu 3 pełne obroty?
+    (3 próby)
+  en: |-
+    Will the player manage to toss the pen and catch it one-handed so that it makes 3 full rotations in the air?
+    (3 attempts)
+timeLimit: HALF_MINUTE

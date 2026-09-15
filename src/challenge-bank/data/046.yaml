@@ -1,0 +1,6 @@
+id: 46
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni 6 sportów wodnych?
+  en: Will the player list 6 water sports in 30 seconds?
+timeLimit: HALF_MINUTE

@@ -1,0 +1,8 @@
+id: 128
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 30 sekund, podać 5 przedmiotów, które można znaleźć
+    w kuchni i mają w nazwie 5 liter lub mniej?
+  en: Will the player manage to name 5 items that can be found in the kitchen and
+    have 5 letters or fewer in their name within 30 seconds?
+timeLimit: HALF_MINUTE

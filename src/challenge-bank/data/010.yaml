@@ -1,0 +1,10 @@
+id: 10
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się podbić, grzbietową powierzchnią dłoni, kartę płatniczą z krawędzi stołu i ją złapać?
+    (4 udane próby z 6.)
+  en: |-
+    Will the player manage to swipe the debit card from the edge of the table with the back of their hand and catch it?
+    4 successful attempts out of 6.
+timeLimit: NONE

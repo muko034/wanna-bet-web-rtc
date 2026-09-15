@@ -1,0 +1,10 @@
+id: 64
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się umieścić 2 monety na łokciu, wyrzucić je w powietrze i złapać je w dłoń (tej samej ręki)?
+    (2 próby.)
+  en: |-
+    Will the player manage to place 2 coins on their elbow, toss them in the air, and catch them in the hand (of the same arm)?
+    (2 attempts)
+timeLimit: NONE

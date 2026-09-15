@@ -1,0 +1,6 @@
+id: 27
+type: MENTAL
+content:
+  pl: Czy gracz wymieni 5 synonimów słowa "POWOLI" w ciągu 30 sekund?
+  en: Will the player list 5 synonyms of the word 'SLOWLY' within 30 seconds?
+timeLimit: HALF_MINUTE

@@ -1,0 +1,10 @@
+id: 169
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się odbić 5 razy grzbietem dłoni piłeczkę i złapać ją tą samą ręką?
+    (2 udane próby z 4)
+  en: |-
+    Will the player manage to hit the ball back 5 times with the back of their hand and catch it with the same hand?
+    2 successful attempts out of 4
+timeLimit: NONE

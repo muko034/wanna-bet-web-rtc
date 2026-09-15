@@ -1,0 +1,8 @@
+id: 41
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni nazwy 4 owoców i warzyw, które zaczynają
+    się na literę "B"?
+  en: Will the player, in 30 seconds, name 4 fruits and vegetables that start with
+    the letter 'B'?
+timeLimit: HALF_MINUTE

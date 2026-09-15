@@ -1,0 +1,6 @@
+id: 34
+type: MENTAL
+content:
+  pl: Czy gracz wymieni nazwiska 5 znanych pisarzy zagranicznych w ciągu 30 sekund?
+  en: Will the player name 5 famous foreign writers within 30 seconds?
+timeLimit: HALF_MINUTE

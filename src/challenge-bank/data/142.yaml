@@ -1,0 +1,8 @@
+id: 142
+type: PHYSICAL
+content:
+  pl: 'Czy graczowi uda się, w ciągu 30 sekund, zrobić telefonem zdjęcia: buta, rolki
+    papieru toaletowego oraz drzewa?'
+  en: Will the player manage to take pictures with their phone of a shoe, a roll of
+    toilet paper, and a tree within 30 seconds?
+timeLimit: HALF_MINUTE

@@ -1,0 +1,6 @@
+id: 39
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 15 sekund, wymieni 4 słowa, które rymują się ze słowem "SMOK"?
+  en: Will the player, in 15 seconds, name 4 words that rhyme with the word 'DRAGON'?
+timeLimit: QUARTER_MINUTE

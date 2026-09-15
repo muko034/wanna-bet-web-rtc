@@ -1,0 +1,10 @@
+id: 52
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się położyć na podłodze i wstać trzymając książkę na czole, tak aby ta nie spadła?
+    (3 próby.)
+  en: |-
+    Will the player manage to lie on the floor and get up while holding a book on their forehead so that it does not fall?
+    (3 attempts.)
+timeLimit: NONE

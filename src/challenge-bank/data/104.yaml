@@ -1,0 +1,10 @@
+id: 104
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, zrobić 25 pompek?
+    Pompkę uznaje się za zaliczoną, jeśli w najniższym punkcie kąt w łokciu jest nie większy niż 90 stopni, a w najwyższym ręce są całkowicie wyprostowane.
+  en: |-
+    Will the player be able to do 25 push-ups in 1 minute?
+    A push-up is considered completed if the angle at the elbow is no greater than 90 degrees at the lowest point, and the arms are fully extended at the highest point.
+timeLimit: ONE_MINUTE

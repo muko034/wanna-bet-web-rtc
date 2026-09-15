@@ -1,0 +1,8 @@
+id: 182
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się utrzymać równowagę stojąc na jednej nodze z zamkniętymi oczami przez 30 sekund?
+  en: |-
+    Will the player maintain balance by standing on one leg with their eyes closed for 30 seconds?
+timeLimit: HALF_MINUTE

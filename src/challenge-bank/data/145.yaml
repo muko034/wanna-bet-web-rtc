@@ -1,0 +1,10 @@
+id: 145
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się okrążyć krzesło, idąc na czworakach z książką na głowie, tak aby ta nie spadła?
+    (2 próby)
+  en: |-
+    Will the player manage to circle the chair, crawling with a book on their head, so that it doesn't fall off?
+    (2 attempts)
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 159
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się strzelić z odległości 2 metrów gumką recepturką w szklankę?
+    (3 próby)
+  en: |-
+    Will the player manage to shoot a rubber band into the glass from a distance of 2 meters?
+    (3 attempts)
+timeLimit: NONE

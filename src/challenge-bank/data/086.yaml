@@ -1,0 +1,13 @@
+id: 86
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 30 sekund, rozwiąże w pamięci poniższe zadanie arytmetyczne?
+    XYZ + ABC / 2 = ?
+    Pozostali gracze powinni uzgodnić liczby "XYZ" oraz "ABC" przed obstawianiem oraz zapisać działanie na kartce. Gracz wykonujący zadanie może patrzeć na kartkę, ale nie może pisać.
+  en: |-
+    Will the player solve the following arithmetic problem in their head within 30 seconds?
+    XYZ + ABC / 2 = ?
+    The other players should agree on the numbers "XYZ" and "ABC" before betting and write down the operation on a piece of paper.
+    The player performing the task can look at the sheet of paper, but cannot write.
+timeLimit: HALF_MINUTE

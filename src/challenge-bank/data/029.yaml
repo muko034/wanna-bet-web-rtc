@@ -1,0 +1,6 @@
+id: 29
+type: MENTAL
+content:
+  pl: Czy gracz wymieni 6 produktów mlecznych w ciągu 15 sekund?
+  en: Will the player exchange 6 dairy products in 15 seconds?
+timeLimit: QUARTER_MINUTE

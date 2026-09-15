@@ -1,0 +1,8 @@
+id: 57
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, przez 1 minutę, utrzymać kubek na zewnętrznej stronie
+    dłoni, uniesiony nad głowę, z wyprostowaną ręką w łokciu?
+  en: Will the player manage to keep the cup on the outside of their hand, raised
+    above their head, with their arm extended at the elbow for 1 minute?
+timeLimit: ONE_MINUTE

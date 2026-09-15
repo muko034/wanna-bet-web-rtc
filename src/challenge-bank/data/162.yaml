@@ -1,0 +1,12 @@
+id: 162
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wrzucić piłeczkę pingpongową do leżącego na podłodze pudełka od gry, tak aby piłeczka przed wpadnięciem do pudełka odbiła się 2 razy od podłoża.
+    Piłeczka może wypaść z pudełka, ale musi najpierw się w nim znaleźć.
+    (3 udane próby z 5)
+  en: |-
+    Will the player manage to throw the ping pong ball into the game box lying on the floor in such a way that the ball bounces off the ground twice before landing in the box?
+    The ball may fall out of the box, but it must first be inside it.
+    3 successful attempts out of 5
+timeLimit: NONE

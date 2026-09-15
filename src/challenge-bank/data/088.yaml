@@ -1,0 +1,13 @@
+id: 88
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 15 sekund, rozwiąże w pamięci poniższe zadanie arytmetyczne?
+    60% * XYZ = ?
+    Pozostali gracze powinni uzgodnić liczbę "XYZ" przed obstawianiem oraz zapisać działanie na kartce. Gracz wykonujący zadanie może patrzeć na kartkę, ale nie może pisać.
+  en: |-
+    Will the player solve the arithmetic problem below in their head within 15 seconds?
+    60% * XYZ = ?
+    Other players should agree on the number 'XYZ' before placing bets and write down the operation on a piece of paper.
+    The player performing the task may look at the sheet, but cannot write.
+timeLimit: QUARTER_MINUTE

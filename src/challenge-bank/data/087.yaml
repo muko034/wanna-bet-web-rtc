@@ -1,0 +1,6 @@
+id: 87
+type: MENTAL
+content:
+  pl: Czy gracz wymieni, w ciągu 15 sekund, nazwy 7 drapieżników?
+  en: Will the player name 7 predators within 15 seconds?
+timeLimit: QUARTER_MINUTE

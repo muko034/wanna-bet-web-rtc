@@ -1,0 +1,6 @@
+id: 31
+type: MENTAL
+content:
+  pl: Czy gracz wymieni 10 różnych marek samochodów w ciągu 30 sekund?
+  en: Will the player name 10 different car brands in 30 seconds?
+timeLimit: HALF_MINUTE

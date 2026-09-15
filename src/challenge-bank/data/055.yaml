@@ -1,0 +1,12 @@
+id: 55
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się podrzucić monetę w powietrze, tak aby ta wylądowała na zewnętrznej powierzchni dłoni?
+    (Moneta powinna być podrzucona kciukiem, tak jak to robi sędzie przed meczem piłkarskim.)
+    (3 udane próby z 5.)
+  en: |-
+    Will the player manage to toss the coin into the air so that it lands on the outer surface of their hand?
+    The coin should be tossed with the thumb, just like the referee does before a football match.
+    3 successful attempts out of 5.
+timeLimit: NONE

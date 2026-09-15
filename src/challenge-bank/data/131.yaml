@@ -1,0 +1,17 @@
+id: 131
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 30 sekund, powiedzieć jedno z poniższych słów od tyłu?
+    Pozostali gracze wybierają jedno z poniżysz słów przed fazą obstawiania. Gracz wykonujący zadanie nie może korzystać z długopisu ani kartki.
+    KONDENSATOR
+    LABORATORIUM
+    BIUROKRATYZACJA
+  en: |-
+    Will the player be able to say one of the words below backwards in 30 seconds?
+    The other players choose one of the words below before the betting phase.
+    The player performing the task cannot use a pen or paper.
+    CAPACITOR
+    LABORATORY
+    BUREAUCRATIZATION
+timeLimit: HALF_MINUTE

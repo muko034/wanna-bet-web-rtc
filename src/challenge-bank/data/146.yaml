@@ -1,0 +1,10 @@
+id: 146
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się nie mrugnąć oczami przez 30 sekund?
+    Czas powinien zacząć płynąć natychmiast po zakończeniu czytania zadania.
+  en: |-
+    Will the player manage to not blink for 30 seconds?
+    Time should start flowing immediately after the task reading is finished.
+timeLimit: HALF_MINUTE

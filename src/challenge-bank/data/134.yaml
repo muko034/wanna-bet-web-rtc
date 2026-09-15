@@ -1,0 +1,6 @@
+id: 134
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 3 fikcyjnych czarodziejów?
+  en: Will the player manage to name 3 fictional wizards in 15 seconds?
+timeLimit: QUARTER_MINUTE

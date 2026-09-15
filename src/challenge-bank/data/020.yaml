@@ -1,0 +1,7 @@
+id: 20
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się zdjąć spodnie stojąc na rękach w czasie jednej minuty?
+  en: Will the player manage to take off their pants while standing on their hands
+    in one minute?
+timeLimit: ONE_MINUTE

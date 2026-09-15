@@ -1,0 +1,10 @@
+id: 158
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wyciągnąć z talii kart dokładnie 10 kart?
+    (3 próby)
+  en: |-
+    Will the player manage to draw exactly 10 cards from the deck?
+    (3 attempts)
+timeLimit: NONE

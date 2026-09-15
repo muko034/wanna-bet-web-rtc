@@ -1,0 +1,10 @@
+id: 68
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wyrzucić 3 monety zza pleców w powietrze i złapać je?
+    (3 próby.)
+  en: |-
+    Will the player manage to toss 3 coins into the air from behind their back and catch them?
+    (3 attempts.)
+timeLimit: NONE

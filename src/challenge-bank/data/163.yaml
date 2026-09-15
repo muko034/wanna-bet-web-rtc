@@ -1,0 +1,10 @@
+id: 163
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w ciągu 15 sekund napisać swoje imię i nazwisko wspak?
+    Gracz może zapisać na kartce wyłącznie odpowiedź.
+  en: |-
+    Will the player manage to write their name and surname backwards in 15 seconds?
+    The player can write down the answer only on the paper.
+timeLimit: QUARTER_MINUTE

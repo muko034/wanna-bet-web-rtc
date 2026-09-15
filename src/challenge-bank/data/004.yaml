@@ -1,0 +1,8 @@
+id: 4
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się przez 15 sekund stać na jednej nodze, z zamkniętymi oczami,
+    z głową odchyloną do tyłu?
+  en: Will the player manage to stand on one leg for 15 seconds, with their eyes closed,
+    and their head tilted back?
+timeLimit: QUARTER_MINUTE

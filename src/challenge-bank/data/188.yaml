@@ -1,0 +1,8 @@
+id: 188
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 30 sekund, wymieni 4 wynalazki Leonarda da Vinci?
+  en: |-
+    Will the player name 4 of Leonardo da Vinci's inventions in 30 seconds?
+timeLimit: HALF_MINUTE

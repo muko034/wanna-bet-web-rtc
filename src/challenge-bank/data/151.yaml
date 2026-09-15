@@ -1,0 +1,10 @@
+id: 151
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w ciągu 15 sekund wykonać pełny obrót, trzymając klepsydrę pionowo na grzbiecie dłoni?
+    (2 udane próby z 4)
+  en: |-
+    Will the player manage to make a full turn in 15 seconds while holding the hourglass vertically on the back of their hand?
+    2 successful attempts out of 4
+timeLimit: QUARTER_MINUTE

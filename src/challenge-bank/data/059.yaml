@@ -1,0 +1,6 @@
+id: 59
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się obrócić jednoczenie 3 kapsle od butelki?
+  en: Will the player manage to flip 3 bottle caps at the same time?
+timeLimit: HALF_MINUTE

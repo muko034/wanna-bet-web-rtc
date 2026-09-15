@@ -1,0 +1,10 @@
+id: 101
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się przeczołgać pod stołem z książką na głowie, tak aby ta niespadła?
+    (2 próby).
+  en: |-
+    Will the player manage to crawl under the table with a book on their head without it falling off?
+    (2 attempts).
+timeLimit: NONE

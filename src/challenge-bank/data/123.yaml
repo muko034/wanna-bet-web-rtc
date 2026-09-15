@@ -1,0 +1,8 @@
+id: 123
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 4 słowa, które rymują się ze
+    słowem "kotek"?
+  en: Will the player manage to say 4 words that rhyme with the word 'kitten' in 15
+    seconds?
+timeLimit: QUARTER_MINUTE

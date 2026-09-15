@@ -1,0 +1,6 @@
+id: 97
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wypowie 6 wyrazów, które zawierają słowo "MIĘDZY"?
+  en: Will the player say 6 words that contain the word 'BETWEEN' within 30 seconds?
+timeLimit: HALF_MINUTE

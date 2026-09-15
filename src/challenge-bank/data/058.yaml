@@ -1,0 +1,10 @@
+id: 58
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się kopnąć kostkę do gry znajdującą się 3 metry od ściany, tak aby ta zatrzymała się w odległości nie większej niż 30 cm od ściany?
+    (3 próby.)
+  en: |-
+    Will the player manage to kick the game die located 3 meters from the wall, so that it stops no further than 30 cm from the wall?
+    (3 attempts.)
+timeLimit: NONE

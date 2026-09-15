@@ -26,3 +26,17 @@ headless browser (WebRTC needs one — Node/jsdom won't do). Separate from `npm 
 Override the target host/port/path with `VITE_PEERJS_SMOKE_HOST`, `VITE_PEERJS_SMOKE_PORT`,
 `VITE_PEERJS_SMOKE_PATH`. Success means all cases pass — Host/Guest connect, exchange messages,
 report connection changes, and unreachable peers/servers reject instead of hanging.
+
+## Challenge Bank
+
+The bundled Challenge Bank content lives in `src/challenge-bank/data/*.yaml`, one file per entry.
+`src/challenge-bank/challenge-bank.ts` is generated from those files and committed — edit the
+YAML, then run:
+
+```
+npm run generate:challenge-bank
+```
+
+`npm test` fails if the committed file drifts from the YAML source, so regenerating is required
+after any content change.
+

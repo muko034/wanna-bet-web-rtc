@@ -1,0 +1,6 @@
+id: 127
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 30 sekund, podać 5 marek motocyklowych?
+  en: Will the player manage to name 5 motorcycle brands in 30 seconds?
+timeLimit: HALF_MINUTE

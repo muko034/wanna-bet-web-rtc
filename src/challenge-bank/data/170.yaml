@@ -1,0 +1,10 @@
+id: 170
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się podrzucić stopą wieszak i złapać go palcem wskazującym?
+    (3 próby)
+  en: |-
+    Will the player manage to toss the hanger with their foot and catch it with their index finger?
+    (3 attempts)
+timeLimit: NONE

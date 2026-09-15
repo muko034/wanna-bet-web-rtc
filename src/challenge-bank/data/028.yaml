@@ -1,0 +1,6 @@
+id: 28
+type: MENTAL
+content:
+  pl: Czy gracz wymieni 4 różne rodzaje sałaty w ciągu 15 sekund?
+  en: Will the player exchange 4 different types of lettuce within 15 seconds?
+timeLimit: QUARTER_MINUTE

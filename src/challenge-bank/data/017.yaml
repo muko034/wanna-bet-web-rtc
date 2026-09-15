@@ -1,0 +1,10 @@
+id: 17
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, siadając na podłodze i wstając, utrzymać kostkę do gry na zewnętrznej powierzchni dłoni?
+    Gracz musi wstać i usiąść 3 razy.
+  en: |-
+    Will the player manage to keep the game die on the outer surface of their hand while sitting on the floor and standing up?
+    Does the player have to stand up and sit down 3 times.
+timeLimit: NONE

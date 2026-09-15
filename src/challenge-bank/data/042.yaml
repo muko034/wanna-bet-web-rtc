@@ -1,0 +1,6 @@
+id: 42
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni 10 tytułów polskich gazet?
+  en: Will the player name the titles of 10 Polish series in 30 seconds?
+timeLimit: HALF_MINUTE

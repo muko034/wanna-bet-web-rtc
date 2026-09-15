@@ -1,0 +1,6 @@
+id: 125
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 4 synonimy słowa "samochód"?
+  en: Will the player manage to name 4 synonyms for the word 'car' in 15 seconds?
+timeLimit: QUARTER_MINUTE

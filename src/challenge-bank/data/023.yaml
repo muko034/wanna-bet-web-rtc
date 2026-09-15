@@ -1,0 +1,8 @@
+id: 23
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się podnieść kostkę do gry stopą i wrzucić ją do kubka stojącego
+    na stole?
+  en: Will the player manage to lift the die with their foot and throw it into the
+    cup standing on the table?
+timeLimit: NONE

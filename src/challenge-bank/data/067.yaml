@@ -1,0 +1,10 @@
+id: 67
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się zadzwonić do znajomego i w ciągu 30 sekund nakłonić go, aby ten wypowiedział słowo "CZEKOLADA"?
+    Gracz nie może zdradzić, że jest to część gry, nie może również powiedzieć tego słowa ani jego części.
+  en: |-
+    Will the player manage to call a friend and persuade them to say the word 'CHOCOLATE' within 30 seconds?
+    The player cannot reveal that this is part of the game, nor can they say that word or any part of it.
+timeLimit: HALF_MINUTE

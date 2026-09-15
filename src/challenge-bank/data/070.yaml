@@ -1,0 +1,10 @@
+id: 70
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się przesunąć monetę, tam i z powrotem, przekładając ją między palcami?
+    (3 próby.)
+  en: |-
+    Will the player manage to move the coin back and forth by sliding it between their fingers?
+    (3 attempts.)
+timeLimit: NONE

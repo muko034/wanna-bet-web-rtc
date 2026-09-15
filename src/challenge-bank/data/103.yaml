@@ -1,0 +1,8 @@
+id: 103
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, rozwiązać swoje sznurowadła (2 buty)
+    i zawiązać je ponownie?
+  en: Will the player be able to untie their shoelaces (2 shoes) and tie them again
+    within 15 seconds?
+timeLimit: QUARTER_MINUTE

@@ -1,0 +1,10 @@
+id: 144
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się narysować (w miarę) prostą linię o długości 4 cm?
+    Gracz może pomylić się o 0,5 cm.
+  en: |-
+    Will the player manage to draw a (relatively) straight line of 4 cm in length?
+    The player may be mistaken by 0.5 cm.
+timeLimit: NONE

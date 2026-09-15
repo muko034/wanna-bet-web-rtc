@@ -1,0 +1,8 @@
+id: 148
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się powiedzieć szybko "W czasie suszy szosa sucha" 5 razy z
+    rzędu bez błędu?
+  en: Will the player manage to say "In dry weather, the road is dry" 5 times in a
+    row without a mistake?
+timeLimit: NONE

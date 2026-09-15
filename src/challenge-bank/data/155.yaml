@@ -1,0 +1,8 @@
+id: 155
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się w ciągu 1 minuty zrobić selfie i dostać 2 polubienia na
+    Facebooku lub Instagramie?
+  en: Will the player be able to take a selfie and get 2 likes on Facebook or Instagram
+    in 1 minute?
+timeLimit: ONE_MINUTE

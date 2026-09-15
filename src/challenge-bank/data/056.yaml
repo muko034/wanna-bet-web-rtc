@@ -1,0 +1,10 @@
+id: 56
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wyrzucić kartę do góry i ją złapać w dwa palce: wskazujący i środkowy?
+    (2 udane próby z 3.)
+  en: |-
+    Will the player be able to throw the card up and catch it with two fingers: the index and middle?
+    2 successful attempts out of 3.
+timeLimit: NONE

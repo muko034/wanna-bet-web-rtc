@@ -1,0 +1,8 @@
+id: 78
+type: MENTAL
+content:
+  pl: Czy gracz wymieni, w ciągu 30 sekund, 3 znanych aktorów lub aktorek, które imię
+    zaczyna się na literę "S"?
+  en: Will the player name, within 30 seconds, 3 famous actors or actresses whose
+    first name starts with the letter 'S'?
+timeLimit: HALF_MINUTE

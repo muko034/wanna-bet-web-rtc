@@ -1,0 +1,11 @@
+id: 132
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, podać 5 wielokrotności liczby XYZ, tj. [1*XYZ, 2*XYZ, ..., 5*XYZ]?
+    Pozostali gracze ustalają 3 cyfrową liczbę XYZ przed fazą obstawiania. Gracz wykonujący zadanie może korzystać z kartki i długopisu.
+  en: |-
+    Will the player manage to provide 5 multiples of the number XYZ within 1 minute, i.e. [1*XYZ, 2*XYZ, ..., 5*XYZ]?
+    The other players determine a 3-digit number XYZ before the betting phase.
+    The player performing the task can use a piece of paper and a pen.
+timeLimit: ONE_MINUTE

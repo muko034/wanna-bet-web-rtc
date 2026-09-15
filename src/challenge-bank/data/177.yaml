@@ -1,0 +1,6 @@
+id: 177
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się zmienić dzwonek w telefonie w ciągu 30 sekund?
+  en: Will the player be able to change the ringtone on the phone within 30 seconds?
+timeLimit: HALF_MINUTE

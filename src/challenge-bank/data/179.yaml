@@ -1,0 +1,10 @@
+id: 179
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się bezbłędnie zapisać słownie liczbę 6-cyfrową?
+    Liczbę zapisuję na kartce inny gracz.
+  en: |-
+    Will the player manage to accurately spell out a 6-digit number in words?
+    I write the number down on a piece of paper for another player.
+timeLimit: HALF_MINUTE

@@ -1,0 +1,13 @@
+id: 36
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 30 sekund, zamienić słowo "MOST" na słowo "TORS", każdorazowo zmieniając jedną literę?
+    (Wszystkie słowa muszą coś oznaczać. Gracz może korzystać z kartki i długopisu.)
+    [Przykład: MOST->TOST->TORT->TORS]
+  en: |-
+    Will the player be able to change the word 'BLUE' to the word 'STAR' in 30 seconds, changing one letter at a time?
+    All words must mean something.
+    The player can use a piece of paper and a pen.
+    Example: BLUE->BLUR->SLUR->SOUR->SOAR->STAR
+timeLimit: HALF_MINUTE

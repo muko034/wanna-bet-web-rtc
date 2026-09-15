@@ -1,0 +1,6 @@
+id: 92
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni 6 nazw kwiatów?
+  en: Will the player name 6 flower names in 30 seconds?
+timeLimit: HALF_MINUTE

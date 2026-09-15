@@ -1,0 +1,10 @@
+id: 167
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się zeskoczyć z krzesła na jedną nogę bez utraty równowagi?
+    (2 próby)
+  en: |-
+    Will the player manage to jump off the chair onto one leg without losing balance?
+    (2 attempts)
+timeLimit: NONE

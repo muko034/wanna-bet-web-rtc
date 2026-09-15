@@ -1,0 +1,8 @@
+id: 106
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 1 minuty, znaleźć i położyć na stole 3 przedmioty,
+    których nazwa zaczyna się na literę "T"?
+  en: Will the player manage to find and place 3 items on the table within 1 minute,
+    whose names start with the letter 'T'?
+timeLimit: ONE_MINUTE

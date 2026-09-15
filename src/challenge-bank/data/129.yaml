@@ -1,0 +1,10 @@
+id: 129
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, zapamiętać 2 kontakty (nazwa i numer) z telefonu innej osoby?
+    Pozostali gracze ustalają między sobą 2 kontakty przed obstawianiem.
+  en: |-
+    Will the player be able to remember 2 contacts (name and number) from another person's phone in 1 minute?
+    The other players establish 2 contacts among themselves before placing bets.
+timeLimit: ONE_MINUTE

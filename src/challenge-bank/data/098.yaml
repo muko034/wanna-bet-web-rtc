@@ -1,0 +1,6 @@
+id: 98
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni 8 stolic?
+  en: Will the player name 8 capitals in 30 seconds?
+timeLimit: HALF_MINUTE

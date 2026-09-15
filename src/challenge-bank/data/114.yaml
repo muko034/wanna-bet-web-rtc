@@ -1,0 +1,10 @@
+id: 114
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, 5 razy pod rząd, szybko powiedzieć "Stół z powyłamywanymi nogami"?
+    (3 próby)
+  en: |-
+    Will the player manage to quickly say 'Table with broken legs' 5 times in a row?
+    (3 attempts)
+timeLimit: NONE

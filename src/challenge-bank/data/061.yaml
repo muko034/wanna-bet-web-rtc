@@ -1,0 +1,8 @@
+id: 61
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, przez 15 sekund, balansować książką ustawioną rogiem na
+    dłoni?
+  en: Will the player manage to balance a book set on its corner on their hand for
+    15 seconds?
+timeLimit: QUARTER_MINUTE

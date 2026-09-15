@@ -1,0 +1,8 @@
+id: 16
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się przeskoczyć nad długopisem, którego trzyma w obu dłoniach,
+    nie wypuszczając go z rąk?
+  en: Will the player manage to jump over the pen they are holding in both hands without
+    letting it go?
+timeLimit: NONE

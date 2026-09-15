@@ -1,0 +1,6 @@
+id: 79
+type: MENTAL
+content:
+  pl: Czy gracz wymieni, w ciągu 30 sekund, 3 znanych architektów?
+  en: Will the player name 3 famous architects within 30 seconds?
+timeLimit: HALF_MINUTE

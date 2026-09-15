@@ -1,0 +1,8 @@
+id: 136
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać wszystkie miesiące, które mają
+    dokładnie 30 dni?
+  en: Will the player manage to name all the months that have exactly 30 days within
+    15 seconds?
+timeLimit: QUARTER_MINUTE

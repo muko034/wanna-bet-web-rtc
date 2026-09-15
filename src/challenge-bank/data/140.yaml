@@ -1,0 +1,8 @@
+id: 140
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 3 marki samochodów, które zaczynają
+    się na literę "C"?
+  en: Will the player manage to name 3 car brands that start with the letter 'C' within
+    15 seconds?
+timeLimit: QUARTER_MINUTE

@@ -1,0 +1,6 @@
+id: 26
+type: MENTAL
+content:
+  pl: Czy gracz wymieni tytuły 10 polskich seriali w ciągu 30 sekund?
+  en: Will the player name the titles of 10 Polish series in 30 seconds?
+timeLimit: HALF_MINUTE

@@ -1,0 +1,13 @@
+id: 35
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz rozwiąże w pamięci poniższe zadanie arytmetyczne w ciągu 30 sekund?
+    (XYZ + ABC - 13) x 2 = ?
+    (Osoba, która czyta pytanie powinna zastąpić litery 'XYZ' oraz 'ABC' dowolnymi cyframi, spisać je na kartce i pokazać graczowi wykonującemu zadanie. Ten może patrzeć na kartkę, ale nie może nic na niej pisać.)
+  en: |-
+    Will the player solve the following arithmetic problem in their head in 30 seconds?
+    (XYZ + ABC - 13) x 2 = ?
+    The person reading the question should replace the letters 'XYZ' and 'ABC' with any digits, write them down on a piece of paper, and show them to the player performing the task.
+    The player can look at the sheet, but cannot write anything on it.
+timeLimit: HALF_MINUTE

@@ -1,0 +1,8 @@
+id: 183
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 30 sekund, wymieni 6 nazwisk polskich pisarzy?
+  en: |-
+    Will the player name 6 names of Polish writers within 30 seconds?
+timeLimit: HALF_MINUTE

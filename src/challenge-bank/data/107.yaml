@@ -1,0 +1,10 @@
+id: 107
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się zagwizdać "Szła dzieweczka...", nie uśmiechając się?
+    (2 próby).
+  en: |-
+    Will the player manage to whistle "Szła dzieweczka..." without smiling?
+    (2 trials).
+timeLimit: NONE

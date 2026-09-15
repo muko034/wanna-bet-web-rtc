@@ -1,0 +1,9 @@
+id: 63
+type: PHYSICAL
+content:
+  pl: "Czy graczowi uda się, przez 30 sekund, stać na palcach lewej nogi z zamknię\
+    tymi oczami? \nPrawa noga musi być w powietrzu."
+  en: |-
+    Will the player be able to stand on the toes of their left foot with their eyes closed for 30 seconds?
+    The right leg must be in the air.
+timeLimit: HALF_MINUTE

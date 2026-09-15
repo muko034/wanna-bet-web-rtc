@@ -1,0 +1,7 @@
+id: 115
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 30 sekund, zdmuchnąć świeczkę z odległości 2 metrów?
+  en: Will the player manage to blow out the candle from a distance of 2 meters in
+    30 seconds?
+timeLimit: HALF_MINUTE

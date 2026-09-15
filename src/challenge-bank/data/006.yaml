@@ -1,0 +1,8 @@
+id: 6
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 1 minuty, znaleźć i położyć na stole 3 przedmioty,
+    których nazwa zaczyna się na literę "K"?
+  en: Will the player be able to find and place 3 items on the table within 1 minute,
+    that start with the letter 'K'?
+timeLimit: ONE_MINUTE

@@ -1,0 +1,6 @@
+id: 89
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 15 sekund, wymieni 5 świąt obchodzonych w Polsce?
+  en: Will the player name 5 holidays celebrated in Poland within 15 seconds?
+timeLimit: QUARTER_MINUTE

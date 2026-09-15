@@ -1,0 +1,10 @@
+id: 168
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w ciągu 15 sekund pokonać odległość 3 metrów, trzymając piłeczkę między kolanami?
+    Piłeczka nie może upaść na podłogę.
+  en: |-
+    Will the player manage to cover a distance of 3 meters in 15 seconds while holding a ball between their knees?
+    The ball cannot fall on the floor.
+timeLimit: QUARTER_MINUTE

@@ -1,0 +1,7 @@
+id: 43
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 30 sekund, wymieni nazwiska 3 znanych osób, które mają na
+    imię Jan?
+  en: Can the player name 3 famous people named Jan within 30 seconds?
+timeLimit: HALF_MINUTE

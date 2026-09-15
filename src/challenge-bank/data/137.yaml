@@ -1,0 +1,10 @@
+id: 137
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się odgadnąć ile stron ma wybrana przez innych graczy książka / gazeta / magazyn?
+    Gracz może pomylić się o 10%.
+  en: |-
+    Will the player be able to guess how many pages the book / newspaper / magazine chosen by other players has?
+    The player can be mistaken by 10%.
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 93
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 15 sekund, wymieni 4 rodzaje kamieni szlachetnych?
+    (Przykład: diament)
+  en: |-
+    Will the player name 4 types of gemstones in 15 seconds?
+    Example: diamond
+timeLimit: QUARTER_MINUTE

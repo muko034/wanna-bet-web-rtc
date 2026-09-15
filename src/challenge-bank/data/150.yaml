@@ -1,0 +1,12 @@
+id: 150
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się przez 15 sekund stać na palcach jednej nogi, utrzymując na głowie puste pudełko od gry?
+    Gracz nie może podtrzymywać pudełka ręką (ani niczym innym).
+    (2 próby)
+  en: |-
+    Will the player succeed in standing on one foot on tiptoe for 15 seconds while keeping an empty game box on their head?
+    The player cannot hold the box with their hand (or anything else).
+    (2 attempts)
+timeLimit: QUARTER_MINUTE

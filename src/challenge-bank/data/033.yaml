@@ -1,0 +1,6 @@
+id: 33
+type: MENTAL
+content:
+  pl: Czy gracz wymieni nazwiska 5 polskich premierów w ciągu 15 sekund?
+  en: Will the player name 5 Polish prime ministers in 15 seconds?
+timeLimit: QUARTER_MINUTE

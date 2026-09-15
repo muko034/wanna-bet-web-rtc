@@ -1,0 +1,6 @@
+id: 100
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 15 sekund, 5 państw, które graniczą z Niemcami?
+  en: Can the player name 5 countries that border Germany within 15 seconds?
+timeLimit: QUARTER_MINUTE

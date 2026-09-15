@@ -1,0 +1,8 @@
+id: 38
+type: MENTAL
+content:
+  pl: Czy gracz wymieni 5 zespołów muzycznych, których nazwy rozpoczynają się od litery
+    "S" w ciągu 30 sekund?
+  en: Will the player name 5 music bands whose names start with the letter 'S' within
+    30 seconds?
+timeLimit: HALF_MINUTE

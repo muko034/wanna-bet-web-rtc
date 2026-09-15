@@ -1,0 +1,10 @@
+id: 143
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 15 sekund, przejść wokół krzesła, trzymając piłeczkę między kolanami?
+    Piłeczki nie można dotykać rękoma, chyba że spadnie na podłoże, wtedy gracz może ją podnieść, umieścić między kolana i kontynuować marsz.
+  en: |-
+    Will the player manage to go around the chair in 15 seconds while holding a ball between their knees?
+    The balls cannot be touched by hands unless they fall to the ground; then the player can pick them up, place them between their knees, and continue marching.
+timeLimit: QUARTER_MINUTE

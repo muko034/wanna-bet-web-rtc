@@ -1,0 +1,17 @@
+id: 130
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, stworzyć 7 innych słów, używając liter z podanego słowa?
+    Pozostali gracze wybierają jedno z poniższych słów (bądź inne) przed fazą obstawiania. Gracz ma do dyspozycji kartkę i długopis w trakcie wykonywania zadania.
+    ALIGATOR
+    JASZCZURKA
+    KAMELEON
+  en: |-
+    Will the player manage to create 7 other words within 1 minute, using the letters from the given word?
+    The other players choose one of the words below (or another) before the betting phase.
+    The player has a piece of paper and a pen available while performing the task.
+    ALLIGATOR
+    ELEPHANT
+    CHAMELEON
+timeLimit: ONE_MINUTE

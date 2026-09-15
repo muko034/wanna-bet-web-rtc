@@ -1,0 +1,8 @@
+id: 186
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 15 sekund, wymieni 4 rodzaje serów?
+  en: |-
+    Will the player name 4 types of cheese within 15 seconds?
+timeLimit: QUARTER_MINUTE

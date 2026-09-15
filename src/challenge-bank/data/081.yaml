@@ -1,0 +1,6 @@
+id: 81
+type: MENTAL
+content:
+  pl: Czy gracz wymieni, w ciągu 30 sekund, 4 znane osoby, które mają na imię "Piotr"?
+  en: Will the player name 4 well-known people named 'Piotr' within 30 seconds?
+timeLimit: HALF_MINUTE

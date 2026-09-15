@@ -1,0 +1,12 @@
+id: 76
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się odgadnąć wzrost gracza siedzącego po jego prawej stronie?
+    Zawodnik, którego dotyczy pytanie powinien zapisać swój wzrost, zanim będzie on odgadywany.
+    (Gracz może pomylić się o 3 cm.)
+  en: |-
+    Will the player be able to guess the height of the player sitting to his right?
+    The player in question should record their height before it is guessed.
+    The player can be off by 3 cm.
+timeLimit: NONE

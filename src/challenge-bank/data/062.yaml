@@ -1,0 +1,7 @@
+id: 62
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, 2 razy w ciągu 30 sekund, nawlec nić przez ucho od igły?
+  en: Will the player manage to thread the thread through the eye of the needle 2
+    times in 30 seconds?
+timeLimit: HALF_MINUTE

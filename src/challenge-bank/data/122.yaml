@@ -1,0 +1,6 @@
+id: 122
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 5 filmów z Jamesem Bondem?
+  en: Will the player manage to name 5 James Bond movies in 15 seconds?
+timeLimit: QUARTER_MINUTE

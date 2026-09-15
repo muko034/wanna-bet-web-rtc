@@ -1,0 +1,20 @@
+id: 49
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi, w ciągu 1 minuty, uda się podać 8 nowych słów z liter jednego wybranego poniżej słowa?
+    (Słowo wybiera gracz po lewej stronie. Wszystkie nowe słowa muszą coś oznaczać. Gracz ma do dyspozycji kartkę i długopis.)
+    KSIĘSTWO
+    ODPOWIEDNI
+    SAMOTNOŚĆ
+    ŚWIADECTWO
+  en: |-
+    Will the player manage to come up with 8 new words using the letters of one of the selected words below in 1 minute?
+    The word is chosen by the player on the left side.
+    All new words must mean something.
+    The player has a sheet of paper and a pen at their disposal.
+    COMMUNICATION
+    APPROPRIATE
+    CELEBRATION
+    HOSPITALITY
+timeLimit: ONE_MINUTE

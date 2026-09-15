@@ -1,0 +1,8 @@
+id: 51
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się przeczołgać pod stołem, trzymając w ustach łyżeczkę z kostką
+    do gry w niej, tak aby ta nie spadła?
+  en: Will the player manage to crawl under the table while holding a spoon with a
+    die in their mouth, so that it doesn't fall?
+timeLimit: NONE

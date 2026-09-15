@@ -1,0 +1,8 @@
+id: 116
+type: PHYSICAL
+content:
+  pl: Czy graczowi uda się, w ciągu 1 minuty, ustawić 3 zapałki, tak aby opierając
+    się o siebie stworzyły piramidę?
+  en: Will the player manage to set up 3 matches in such a way that they form a pyramid
+    by leaning against each other within 1 minute?
+timeLimit: ONE_MINUTE

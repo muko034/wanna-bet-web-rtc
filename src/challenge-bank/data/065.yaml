@@ -1,0 +1,12 @@
+id: 65
+type: PHYSICAL
+content:
+  pl: |-
+    Zanim zadanie zostanie odczytane gracz powinien zamknąć oczy.
+    Czy graczowi uda się, w ciągu 1 minuty, powiedzieć, w co ubrana jest osoba po jego prawej stronie?
+    Gracz powinien wymienić przynajmniej 3 rzeczy (ich nazwy i kolor).
+  en: |-
+    Before the task is read, the player should close their eyes.
+    Will the player manage to say within 1 minute what the person on his right is wearing?
+    The player should exchange at least 3 items (their names and colors).
+timeLimit: ONE_MINUTE

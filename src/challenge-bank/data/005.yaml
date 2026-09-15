@@ -1,0 +1,10 @@
+id: 5
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, trzymając łyżeczkę z kostką do gry w ręce, obskoczyć na jednej wokół stołu, tak aby kostka nie spadła?
+    (2 próby.)
+  en: |-
+    Will the player succeed in circling the table with a dice in one hand using a spoon, so that the die does not fall?
+    (2 attempts)
+timeLimit: NONE

@@ -1,0 +1,8 @@
+id: 181
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, w ciągu 15 sekund, wymieni 5 planet Układu Słonecznego?
+  en: |-
+    Will the player name 5 planets in the solar system within 15 seconds?
+timeLimit: QUARTER_MINUTE

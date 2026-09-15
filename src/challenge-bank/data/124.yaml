@@ -1,0 +1,7 @@
+id: 124
+type: MENTAL
+content:
+  pl: Czy graczowi uda się, w ciągu 15 sekund, podać 5 imion żeńskich, które mają
+    4 litery?
+  en: Will the player succeed in naming 5 female names with 4 letters in 15 seconds?
+timeLimit: QUARTER_MINUTE

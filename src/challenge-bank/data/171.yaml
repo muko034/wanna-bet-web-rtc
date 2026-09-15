@@ -1,0 +1,10 @@
+id: 171
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się stać na jednej nodze przez minutę?
+    Gracz nie może się przemieszczać.
+  en: |-
+    Will the player be able to stand on one leg for a minute?
+    The player cannot move.
+timeLimit: ONE_MINUTE

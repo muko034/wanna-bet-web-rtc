@@ -1,0 +1,10 @@
+id: 108
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, uda się zapisać swoje nazwisko jak w odbiciu lustrzanym?
+    Gracz ma do dyspozycji wyłącznie kartę i długopis.
+  en: |-
+    Will the player manage to write their name in a mirror image within 1 minute?
+    The player has only a card and a pen at their disposal.
+timeLimit: ONE_MINUTE

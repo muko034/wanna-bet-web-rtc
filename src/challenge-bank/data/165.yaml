@@ -1,0 +1,13 @@
+id: 165
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wykonać pełen obrót, stając na jednej nodze i nie tracąc równowagi?
+    Gracz nie może podskakiwać na nodze na której wykonuje obrót. Po wykonanym obrocie gracz musi utrzymać równowagę na jednej nodze.
+    (2 udane próby z 3)
+  en: |-
+    Will the player be able to complete a full turn while standing on one leg and not losing balance?
+    The player cannot jump on the leg on which they are spinning.
+    After completing the turn, the player must maintain balance on one leg.
+    2 successful attempts out of 3
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 24
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się podbić kulkę papieru 4 razy nogą, tak aby ta nie spadła na podłogę?
+    (3 próby.)
+  en: |-
+    Will the player manage to hit the paper ball 4 times with their foot without it falling to the floor?
+    (3 attempts)
+timeLimit: NONE

@@ -1,0 +1,6 @@
+id: 96
+type: MENTAL
+content:
+  pl: Czy gracz, w ciągu 15 sekund, wymieni 5 walut?
+  en: Will the player name 5 currencies in 15 seconds?
+timeLimit: QUARTER_MINUTE

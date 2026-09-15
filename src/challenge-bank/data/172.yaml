@@ -1,0 +1,12 @@
+id: 172
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się odbić 10 razy piłeczkę pomiędzy dłońmi?
+    Raz jedna dłoń, razu druga.
+    (3 próby)
+  en: |-
+    Will the player manage to bounce the ball 10 times between their hands?
+    Once one hand, once the other.
+    (3 attempts)
+timeLimit: NONE

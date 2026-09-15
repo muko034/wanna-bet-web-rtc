@@ -1,0 +1,11 @@
+id: 120
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się przez 1 minutę stać na głowie?
+    Podłoża może dotykać wyłącznie głowa i ręce / przedramiona. Gracz nie może dotykać niczego innego żadną inną częścią ciała.
+  en: |-
+    Will the player manage to stand on their head for 1 minute?
+    Only the head and hands/forearms may touch the surface.
+    The player cannot touch anything else with any other part of the body.
+timeLimit: ONE_MINUTE

@@ -1,0 +1,10 @@
+id: 105
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, zrobić 30 brzuszków?
+    Ręce w trakcie robienia brzuszków powinny być nieruchome, splecione za głową lub na klatce piersiowej.
+  en: |-
+    Will the player manage to do 30 sit-ups in 1 minute?
+    Hands should remain still while doing sit-ups, either clasped behind the head or on the chest.
+timeLimit: ONE_MINUTE

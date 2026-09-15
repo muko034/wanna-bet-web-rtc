@@ -1,0 +1,17 @@
+id: 133
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się, w ciągu 1 minuty, stworzyć 5 innych słów, używając liter z podanego słowa?
+    Pozostali gracze wybierają jedno z poniższych słów (bądź inne) przed fazą obstawiania. Gracz ma do dyspozycji kartkę i długopis w trakcie wykonywania zadania.
+    WIELKANOC
+    AKTORKA
+    SKRZYŻOWANIE
+  en: |-
+    Will the player be able to create 5 other words within 1 minute using the letters from the given word?
+    The other players choose one of the words below (or another) before the betting phase.
+    The player has a piece of paper and a pen available while performing the task.
+    EASTER
+    ACTRESS
+    INTERSECTION
+timeLimit: ONE_MINUTE

@@ -1,0 +1,13 @@
+id: 154
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się skoczyć na lewej nodze na odległość 1 metra bez potknięcia się?
+    Skok musi zacząć i skończyć się na lewej nodze. Dodatkowo gracz musi wylądować w miejscu, bez podskoków czy podpierania się.
+    (3 udane próby z 5)
+  en: |-
+    Will the player manage to jump on their left leg a distance of 1 meter without stumbling?
+    The jump must start and end on the left leg.
+    Additionally, the player must land in a place without jumping or leaning on something.
+    3 successful attempts out of 5
+timeLimit: NONE
