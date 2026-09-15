@@ -1,5 +1,6 @@
 import { HostProtocol } from '../protocol/host-protocol';
 import type { Transport } from '../transport/transport';
+import { buildInitialGameState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 
 function randomId(): string {
@@ -43,6 +44,11 @@ export class ConnectionManager {
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
     this.transport.onConnectionChange((peerId, connected) => this.handleConnectionChange(peerId, connected));
+  }
+
+  /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
+  startGame(): void {
+    this.protocol.broadcastState(buildInitialGameState(this.room));
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {

@@ -81,6 +81,21 @@ export function rejoinRoom(transport: Transport, registry: RoomRegistry, code: s
 }
 
 /**
+ * Watches a Guest's own `transport` for a `state` message announcing the game has started
+ * (`status: 'active'`). This is the Guest's only cue to leave the "waiting for the Host to
+ * start" screen — there is no separate "game started" message, just the first `state`
+ * broadcast, since Round Engine state itself carries no earlier status a Guest could act on.
+ */
+export function watchForGameStart(transport: Transport, onGameStarted: () => void): void {
+  const protocol = new GuestProtocol(transport);
+  protocol.on('state', (payload) => {
+    if (payload.status === 'active') {
+      onGameStarted();
+    }
+  });
+}
+
+/**
  * Watches a Guest's own `transport` for its connection to the Host being lost. A dropped
  * data channel is terminal here — this app never attempts an automatic reconnect — so a
  * single `connected: false` notification is enough to call the Room over. There is no Host

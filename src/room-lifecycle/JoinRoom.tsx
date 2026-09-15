@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
+import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
+import { withBase } from '../base-path';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, rejoinRoom, watchForSessionEnd, type JoinResult } from './join-room';
+import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
 
 type Props = {
   path?: string;
   code?: string;
+  /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`, since a Guest holds no local `Room` for `StartedGame` to read. */
+  onGameStarted: (code: string) => void;
 };
 
 type Status =
@@ -33,7 +37,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code }: Props) {
+export function JoinRoom({ code, onGameStarted }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
 
@@ -49,6 +53,10 @@ export function JoinRoom({ code }: Props) {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForGameStart(transport, () => {
+          onGameStarted(code);
+          route(withBase(`room/${code}/play`));
+        });
       } else if (result.status === 'unknown-player') {
         setStatus({ kind: 'form' });
       } else {
@@ -67,6 +75,10 @@ export function JoinRoom({ code }: Props) {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForGameStart(transport, () => {
+          onGameStarted(code);
+          route(withBase(`room/${code}/play`));
+        });
       } else {
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }

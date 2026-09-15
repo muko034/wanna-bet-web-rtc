@@ -21,7 +21,7 @@ export function CreateRoom({ onRoomCreated }: Props) {
     event.preventDefault();
     setCreating(true);
     const transport = new PeerJsTransport();
-    createRoom(transport, roomRegistry).then((room) => onRoomCreated(room, transport));
+    createRoom(transport, roomRegistry, name).then((room) => onRoomCreated(room, transport));
   };
 
   return (
