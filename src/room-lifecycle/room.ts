@@ -9,11 +9,18 @@ export type Player = {
 
 export type Room = {
   code: string;
+  /** The Host's own display name and playerId — the Host is a Player too, but never appears in `players` (that list is Guests only, per the Lobby's display). */
+  hostName: string;
+  hostPlayerId: string;
   players: Player[];
   /** Total players, Host included — checked against `MAX_ROOM_PLAYERS`. */
   playerCount: number;
   started: boolean;
 };
+
+function randomId(): string {
+  return Math.random().toString(36).slice(2);
+}
 
 /** Room capacity cap (Host counts as one) — sized for personal-use scale, not for horizontal growth. */
 export const MAX_ROOM_PLAYERS = 20;
@@ -26,12 +33,12 @@ export const MAX_ROOM_PLAYERS = 20;
  * already claimed by an unrelated peer. No Guests are connected yet, but the Host itself
  * counts toward `playerCount` from the start.
  */
-export async function createRoom(transport: Transport, registry: RoomRegistry): Promise<Room> {
+export async function createRoom(transport: Transport, registry: RoomRegistry, hostName: string): Promise<Room> {
   for (;;) {
     const code = registry.generate();
     try {
       await transport.connect(undefined, registry.transportIdFor(code));
-      return { code, players: [], playerCount: 1, started: false };
+      return { code, hostName, hostPlayerId: randomId(), players: [], playerCount: 1, started: false };
     } catch (error) {
       if (!(error instanceof RequestedIdTakenError)) {
         throw error;

@@ -13,16 +13,16 @@ Host's own device today).
 
 ## Acceptance criteria
 
-- [ ] The Host counts as a `Player` in the Round Engine's player list (Points, rotation order), not just as an
+- [x] The Host counts as a `Player` in the Round Engine's player list (Points, rotation order), not just as an
       implicit `playerCount` entry.
-- [ ] Starting the game builds an initial `GameState` (`round: null`, every player at the same starting Points) and
+- [x] Starting the game builds an initial `GameState` (`round: null`, every player at the same starting Points) and
       broadcasts it via `HostProtocol.broadcastState`.
-- [ ] A Guest's `GuestProtocol` receiving a `state` message with `status: 'active'` navigates that Guest's device from
+- [x] A Guest's `GuestProtocol` receiving a `state` message with `status: 'active'` navigates that Guest's device from
       the "waiting for the Host to start" screen to the gameplay route (`/room/<CODE>/play`), without requiring a
       manual reload.
-- [ ] The Host's own device also renders the gameplay view immediately on starting (existing behavior, unaffected).
-- [ ] No Round has started yet at this point — this task only proves `GameState` reaches every device; Round
+- [x] The Host's own device also renders the gameplay view immediately on starting (existing behavior, unaffected).
+- [x] No Round has started yet at this point — this task only proves `GameState` reaches every device; Round
       start/Challenge/Bet/Outcome behavior is out of scope (see tasks 15–17).
-- [ ] Tests cover: the Host being included in the broadcast player list, and a Guest transitioning views upon
+- [x] Tests cover: the Host being included in the broadcast player list, and a Guest transitioning views upon
       receiving the `state` message (using the existing fake `Transport` — no real PeerJS/browser needed, consistent
       with the rest of `room-lifecycle`'s test seam).

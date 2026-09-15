@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
+import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
+import { withBase } from '../base-path';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, rejoinRoom, watchForSessionEnd, type JoinResult } from './join-room';
+import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
 
@@ -49,6 +51,7 @@ export function JoinRoom({ code }: Props) {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForGameStart(transport, () => route(withBase(`room/${code}/play`)));
       } else if (result.status === 'unknown-player') {
         setStatus({ kind: 'form' });
       } else {
@@ -67,6 +70,7 @@ export function JoinRoom({ code }: Props) {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForGameStart(transport, () => route(withBase(`room/${code}/play`)));
       } else {
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }

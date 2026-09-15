@@ -4,7 +4,7 @@ import { ConnectionManager } from './connection-manager';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
 
 function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', players, playerCount: 1 + players.length, started: false };
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
 }
 
 async function connectGuest(hostId: string) {
@@ -132,5 +132,33 @@ describe('ConnectionManager', () => {
 
     expect(strangerReceived).toEqual([{ type: 'rejected', seq: 2, payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
     expect(manager.room.players).toHaveLength(1);
+  });
+
+  it("broadcasts the initial GameState — the Host included alongside every Guest — once the game starts", async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const { playerId } = await joinAndAwaitWelcome(hostId, 'Alex');
+    const guestTransport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    guestTransport.onMessage((message) => received.push(message));
+
+    manager.startGame();
+
+    expect(received).toEqual([
+      {
+        type: 'state',
+        seq: expect.any(Number),
+        payload: {
+          roomId: 'ABCDEF',
+          status: 'active',
+          round: null,
+          players: [
+            expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
+            expect.objectContaining({ playerId, name: 'Alex' }),
+          ],
+        },
+      },
+    ]);
   });
 });

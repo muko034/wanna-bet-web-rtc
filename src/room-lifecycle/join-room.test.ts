@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { joinRoom, rejoinRoom, watchForSessionEnd } from './join-room';
+import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd } from './join-room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', players, playerCount: 1 + players.length, started: false };
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
 }
 
 async function hostRoom(registry: RoomRegistry, room: Room = roomWith([])) {
@@ -119,5 +119,38 @@ describe('watchForSessionEnd', () => {
     watchForSessionEnd(guestTransport, onSessionEnded);
 
     expect(onSessionEnded).not.toHaveBeenCalled();
+  });
+});
+
+describe('watchForGameStart', () => {
+  it('notifies the caller once the Host broadcasts a GameState with status "active"', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const manager = new ConnectionManager(hostTransport, roomWith([{ playerId: 'p1', name: 'Alex', connected: true }]), () => {});
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+
+    const onGameStarted = vi.fn();
+    watchForGameStart(guestTransport, onGameStarted);
+    manager.startGame();
+
+    expect(onGameStarted).toHaveBeenCalledOnce();
+  });
+
+  it('does not notify the caller before the Host has broadcast any GameState', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+
+    const onGameStarted = vi.fn();
+    watchForGameStart(guestTransport, onGameStarted);
+
+    expect(onGameStarted).not.toHaveBeenCalled();
   });
 });

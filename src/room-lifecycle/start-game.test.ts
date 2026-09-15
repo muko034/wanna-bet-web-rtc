@@ -3,7 +3,7 @@ import { startGame } from './room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', players, playerCount: 1 + players.length, started: false };
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
 }
 
 describe('startGame', () => {

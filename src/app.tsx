@@ -41,6 +41,7 @@ export function App() {
     if (!room) return;
     const started = startGame(room);
     setRoom(started);
+    connectionManagerRef.current?.startGame();
     route(withBase(`room/${started.code}/play`));
   };
 
