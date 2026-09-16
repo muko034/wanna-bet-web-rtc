@@ -1,4 +1,5 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
+import type { GameState } from '../protocol/messages';
 import { PeerUnavailableError, type Transport } from '../transport/transport';
 import type { RoomRegistry } from './room-registry';
 
@@ -93,6 +94,11 @@ export function watchForGameStart(transport: Transport, onGameStarted: () => voi
       onGameStarted();
     }
   });
+}
+
+export function watchGameState(transport: Transport, onGameState: (state: GameState) => void): void {
+  const protocol = new GuestProtocol(transport);
+  protocol.on('state', (payload) => onGameState(payload));
 }
 
 /**

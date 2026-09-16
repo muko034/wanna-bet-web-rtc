@@ -11,6 +11,7 @@ import { withBase } from './base-path';
 import { startGame, type Room } from './room-lifecycle/room';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import type { Transport } from './transport/transport';
+import type { GameState } from './protocol/messages';
 
 type RoomRouteProps = {
   path?: string;
@@ -18,19 +19,22 @@ type RoomRouteProps = {
   room: Room | null;
   onStart: () => void;
   onGameStarted: (code: string) => void;
+  onGameState: (state: GameState) => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, onStart, onGameStarted }: RoomRouteProps) {
+function RoomRoute({ code, room, onStart, onGameStarted, onGameState }: RoomRouteProps) {
   if (room && room.code === code) {
     return <Lobby code={code} room={room} onStart={onStart} />;
   }
-  return <JoinRoom code={code} onGameStarted={onGameStarted} />;
+  return <JoinRoom code={code} onGameStarted={onGameStarted} onGameState={onGameState} />;
 }
 
 export function App() {
   const [room, setRoom] = useState<Room | null>(null);
   const [guestGameStartedCode, setGuestGameStartedCode] = useState<string | null>(null);
+  const [hostGameState, setHostGameState] = useState<GameState | null>(null);
+  const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
 
   const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
@@ -42,8 +46,13 @@ export function App() {
   const handleStart = () => {
     if (!room) return;
     const started = startGame(room);
+    if (connectionManagerRef.current) {
+      connectionManagerRef.current.room = started;
+    }
     setRoom(started);
     connectionManagerRef.current?.startGame();
+    const gameState = connectionManagerRef.current?.startRound() ?? null;
+    setHostGameState(gameState);
     route(withBase(`room/${started.code}/play`));
   };
 
@@ -52,8 +61,19 @@ export function App() {
       <Home path={withBase('/')} />
       <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
       <JoinCode path={withBase('join')} />
-      <RoomRoute path={withBase('room/:code')} room={room} onStart={handleStart} onGameStarted={setGuestGameStartedCode} />
-      <StartedGame path={withBase('room/:code/play')} room={room} guestGameStartedCode={guestGameStartedCode} />
+      <RoomRoute
+        path={withBase('room/:code')}
+        room={room}
+        onStart={handleStart}
+        onGameStarted={setGuestGameStartedCode}
+        onGameState={setGuestGameState}
+      />
+      <StartedGame
+        path={withBase('room/:code/play')}
+        room={room}
+        guestGameStartedCode={guestGameStartedCode}
+        gameState={hostGameState ?? guestGameState}
+      />
       <NotFound default />
     </Router>
   );
