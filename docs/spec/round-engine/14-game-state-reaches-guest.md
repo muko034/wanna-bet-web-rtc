@@ -1,5 +1,7 @@
 **Blocked by**: 5 (Single round happy path, round-engine), 2 (Guest joins a Room, room-lifecycle)
 
+**Status**: Implemented
+
 ## What to build
 
 The foundational wiring that makes the Round Engine reachable over the network at all, with no Round yet in play.
