@@ -34,9 +34,17 @@ describe('starting a round from the Host', () => {
   it('broadcasts the started Round from the shared GameState, and each device resolves its own Challenge visibility from that same state', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, (candidateIds) => candidateIds[0]);
+    let activePlayerId: string | undefined;
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      (candidateIds) => activePlayerId ?? candidateIds[0],
+    );
     const alex = await joinGuest(hostId, 'Alex');
     const sam = await joinGuest(hostId, 'Sam');
+    activePlayerId = alex.playerId;
 
     const alexStates: GameState[] = [];
     const samStates: GameState[] = [];
@@ -44,7 +52,7 @@ describe('starting a round from the Host', () => {
     new GuestProtocol(sam.guestTransport).on('state', (payload) => samStates.push(payload));
 
     manager.startGame();
-    const hostState = manager.startRound(alex.playerId);
+    const hostState = manager.startRound();
     const guestState = alexStates.at(-1);
 
     expect(guestState?.round).toEqual({

@@ -10,6 +10,16 @@ function randomId(): string {
   return Math.random().toString(36).slice(2);
 }
 
+function randomPlayer(candidateIds: string[]): string {
+  return candidateIds[Math.floor(Math.random() * candidateIds.length)];
+}
+
+/** Rotates `playerOrder` so `playerId` is at the front, preserving everyone else's relative order. */
+function rotateToFront(playerOrder: string[], playerId: string): string[] {
+  const index = playerOrder.indexOf(playerId);
+  return [...playerOrder.slice(index), ...playerOrder.slice(0, index)];
+}
+
 /** Disambiguates `name` against `existingNames` by appending a "(n)" suffix on collision. */
 function disambiguate(name: string, existingNames: string[]): string {
   if (!existingNames.includes(name)) {
@@ -36,22 +46,29 @@ export class ConnectionManager {
   private readonly transport: Transport;
   private readonly onRoomChange: (room: Room) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
+  /** Picks the very first Active Player at random; every Round after that follows the fixed order it establishes. */
+  private readonly pickActivePlayer: (candidateIds: string[]) => string;
   /** Live connection binding: which player a currently-connected peer id belongs to. */
   private readonly playerIdByPeerId = new Map<string, string>();
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
   private challengeHistory: string[] = [];
+  /** Active Player rotation order — starts as join order, then rotates so the drawn/next Active Player leads. */
+  private playerOrder: string[] = [];
+  private firstRoundStarted = false;
 
   constructor(
     transport: Transport,
     initialRoom: Room,
     onRoomChange: (room: Room) => void,
     pickChallenge: (candidateIds: string[]) => string = randomChallenge,
+    pickActivePlayer: (candidateIds: string[]) => string = randomPlayer,
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
+    this.pickActivePlayer = pickActivePlayer;
     this.protocol = new HostProtocol(transport);
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
@@ -61,17 +78,31 @@ export class ConnectionManager {
   /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
   startGame(): GameState {
     this.gameState = buildInitialGameState(this.room);
+    this.playerOrder = this.gameState.players.map((player) => player.playerId);
     this.protocol.broadcastState(this.gameState);
     return this.gameState;
   }
 
-  startRound(activePlayerId: string): GameState {
+  /**
+   * Starts a Round for the next Active Player — picked at random the first time, then following the fixed
+   * rotation order that first pick establishes (see `docs/game-rules.md`'s rotation rule).
+   */
+  startRound(): GameState {
     if (this.gameState === null) {
       throw new Error('Cannot start a Round before the game has started');
     }
 
+    const activePlayerId = this.firstRoundStarted
+      ? this.playerOrder[0]
+      : this.pickActivePlayer(this.playerOrder);
+
+    if (!this.firstRoundStarted) {
+      this.playerOrder = rotateToFront(this.playerOrder, activePlayerId);
+      this.firstRoundStarted = true;
+    }
+
     const { state: nextRoundEngineState } = roundEngineReducer(
-      toRoundEngineState(this.gameState, this.challengeHistory),
+      toRoundEngineState(this.gameState, this.challengeHistory, this.playerOrder),
       {
         type: 'START_ROUND',
         activePlayerId,
@@ -81,6 +112,7 @@ export class ConnectionManager {
     );
 
     this.challengeHistory = nextRoundEngineState.challengeHistory;
+    this.playerOrder = nextRoundEngineState.playerOrder;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
     this.protocol.broadcastState(this.gameState);
     return this.gameState;

@@ -17,7 +17,7 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
-  onStartRound: (activePlayerId: string) => void;
+  onStartRound: () => void;
 };
 
 /**
@@ -74,19 +74,10 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onSta
         </>
       ) : room?.code === code ? (
         <>
-          <div class="vb-giant-sub">Pick the Active Player to start the next round.</div>
-          <div class="vb-avatar-row">
-            {gameState?.players.map((player) => (
-              <button
-                class="vb-avatar-button"
-                type="button"
-                key={player.playerId}
-                onClick={() => onStartRound(player.playerId)}
-              >
-                {player.name}
-              </button>
-            ))}
-          </div>
+          <div class="vb-giant-sub">Ready to start the next round.</div>
+          <button class="vb-cta" type="button" onClick={() => onStartRound()}>
+            Start round
+          </button>
         </>
       ) : (
         <div class="vb-giant-sub">Waiting for the Host to start the next round.</div>

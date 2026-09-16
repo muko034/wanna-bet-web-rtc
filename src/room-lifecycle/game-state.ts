@@ -29,9 +29,13 @@ export function buildInitialGameState(room: Room): GameState {
   };
 }
 
-export function toRoundEngineState(gameState: GameState, challengeHistory: string[]): RoundEngineState {
+export function toRoundEngineState(
+  gameState: GameState,
+  challengeHistory: string[],
+  playerOrder: string[],
+): RoundEngineState {
   return {
-    playerOrder: gameState.players.map((player) => player.playerId),
+    playerOrder,
     points: Object.fromEntries(gameState.players.map((player) => [player.playerId, player.points])),
     challengeHistory,
     round: gameState.round,

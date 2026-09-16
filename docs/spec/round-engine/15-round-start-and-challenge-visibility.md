@@ -4,15 +4,17 @@
 
 ## What to build
 
-Wire `START_ROUND` end-to-end: a Host control to start a Round for a chosen Active Player, driving
-`roundEngineReducer`'s `START_ROUND` action and broadcasting the resulting `GameState`. Every connected device must
-render the drawn Challenge according to its own role in that Round — hidden (a placeholder, per ADR 0004) on the
-Active Player's own device, visible (text + any Illustration) to everyone else — using only the broadcast
-`GameState`'s `activePlayerId`/`challengeId`, never a side channel.
+Wire `START_ROUND` end-to-end: the Host triggers a Round start, with the Active Player automatically designated
+(picked at random for the very first Round, then following the fixed rotation order that first pick establishes,
+per `docs/game-rules.md`), driving `roundEngineReducer`'s `START_ROUND` action and broadcasting the resulting
+`GameState`. Every connected device must render the drawn Challenge according to its own role in that Round — hidden
+(a placeholder, per ADR 0004) on the Active Player's own device, visible (text + any Illustration) to everyone
+else — using only the broadcast `GameState`'s `activePlayerId`/`challengeId`, never a side channel.
 
 ## Acceptance criteria
 
-- [x] The Host can pick (or the UI otherwise designates) an Active Player and trigger a Round start.
+- [x] The Host triggers a Round start; the Active Player is designated automatically — random for the first Round,
+      then the fixed rotation order that first pick establishes for every Round after.
 - [x] `START_ROUND` runs through the reducer with a real Challenge Bank source (`src/challenge-bank/challenge-bank.ts`)
       and the Room's Challenge History, and the resulting `GameState` is broadcast to all Guests.
 - [x] The Active Player's own device shows a hidden/placeholder Challenge card while the Round is open — no Challenge

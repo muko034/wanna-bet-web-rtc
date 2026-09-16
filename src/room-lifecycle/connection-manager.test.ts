@@ -162,3 +162,51 @@ describe('ConnectionManager', () => {
     ]);
   });
 });
+
+describe('choosing the Active Player', () => {
+  it('picks the first Round\'s Active Player at random from every Player, the Host included, in join order', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const receivedCandidates: string[][] = [];
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      (candidateIds) => {
+        receivedCandidates.push(candidateIds);
+        return candidateIds[0];
+      },
+    );
+    const { playerId: alexId } = await joinAndAwaitWelcome(hostId, 'Alex');
+    const { playerId: samId } = await joinAndAwaitWelcome(hostId, 'Sam');
+
+    manager.startGame();
+    manager.startRound();
+
+    expect(receivedCandidates).toEqual([['host-1', alexId, samId]]);
+  });
+
+  it('does not re-randomize the Active Player for later Rounds — it follows the fixed order the first pick established', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let pickCount = 0;
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      (candidateIds) => {
+        pickCount++;
+        return candidateIds[0];
+      },
+    );
+    await joinAndAwaitWelcome(hostId, 'Alex');
+
+    manager.startGame();
+    manager.startRound();
+    manager.startRound();
+
+    expect(pickCount).toBe(1);
+  });
+});

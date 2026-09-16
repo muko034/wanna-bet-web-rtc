@@ -55,8 +55,8 @@ export function App() {
     route(withBase(`room/${started.code}/play`));
   };
 
-  const handleStartRound = (activePlayerId: string) => {
-    const gameState = connectionManagerRef.current?.startRound(activePlayerId) ?? null;
+  const handleStartRound = () => {
+    const gameState = connectionManagerRef.current?.startRound() ?? null;
     setHostGameState(gameState);
   };
 
