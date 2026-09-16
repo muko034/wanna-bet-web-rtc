@@ -50,14 +50,10 @@ export function App() {
       connectionManagerRef.current.room = started;
     }
     setRoom(started);
-    const gameState = connectionManagerRef.current?.startGame() ?? null;
-    setHostGameState(gameState);
-    route(withBase(`room/${started.code}/play`));
-  };
-
-  const handleStartRound = () => {
+    connectionManagerRef.current?.startGame();
     const gameState = connectionManagerRef.current?.startRound() ?? null;
     setHostGameState(gameState);
+    route(withBase(`room/${started.code}/play`));
   };
 
   return (
@@ -77,7 +73,6 @@ export function App() {
         room={room}
         guestGameStartedCode={guestGameStartedCode}
         gameState={hostGameState ?? guestGameState}
-        onStartRound={handleStartRound}
       />
       <NotFound default />
     </Router>

@@ -17,16 +17,16 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
-  onStartRound: () => void;
 };
 
 /**
  * `/room/<CODE>/play`: neutral placeholder for the started game, with no gameplay logic
  * yet. Redirects the Host back to the Lobby if the Host's own Room hasn't started; a Guest
  * reaches this view via its own `guestGameStartedCode` signal instead, since a Guest never
- * holds a local `Room` object (see `resolveStartedGameView`).
+ * holds a local `Room` object (see `resolveStartedGameView`). The Host starts the first
+ * Round automatically alongside the game itself — there's no separate Round-start control.
  */
-export function StartedGame({ code, room, guestGameStartedCode, gameState, onStartRound }: Props) {
+export function StartedGame({ code, room, guestGameStartedCode, gameState }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
 
   useEffect(() => {
@@ -72,15 +72,8 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onSta
           ) : null}
           <div class="vb-status-pill">Waiting for bets and outcome controls in the next tasks.</div>
         </>
-      ) : room?.code === code ? (
-        <>
-          <div class="vb-giant-sub">Ready to start the next round.</div>
-          <button class="vb-cta" type="button" onClick={() => onStartRound()}>
-            Start round
-          </button>
-        </>
       ) : (
-        <div class="vb-giant-sub">Waiting for the Host to start the next round.</div>
+        <div class="vb-giant-sub">Starting the round…</div>
       )}
     </PhoneShell>
   );
