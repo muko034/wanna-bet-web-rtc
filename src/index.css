@@ -199,3 +199,48 @@ input {
   font-weight: 700;
   margin-bottom: 8px;
 }
+.vb-task-card {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 18px;
+  text-align: left;
+}
+.vb-task-hidden {
+  text-align: center;
+}
+.vb-task-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+.vb-task-text {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.vb-task-detail {
+  margin-top: 10px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+.vb-task-illustration {
+  width: 100%;
+  border-radius: 14px;
+  margin-top: 14px;
+}
+.vb-avatar-button {
+  min-width: 84px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+}

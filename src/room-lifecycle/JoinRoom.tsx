@@ -4,15 +4,17 @@ import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { withBase } from '../base-path';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, type JoinResult } from './join-room';
+import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, watchGameState, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
+import type { GameState } from '../protocol/messages';
 
 type Props = {
   path?: string;
   code?: string;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`, since a Guest holds no local `Room` for `StartedGame` to read. */
   onGameStarted: (code: string) => void;
+  onGameState: (state: GameState) => void;
 };
 
 type Status =
@@ -37,7 +39,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
 
@@ -52,6 +54,7 @@ export function JoinRoom({ code, onGameStarted }: Props) {
       if (result.status === 'joined') {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        watchGameState(transport, onGameState);
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
         watchForGameStart(transport, () => {
           onGameStarted(code);
@@ -74,6 +77,7 @@ export function JoinRoom({ code, onGameStarted }: Props) {
       if (result.status === 'joined') {
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        watchGameState(transport, onGameState);
         watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
         watchForGameStart(transport, () => {
           onGameStarted(code);

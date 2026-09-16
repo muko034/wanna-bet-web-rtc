@@ -1,6 +1,9 @@
+import { challengeBank } from '../challenge-bank/challenge-bank';
+import type { GameState } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
+import { roundEngineReducer } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
-import { buildInitialGameState } from './game-state';
+import { applyRoundEngineState, buildInitialGameState, toRoundEngineState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 
 function randomId(): string {
@@ -28,18 +31,27 @@ function disambiguate(name: string, existingNames: string[]): string {
  */
 export class ConnectionManager {
   room: Room;
+  gameState: GameState | null = null;
   private readonly protocol: HostProtocol;
   private readonly transport: Transport;
   private readonly onRoomChange: (room: Room) => void;
+  private readonly pickChallenge: (candidateIds: string[]) => string;
   /** Live connection binding: which player a currently-connected peer id belongs to. */
   private readonly playerIdByPeerId = new Map<string, string>();
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
+  private challengeHistory: string[] = [];
 
-  constructor(transport: Transport, initialRoom: Room, onRoomChange: (room: Room) => void) {
+  constructor(
+    transport: Transport,
+    initialRoom: Room,
+    onRoomChange: (room: Room) => void,
+    pickChallenge: (candidateIds: string[]) => string = randomChallenge,
+  ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.room = initialRoom;
+    this.pickChallenge = pickChallenge;
     this.protocol = new HostProtocol(transport);
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
@@ -47,8 +59,31 @@ export class ConnectionManager {
   }
 
   /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
-  startGame(): void {
-    this.protocol.broadcastState(buildInitialGameState(this.room));
+  startGame(): GameState {
+    this.gameState = buildInitialGameState(this.room);
+    this.protocol.broadcastState(this.gameState);
+    return this.gameState;
+  }
+
+  startRound(activePlayerId: string): GameState {
+    if (this.gameState === null) {
+      throw new Error('Cannot start a Round before the game has started');
+    }
+
+    const { state: nextRoundEngineState } = roundEngineReducer(
+      toRoundEngineState(this.gameState, this.challengeHistory),
+      {
+        type: 'START_ROUND',
+        activePlayerId,
+        challengeBank,
+        pickChallenge: this.pickChallenge,
+      },
+    );
+
+    this.challengeHistory = nextRoundEngineState.challengeHistory;
+    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
+    this.protocol.broadcastState(this.gameState);
+    return this.gameState;
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {
@@ -110,4 +145,8 @@ export class ConnectionManager {
     };
     this.onRoomChange(this.room);
   }
+}
+
+function randomChallenge(candidateIds: string[]): string {
+  return candidateIds[Math.floor(Math.random() * candidateIds.length)];
 }

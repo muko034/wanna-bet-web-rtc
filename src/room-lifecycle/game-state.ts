@@ -1,5 +1,6 @@
 import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
+import type { RoundEngineState } from '../round-engine/round-engine';
 
 /** Every Player's Points at the start of a fresh game, per the game rules. */
 export const STARTING_POINTS = 100;
@@ -25,5 +26,25 @@ export function buildInitialGameState(room: Room): GameState {
         connected: player.connected,
       })),
     ],
+  };
+}
+
+export function toRoundEngineState(gameState: GameState, challengeHistory: string[]): RoundEngineState {
+  return {
+    playerOrder: gameState.players.map((player) => player.playerId),
+    points: Object.fromEntries(gameState.players.map((player) => [player.playerId, player.points])),
+    challengeHistory,
+    round: gameState.round,
+  };
+}
+
+export function applyRoundEngineState(gameState: GameState, roundEngineState: RoundEngineState): GameState {
+  return {
+    ...gameState,
+    players: gameState.players.map((player) => ({
+      ...player,
+      points: roundEngineState.points[player.playerId] ?? player.points,
+    })),
+    round: roundEngineState.round,
   };
 }

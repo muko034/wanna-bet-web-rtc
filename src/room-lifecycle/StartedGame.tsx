@@ -3,6 +3,10 @@ import { useEffect } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
+import { challengeBank } from '../challenge-bank/challenge-bank';
+import type { GameState } from '../protocol/messages';
+import { loadIdentity } from './player-identity';
+import { resolveChallengeCard } from './challenge-card';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
 
@@ -12,6 +16,8 @@ type Props = {
   room: Room | null;
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
+  gameState: GameState | null;
+  onStartRound: (activePlayerId: string) => void;
 };
 
 /**
@@ -20,7 +26,7 @@ type Props = {
  * reaches this view via its own `guestGameStartedCode` signal instead, since a Guest never
  * holds a local `Room` object (see `resolveStartedGameView`).
  */
-export function StartedGame({ code, room, guestGameStartedCode }: Props) {
+export function StartedGame({ code, room, guestGameStartedCode, gameState, onStartRound }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
 
   useEffect(() => {
@@ -37,12 +43,54 @@ export function StartedGame({ code, room, guestGameStartedCode }: Props) {
     return null;
   }
 
+  const localPlayerId = room?.code === code
+    ? room?.hostPlayerId
+    : (code ? loadIdentity(localStorage, code)?.playerId : null);
+  const challengeCard = localPlayerId
+    ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
+    : null;
+
   return (
     <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
       <div class="vb-giant-title" style="font-size:24px">
-        Game started
+        {gameState?.round ? 'Round in progress' : 'Game started'}
       </div>
-      <div class="vb-giant-sub">The game is underway. (Gameplay isn't implemented yet.)</div>
+      {gameState?.round ? (
+        <>
+          {challengeCard?.kind === 'hidden' ? (
+            <div class="vb-task-card vb-task-hidden">
+              <div class="vb-task-label">Challenge</div>
+              <div class="vb-task-text">{challengeCard.title}</div>
+              <div class="vb-task-detail">{challengeCard.detail}</div>
+            </div>
+          ) : challengeCard?.kind === 'visible' ? (
+            <div class="vb-task-card">
+              <div class="vb-task-label">Challenge</div>
+              <div class="vb-task-text">{challengeCard.text}</div>
+              {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
+            </div>
+          ) : null}
+          <div class="vb-status-pill">Waiting for bets and outcome controls in the next tasks.</div>
+        </>
+      ) : room?.code === code ? (
+        <>
+          <div class="vb-giant-sub">Pick the Active Player to start the next round.</div>
+          <div class="vb-avatar-row">
+            {gameState?.players.map((player) => (
+              <button
+                class="vb-avatar-button"
+                type="button"
+                key={player.playerId}
+                onClick={() => onStartRound(player.playerId)}
+              >
+                {player.name}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div class="vb-giant-sub">Waiting for the Host to start the next round.</div>
+      )}
     </PhoneShell>
   );
 }
