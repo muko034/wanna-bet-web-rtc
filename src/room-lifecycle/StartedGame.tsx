@@ -1,12 +1,14 @@
 import { route } from 'preact-router';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
+import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { GameState } from '../protocol/messages';
+import type { GameState, Prediction } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
+import { resolveBettingPanel } from './betting-panel';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
 
@@ -17,17 +19,21 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
+  onPlaceBet: (payload: { amount: number; prediction: Prediction }) => void;
 };
 
 /**
- * `/room/<CODE>/play`: neutral placeholder for the started game, with no gameplay logic
- * yet. Redirects the Host back to the Lobby if the Host's own Room hasn't started; a Guest
- * reaches this view via its own `guestGameStartedCode` signal instead, since a Guest never
- * holds a local `Room` object (see `resolveStartedGameView`). The Host starts the first
- * Round automatically alongside the game itself — there's no separate Round-start control.
+ * `/room/<CODE>/play`: the started-game view. Redirects the Host back to the Lobby if the
+ * Host's own Room hasn't started; a Guest reaches this view via its own
+ * `guestGameStartedCode` signal instead, since a Guest never holds a local `Room` object
+ * (see `resolveStartedGameView`). While a round is open, it shows the Challenge card plus
+ * per-Bettor public bet status, and it lets an eligible local Bettor submit a Bet.
  */
-export function StartedGame({ code, room, guestGameStartedCode, gameState }: Props) {
+export function StartedGame({ code, room, guestGameStartedCode, gameState, onPlaceBet }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
+  const [amount, setAmount] = useState('1');
+  const [prediction, setPrediction] = useState<Prediction>('YES');
+  const [submittedRoundKey, setSubmittedRoundKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (view.view === 'redirect-to-lobby') {
@@ -46,9 +52,43 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState }: Pro
   const localPlayerId = room?.code === code
     ? room?.hostPlayerId
     : (code ? loadIdentity(localStorage, code)?.playerId : null);
+  const roundKey = gameState?.round ? `${gameState.round.activePlayerId}:${gameState.round.challengeId}` : null;
+  const localBetSeenInBroadcast = !!(
+    localPlayerId &&
+    gameState?.round?.bets.some((bet) => bet.playerId === localPlayerId)
+  );
+
+  useEffect(() => {
+    setSubmittedRoundKey(null);
+    setAmount('1');
+    setPrediction('YES');
+  }, [roundKey]);
+
+  const bettingPanel = useMemo(
+    () => (
+      localPlayerId
+        ? resolveBettingPanel({
+          gameState,
+          localPlayerId,
+          locallySubmittedBet: submittedRoundKey === roundKey && !localBetSeenInBroadcast,
+        })
+        : { kind: 'hidden', bettors: [] as const }
+    ),
+    [gameState, localBetSeenInBroadcast, localPlayerId, roundKey, submittedRoundKey],
+  );
   const challengeCard = localPlayerId
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
     : null;
+  const localBetPlaced = bettingPanel.bettors.some((bettor) => bettor.isLocalPlayer && bettor.hasBet);
+
+  const handleBetSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!roundKey) {
+      return;
+    }
+    onPlaceBet({ amount: Number(amount), prediction });
+    setSubmittedRoundKey(roundKey);
+  };
 
   return (
     <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
@@ -70,7 +110,51 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState }: Pro
               {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
             </div>
           ) : null}
-          <div class="vb-status-pill">Waiting for bets and outcome controls in the next tasks.</div>
+          <div class="vb-status-pill">
+            {bettingPanel.bettors.length === 0
+              ? 'Waiting for bettors.'
+              : bettingPanel.bettors.map((bettor) => `${bettor.hasBet ? '✓' : '○'} ${bettor.name}`).join(' · ')}
+          </div>
+          {bettingPanel.kind === 'form' ? (
+            <form onSubmit={handleBetSubmit} style="width:100%;display:flex;flex-direction:column;gap:12px">
+              <input
+                class="vb-input-white"
+                type="number"
+                min="1"
+                inputMode="numeric"
+                value={amount}
+                onInput={(event) => setAmount((event.target as HTMLInputElement).value)}
+                required
+              />
+              <div style="display:flex;gap:12px">
+                <label>
+                  <input
+                    type="radio"
+                    name="prediction"
+                    value="YES"
+                    checked={prediction === 'YES'}
+                    onChange={() => setPrediction('YES')}
+                  />
+                  YES
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="prediction"
+                    value="NO"
+                    checked={prediction === 'NO'}
+                    onChange={() => setPrediction('NO')}
+                  />
+                  NO
+                </label>
+              </div>
+              <button class="vb-cta" type="submit">Place bet</button>
+            </form>
+          ) : bettingPanel.kind === 'submitted' ? (
+            <div class="vb-status-pill">Bet submitted.</div>
+          ) : localBetPlaced ? (
+            <div class="vb-status-pill">Bet placed.</div>
+          ) : null}
         </>
       ) : (
         <div class="vb-giant-sub">Starting the round…</div>

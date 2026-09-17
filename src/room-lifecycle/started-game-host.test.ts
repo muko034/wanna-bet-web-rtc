@@ -5,6 +5,7 @@ import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState } from '../protocol/messages';
 import { ConnectionManager } from './connection-manager';
 import { resolveChallengeCard } from './challenge-card';
+import { resolveBettingPanel } from './betting-panel';
 import type { Room } from './room';
 
 function roomWith(players: Room['players']): Room {
@@ -94,5 +95,42 @@ describe('starting a round from the Host', () => {
       text: challengeBank[0].content.en,
       ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
     });
+  });
+
+  it('applies an incoming placeBet intent and rebroadcasts only public "has bet" state to every device', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let activePlayerId: string | undefined;
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      () => activePlayerId ?? 'host-1',
+    );
+    const alex = await joinGuest(hostId, 'Alex');
+    const sam = await joinGuest(hostId, 'Sam');
+    activePlayerId = alex.playerId;
+
+    const alexStates: GameState[] = [];
+    const samStates: GameState[] = [];
+    const alexProtocol = new GuestProtocol(alex.guestTransport);
+    const samProtocol = new GuestProtocol(sam.guestTransport);
+    alexProtocol.on('state', (payload) => alexStates.push(payload));
+    samProtocol.on('state', (payload) => samStates.push(payload));
+
+    manager.startGame();
+    manager.startRound();
+    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
+
+    const alexState = alexStates.at(-1);
+    const samState = samStates.at(-1);
+
+    expect(alexState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+    expect(samState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+
+    expect(resolveBettingPanel({ gameState: alexState ?? null, localPlayerId: alex.playerId }).bettors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ playerId: sam.playerId, hasBet: true })]),
+    );
   });
 });

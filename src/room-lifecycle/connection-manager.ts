@@ -1,9 +1,9 @@
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { GameState } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
-import { roundEngineReducer } from '../round-engine/round-engine';
+import { roundEngineReducer, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
-import { applyRoundEngineState, buildInitialGameState, toRoundEngineState } from './game-state';
+import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 
 function randomId(): string {
@@ -42,6 +42,7 @@ function disambiguate(name: string, existingNames: string[]): string {
 export class ConnectionManager {
   room: Room;
   gameState: GameState | null = null;
+  private roundEngineState: RoundEngineState | null = null;
   private readonly protocol: HostProtocol;
   private readonly transport: Transport;
   private readonly onRoomChange: (room: Room) => void;
@@ -52,7 +53,6 @@ export class ConnectionManager {
   private readonly playerIdByPeerId = new Map<string, string>();
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
-  private challengeHistory: string[] = [];
   /** Active Player rotation order — starts as join order, then rotates so the drawn/next Active Player leads. */
   private playerOrder: string[] = [];
   private firstRoundStarted = false;
@@ -71,6 +71,7 @@ export class ConnectionManager {
     this.pickActivePlayer = pickActivePlayer;
     this.protocol = new HostProtocol(transport);
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
+    this.protocol.on('placeBet', (payload, peerId) => this.handlePlaceBet(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
     this.transport.onConnectionChange((peerId, connected) => this.handleConnectionChange(peerId, connected));
   }
@@ -78,7 +79,8 @@ export class ConnectionManager {
   /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
   startGame(): GameState {
     this.gameState = buildInitialGameState(this.room);
-    this.playerOrder = this.gameState.players.map((player) => player.playerId);
+    this.roundEngineState = buildInitialRoundEngineState(this.room);
+    this.playerOrder = this.roundEngineState.playerOrder;
     this.protocol.broadcastState(this.gameState);
     return this.gameState;
   }
@@ -88,7 +90,7 @@ export class ConnectionManager {
    * rotation order that first pick establishes (see `docs/game-rules.md`'s rotation rule).
    */
   startRound(): GameState {
-    if (this.gameState === null) {
+    if (this.gameState === null || this.roundEngineState === null) {
       throw new Error('Cannot start a Round before the game has started');
     }
 
@@ -102,7 +104,7 @@ export class ConnectionManager {
     }
 
     const { state: nextRoundEngineState } = roundEngineReducer(
-      toRoundEngineState(this.gameState, this.challengeHistory, this.playerOrder),
+      this.roundEngineState,
       {
         type: 'START_ROUND',
         activePlayerId,
@@ -111,8 +113,27 @@ export class ConnectionManager {
       },
     );
 
-    this.challengeHistory = nextRoundEngineState.challengeHistory;
     this.playerOrder = nextRoundEngineState.playerOrder;
+    this.roundEngineState = nextRoundEngineState;
+    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
+    this.protocol.broadcastState(this.gameState);
+    return this.gameState;
+  }
+
+  placeBet(playerId: string, amount: number, prediction: Prediction): GameState {
+    if (this.gameState === null || this.roundEngineState === null) {
+      throw new Error('Cannot place a Bet before the game has started');
+    }
+
+    const { state: nextRoundEngineState } = roundEngineReducer(this.roundEngineState, {
+      type: 'PLACE_BET',
+      playerId,
+      amount,
+      prediction,
+    });
+
+    this.playerOrder = nextRoundEngineState.playerOrder;
+    this.roundEngineState = nextRoundEngineState;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
     this.protocol.broadcastState(this.gameState);
     return this.gameState;
@@ -164,6 +185,15 @@ export class ConnectionManager {
 
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
+  }
+
+  private handlePlaceBet(payload: { amount: number; prediction: Prediction }, peerId: string): void {
+    const playerId = this.playerIdByPeerId.get(peerId);
+    if (playerId === undefined) {
+      return;
+    }
+
+    this.placeBet(playerId, payload.amount, payload.prediction);
   }
 
   private handleConnectionChange(peerId: string, connected: boolean): void {

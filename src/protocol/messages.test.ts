@@ -12,7 +12,7 @@ const gameState: GameState = {
   round: {
     activePlayerId: 'p1',
     challengeId: 'c1',
-    bets: [{ playerId: 'p1', amount: 10, prediction: 'YES' }],
+    bets: [{ playerId: 'p1' }],
     outcome: null,
   },
 };

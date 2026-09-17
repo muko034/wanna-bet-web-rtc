@@ -29,16 +29,15 @@ export function buildInitialGameState(room: Room): GameState {
   };
 }
 
-export function toRoundEngineState(
-  gameState: GameState,
-  challengeHistory: string[],
-  playerOrder: string[],
-): RoundEngineState {
+export function buildInitialRoundEngineState(room: Room): RoundEngineState {
   return {
-    playerOrder,
-    points: Object.fromEntries(gameState.players.map((player) => [player.playerId, player.points])),
-    challengeHistory,
-    round: gameState.round,
+    playerOrder: [room.hostPlayerId, ...room.players.map((player) => player.playerId)],
+    points: Object.fromEntries([
+      [room.hostPlayerId, STARTING_POINTS],
+      ...room.players.map((player) => [player.playerId, STARTING_POINTS]),
+    ]),
+    challengeHistory: [],
+    round: null,
   };
 }
 
@@ -49,6 +48,13 @@ export function applyRoundEngineState(gameState: GameState, roundEngineState: Ro
       ...player,
       points: roundEngineState.points[player.playerId] ?? player.points,
     })),
-    round: roundEngineState.round,
+    // Broadcast only public bet-placement status. The Host keeps amount/prediction inside
+    // its authoritative Round Engine state.
+    round: roundEngineState.round
+      ? {
+        ...roundEngineState.round,
+        bets: roundEngineState.round.bets.map((bet) => ({ playerId: bet.playerId })),
+      }
+      : null,
   };
 }

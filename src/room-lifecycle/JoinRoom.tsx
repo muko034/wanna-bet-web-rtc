@@ -3,11 +3,12 @@ import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { withBase } from '../base-path';
+import { GuestProtocol } from '../protocol/guest-protocol';
 import { PeerJsTransport } from '../transport/peerjs-transport';
 import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, watchGameState, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
-import type { GameState } from '../protocol/messages';
+import type { GameState, Prediction } from '../protocol/messages';
 
 type Props = {
   path?: string;
@@ -15,6 +16,7 @@ type Props = {
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`, since a Guest holds no local `Room` for `StartedGame` to read. */
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
+  onPlaceBetReady: (placeBet: ((payload: { amount: number; prediction: Prediction }) => void) | null) => void;
 };
 
 type Status =
@@ -39,7 +41,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, onPlaceBetReady }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
 
@@ -52,21 +54,28 @@ export function JoinRoom({ code, onGameStarted, onGameState }: Props) {
     const transport = new PeerJsTransport();
     rejoinRoom(transport, roomRegistry, code, stored.reconnectToken).then((result) => {
       if (result.status === 'joined') {
+        const protocol = new GuestProtocol(transport);
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        onPlaceBetReady((payload) => protocol.placeBet(payload));
         watchGameState(transport, onGameState);
-        watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForSessionEnd(transport, () => {
+          onPlaceBetReady(null);
+          setStatus({ kind: 'session-ended' });
+        });
         watchForGameStart(transport, () => {
           onGameStarted(code);
           route(withBase(`room/${code}/play`));
         });
       } else if (result.status === 'unknown-player') {
+        onPlaceBetReady(null);
         setStatus({ kind: 'form' });
       } else {
+        onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
-  }, [code]);
+  }, [code, onGameStarted, onGameState, onPlaceBetReady]);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,15 +84,21 @@ export function JoinRoom({ code, onGameStarted, onGameState }: Props) {
     const transport = new PeerJsTransport();
     joinRoom(transport, roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
+        const protocol = new GuestProtocol(transport);
         saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
         setStatus({ kind: 'joined' });
+        onPlaceBetReady((payload) => protocol.placeBet(payload));
         watchGameState(transport, onGameState);
-        watchForSessionEnd(transport, () => setStatus({ kind: 'session-ended' }));
+        watchForSessionEnd(transport, () => {
+          onPlaceBetReady(null);
+          setStatus({ kind: 'session-ended' });
+        });
         watchForGameStart(transport, () => {
           onGameStarted(code);
           route(withBase(`room/${code}/play`));
         });
       } else {
+        onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
