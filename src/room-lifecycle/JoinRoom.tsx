@@ -8,7 +8,7 @@ import { PeerJsTransport } from '../transport/peerjs-transport';
 import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, watchGameState, type JoinResult } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import { roomRegistry } from './room-registry-instance';
-import type { GameState, Prediction } from '../protocol/messages';
+import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
 type Props = {
   path?: string;
@@ -16,7 +16,7 @@ type Props = {
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`, since a Guest holds no local `Room` for `StartedGame` to read. */
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
-  onPlaceBetReady: (placeBet: ((payload: { amount: number; prediction: Prediction }) => void) | null) => void;
+  onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
 type Status =

@@ -1,4 +1,4 @@
-import type { GameState, Prediction } from '../protocol/messages';
+import type { GameState } from '../protocol/messages';
 
 export type BettorStatus = {
   playerId: string;
@@ -11,13 +11,18 @@ export type BettingPanel =
   | { kind: 'hidden'; bettors: BettorStatus[] }
   | { kind: 'status'; bettors: BettorStatus[] }
   | { kind: 'submitted'; bettors: BettorStatus[] }
-  | { kind: 'form'; bettors: BettorStatus[]; initialAmount: number; initialPrediction: Prediction };
+  | { kind: 'form'; bettors: BettorStatus[] };
 
 type Params = {
   gameState: GameState | null;
   localPlayerId: string;
   locallySubmittedBet?: boolean;
 };
+
+/** Whether `playerId` has already placed a Bet in `round`, per the public broadcast state. */
+export function hasPlacedBet(round: GameState['round'], playerId: string): boolean {
+  return !!round?.bets.some((bet) => bet.playerId === playerId);
+}
 
 export function resolveBettingPanel({
   gameState,
@@ -29,23 +34,21 @@ export function resolveBettingPanel({
     return { kind: 'hidden', bettors: [] };
   }
 
-  const playersById = new Map(gameState.players.map((player) => [player.playerId, player]));
   const bettors = gameState.players
     .filter((player) => player.playerId !== round.activePlayerId)
     .map((player) => ({
       playerId: player.playerId,
-      name: playersById.get(player.playerId)?.name ?? player.playerId,
-      hasBet: round.bets.some((bet) => bet.playerId === player.playerId),
+      name: player.name,
+      hasBet: hasPlacedBet(round, player.playerId),
       isLocalPlayer: player.playerId === localPlayerId,
     }));
 
-  const localPlayer = playersById.get(localPlayerId);
+  const localPlayer = gameState.players.find((player) => player.playerId === localPlayerId);
   if (!localPlayer || localPlayerId === round.activePlayerId) {
     return { kind: 'status', bettors };
   }
 
-  const localHasBet = bettors.some((bettor) => bettor.playerId === localPlayerId && bettor.hasBet);
-  if (localHasBet) {
+  if (hasPlacedBet(round, localPlayerId)) {
     return { kind: 'status', bettors };
   }
 
@@ -53,10 +56,5 @@ export function resolveBettingPanel({
     return { kind: 'submitted', bettors };
   }
 
-  return {
-    kind: 'form',
-    bettors,
-    initialAmount: 1,
-    initialPrediction: 'YES',
-  };
+  return { kind: 'form', bettors };
 }

@@ -1,5 +1,5 @@
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { GameState } from '../protocol/messages';
+import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
 import { roundEngineReducer, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
@@ -187,7 +187,7 @@ export class ConnectionManager {
     this.onRoomChange(this.room);
   }
 
-  private handlePlaceBet(payload: { amount: number; prediction: Prediction }, peerId: string): void {
+  private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
       return;

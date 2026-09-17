@@ -11,7 +11,7 @@ import { withBase } from './base-path';
 import { startGame, type Room } from './room-lifecycle/room';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import type { Transport } from './transport/transport';
-import type { GameState, Prediction } from './protocol/messages';
+import type { GameState, PlaceBetPayload } from './protocol/messages';
 
 type RoomRouteProps = {
   path?: string;
@@ -20,7 +20,7 @@ type RoomRouteProps = {
   onStart: () => void;
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
-  onPlaceBetReady: (placeBet: ((payload: { amount: number; prediction: Prediction }) => void) | null) => void;
+  onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
@@ -37,7 +37,7 @@ export function App() {
   const [hostGameState, setHostGameState] = useState<GameState | null>(null);
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
-  const guestPlaceBetRef = useRef<((payload: { amount: number; prediction: Prediction }) => void) | null>(null);
+  const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
 
   const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
     connectionManagerRef.current = new ConnectionManager(transport, createdRoom, setRoom);
@@ -58,7 +58,7 @@ export function App() {
     route(withBase(`room/${started.code}/play`));
   };
 
-  const handlePlaceBet = useCallback((payload: { amount: number; prediction: Prediction }) => {
+  const handlePlaceBet = useCallback((payload: PlaceBetPayload) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
       const nextState = connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
       setHostGameState(nextState);

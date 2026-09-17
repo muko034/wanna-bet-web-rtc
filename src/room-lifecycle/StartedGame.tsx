@@ -5,10 +5,10 @@ import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { GameState, Prediction } from '../protocol/messages';
+import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
-import { resolveBettingPanel } from './betting-panel';
+import { hasPlacedBet, resolveBettingPanel } from './betting-panel';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
 
@@ -19,7 +19,7 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
-  onPlaceBet: (payload: { amount: number; prediction: Prediction }) => void;
+  onPlaceBet: (payload: PlaceBetPayload) => void;
 };
 
 /**
@@ -53,10 +53,7 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onPla
     ? room?.hostPlayerId
     : (code ? loadIdentity(localStorage, code)?.playerId : null);
   const roundKey = gameState?.round ? `${gameState.round.activePlayerId}:${gameState.round.challengeId}` : null;
-  const localBetSeenInBroadcast = !!(
-    localPlayerId &&
-    gameState?.round?.bets.some((bet) => bet.playerId === localPlayerId)
-  );
+  const localBetSeenInBroadcast = !!localPlayerId && hasPlacedBet(gameState?.round ?? null, localPlayerId);
 
   useEffect(() => {
     setSubmittedRoundKey(null);
