@@ -1,5 +1,7 @@
 **Blocked by**: 15 (Round start and Challenge visibility)
 
+**Status**: Implemented
+
 ## What to build
 
 A Bet form for Bettors (any connected player who is not the Active Player, and who hasn't already bet this Round):
@@ -11,16 +13,16 @@ Prediction of any Bet before Resolution — see `docs/domain-glossary.md`'s Bet/
 
 ## Acceptance criteria
 
-- [ ] A Bettor's device shows a Bet form (amount + YES/NO) once a Round is open and that player is not the Active
+- [x] A Bettor's device shows a Bet form (amount + YES/NO) once a Round is open and that player is not the Active
       Player.
-- [ ] Submitting the form sends a `placeBet` message to the Host and the form becomes non-interactive/replaced with a
+- [x] Submitting the form sends a `placeBet` message to the Host and the form becomes non-interactive/replaced with a
       "bet placed" status on that device, without waiting for the Host's rebroadcast to arrive first if that would
       cause a visible flash (a brief optimistic "submitted" state is acceptable).
-- [ ] The Host, on receiving `placeBet`, applies `PLACE_BET` via the reducer and rebroadcasts the updated `GameState`.
-- [ ] Every device can tell which Bettors have placed a Bet already (e.g. a checkmark/status), but no device other
+- [x] The Host, on receiving `placeBet`, applies `PLACE_BET` via the reducer and rebroadcasts the updated `GameState`.
+- [x] Every device can tell which Bettors have placed a Bet already (e.g. a checkmark/status), but no device other
       than the Host's authoritative state ever exposes another player's Bet amount or Prediction before Resolution.
-- [ ] The Active Player's device does not show a Bet form (enforced by this task's UI; the reducer-level rejection of
+- [x] The Active Player's device does not show a Bet form (enforced by this task's UI; the reducer-level rejection of
       an Active Player's Bet is 06's concern, not this task's).
-- [ ] Tests cover: the Bet form appearing only for eligible Bettors, the Host-side handling of an incoming `placeBet`
+- [x] Tests cover: the Bet form appearing only for eligible Bettors, the Host-side handling of an incoming `placeBet`
       message resulting in a reducer call and rebroadcast, and that a per-Bettor "has bet" status is derivable from
       the broadcast `GameState` without leaking amount/Prediction.
