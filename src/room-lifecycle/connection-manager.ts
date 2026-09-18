@@ -46,6 +46,8 @@ export class ConnectionManager {
   private readonly protocol: HostProtocol;
   private readonly transport: Transport;
   private readonly onRoomChange: (room: Room) => void;
+  /** Notifies the Host's own UI of every GameState change — including ones triggered by a Guest's `placeBet`, which the Host would otherwise never observe locally. */
+  private readonly onGameStateChange: (gameState: GameState) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
   /** Picks the very first Active Player at random; every Round after that follows the fixed order it establishes. */
   private readonly pickActivePlayer: (candidateIds: string[]) => string;
@@ -63,9 +65,11 @@ export class ConnectionManager {
     onRoomChange: (room: Room) => void,
     pickChallenge: (candidateIds: string[]) => string = randomChallenge,
     pickActivePlayer: (candidateIds: string[]) => string = randomPlayer,
+    onGameStateChange: (gameState: GameState) => void = () => {},
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
+    this.onGameStateChange = onGameStateChange;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
     this.pickActivePlayer = pickActivePlayer;
@@ -81,7 +85,7 @@ export class ConnectionManager {
     this.gameState = buildInitialGameState(this.room);
     this.roundEngineState = buildInitialRoundEngineState(this.room);
     this.playerOrder = this.roundEngineState.playerOrder;
-    this.protocol.broadcastState(this.gameState);
+    this.emitGameState(this.gameState);
     return this.gameState;
   }
 
@@ -116,7 +120,7 @@ export class ConnectionManager {
     this.playerOrder = nextRoundEngineState.playerOrder;
     this.roundEngineState = nextRoundEngineState;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
-    this.protocol.broadcastState(this.gameState);
+    this.emitGameState(this.gameState);
     return this.gameState;
   }
 
@@ -135,8 +139,14 @@ export class ConnectionManager {
     this.playerOrder = nextRoundEngineState.playerOrder;
     this.roundEngineState = nextRoundEngineState;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
-    this.protocol.broadcastState(this.gameState);
+    this.emitGameState(this.gameState);
     return this.gameState;
+  }
+
+  /** Broadcasts `gameState` to every Guest and notifies the Host's own `onGameStateChange` callback, so both sides of a Round stay in sync after every state-changing action. */
+  private emitGameState(gameState: GameState): void {
+    this.protocol.broadcastState(gameState);
+    this.onGameStateChange(gameState);
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {

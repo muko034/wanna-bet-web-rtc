@@ -40,7 +40,14 @@ export function App() {
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
 
   const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
-    connectionManagerRef.current = new ConnectionManager(transport, createdRoom, setRoom);
+    connectionManagerRef.current = new ConnectionManager(
+      transport,
+      createdRoom,
+      setRoom,
+      undefined,
+      undefined,
+      setHostGameState,
+    );
     setRoom(createdRoom);
     route(withBase(`room/${createdRoom.code}`));
   };
@@ -53,15 +60,13 @@ export function App() {
     }
     setRoom(started);
     connectionManagerRef.current?.startGame();
-    const gameState = connectionManagerRef.current?.startRound() ?? null;
-    setHostGameState(gameState);
+    connectionManagerRef.current?.startRound();
     route(withBase(`room/${started.code}/play`));
   };
 
   const handlePlaceBet = useCallback((payload: PlaceBetPayload) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
-      const nextState = connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
-      setHostGameState(nextState);
+      connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
       return;
     }
 

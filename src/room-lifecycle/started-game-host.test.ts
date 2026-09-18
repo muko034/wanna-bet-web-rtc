@@ -133,4 +133,28 @@ describe('starting a round from the Host', () => {
       expect.arrayContaining([expect.objectContaining({ playerId: sam.playerId, hasBet: true })]),
     );
   });
+
+  it("notifies the Host's own onGameStateChange callback when a Guest's placeBet arrives, so the Host's own screen reflects it — not just the broadcast to other Guests", async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let activePlayerId: string | undefined;
+    const hostGameStates: GameState[] = [];
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      () => activePlayerId ?? 'host-1',
+      (gameState) => hostGameStates.push(gameState),
+    );
+    const sam = await joinGuest(hostId, 'Sam');
+    activePlayerId = 'host-1';
+
+    manager.startGame();
+    manager.startRound();
+    new GuestProtocol(sam.guestTransport).placeBet({ amount: 10, prediction: 'NO' });
+
+    const latestHostState = hostGameStates.at(-1);
+    expect(latestHostState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+  });
 });
