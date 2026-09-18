@@ -6,7 +6,11 @@ import { z } from 'zod';
  * `z.infer` — there is no hand-written `type` or `interface` duplicating a schema's shape.
  */
 
-const betSchema = z.object({
+const publicBetSchema = z.object({
+  playerId: z.string(),
+});
+
+const privateBetSchema = z.object({
   playerId: z.string(),
   amount: z.number(),
   prediction: z.enum(['YES', 'NO']),
@@ -15,7 +19,8 @@ const betSchema = z.object({
 const roundStateSchema = z.object({
   activePlayerId: z.string(),
   challengeId: z.string(),
-  bets: z.array(betSchema),
+  /** Public broadcast state: only whether a player has already bet, never the amount/prediction. */
+  bets: z.array(publicBetSchema),
   outcome: z.enum(['YES', 'NO']).nullable(),
 });
 
@@ -34,7 +39,9 @@ const gameStateSchema = z.object({
   round: roundStateSchema.nullable(),
 });
 
-export type Bet = z.infer<typeof betSchema>;
+export type Prediction = z.infer<typeof privateBetSchema.shape.prediction>;
+export type Bet = z.infer<typeof publicBetSchema>;
+export type PrivateBet = z.infer<typeof privateBetSchema>;
 export type RoundState = z.infer<typeof roundStateSchema>;
 export type Player = z.infer<typeof playerSchema>;
 export type GameState = z.infer<typeof gameStateSchema>;
@@ -84,6 +91,7 @@ const stateMessageSchema = z.object({
 export type JoinMessage = z.infer<typeof joinMessageSchema>;
 export type RejoinMessage = z.infer<typeof rejoinMessageSchema>;
 export type PlaceBetMessage = z.infer<typeof placeBetMessageSchema>;
+export type PlaceBetPayload = PlaceBetMessage['payload'];
 export type LeaveMessage = z.infer<typeof leaveMessageSchema>;
 export type WelcomeMessage = z.infer<typeof welcomeMessageSchema>;
 export type RejectedMessage = z.infer<typeof rejectedMessageSchema>;
