@@ -138,7 +138,33 @@ export class ConnectionManager {
 
     this.playerOrder = nextRoundEngineState.playerOrder;
     this.roundEngineState = nextRoundEngineState;
-    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
+    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, this.gameState.resolution);
+    this.emitGameState(this.gameState);
+    return this.gameState;
+  }
+
+  resolveRound(outcome: Prediction): GameState {
+    if (this.gameState === null || this.roundEngineState === null) {
+      throw new Error('Cannot resolve a Round before the game has started');
+    }
+
+    const activePlayerId = this.roundEngineState.round?.activePlayerId;
+    if (!activePlayerId) {
+      throw new Error('Cannot resolve a Round when no Round is open');
+    }
+
+    const { state: nextRoundEngineState, payouts } = roundEngineReducer(this.roundEngineState, {
+      type: 'RESOLVE_ROUND',
+      outcome,
+    });
+
+    this.playerOrder = nextRoundEngineState.playerOrder;
+    this.roundEngineState = nextRoundEngineState;
+    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, {
+      activePlayerId,
+      outcome,
+      payouts,
+    });
     this.emitGameState(this.gameState);
     return this.gameState;
   }

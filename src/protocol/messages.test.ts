@@ -8,6 +8,8 @@ import {
 const gameState: GameState = {
   roomId: 'ABCDEF',
   status: 'active',
+  activePlayerId: null,
+  resolution: null,
   players: [{ playerId: 'p1', name: 'Alex', points: 0, status: 'active', connected: true }],
   round: {
     activePlayerId: 'p1',
@@ -101,6 +103,29 @@ describe('parseHostToGuestMessage', () => {
     expect(
       parseHostToGuestMessage({ type: 'state', seq: 3, payload: { ...gameState, status: 'bogus' } }),
     ).toBeUndefined();
+  });
+
+  it('accepts a state message carrying the next Active Player and a Resolution summary after a round closes', () => {
+    const message = {
+      type: 'state',
+      seq: 4,
+      payload: {
+        ...gameState,
+        activePlayerId: 'p2',
+        round: null,
+        resolution: {
+          activePlayerId: 'p1',
+          outcome: 'YES',
+          payouts: [
+            { playerId: 'p1', amount: 15 },
+            { playerId: 'p2', amount: 20 },
+            { playerId: 'p3', amount: -15 },
+          ],
+        },
+      },
+    } as const;
+
+    expect(parseHostToGuestMessage(message)).toEqual(message);
   });
 
   it('rejects a non-object input', () => {

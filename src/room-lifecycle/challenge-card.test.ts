@@ -18,6 +18,8 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
+    activePlayerId: 'guest-1',
+    resolution: null,
     players: [
       { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
       { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },

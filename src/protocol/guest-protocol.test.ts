@@ -14,6 +14,8 @@ async function connectedPair(): Promise<{ hostTransport: FakeTransport; guestTra
 const gameState: GameState = {
   roomId: 'ABCDEF',
   status: 'active',
+  activePlayerId: null,
+  resolution: null,
   players: [],
   round: null,
 };

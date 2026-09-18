@@ -157,4 +157,82 @@ describe('starting a round from the Host', () => {
     const latestHostState = hostGameStates.at(-1);
     expect(latestHostState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
   });
+
+  it.each([
+    [
+      'YES',
+      { host: 115, alex: 120, sam: 85 },
+      [
+        { playerId: 'host-1', amount: 15 },
+        { playerId: 'guest-1', amount: 20 },
+        { playerId: 'guest-2', amount: -15 },
+      ],
+    ],
+    [
+      'NO',
+      { host: 100, alex: 80, sam: 115 },
+      [
+        { playerId: 'guest-1', amount: -20 },
+        { playerId: 'guest-2', amount: 15 },
+      ],
+    ],
+  ] as const)(
+    'applies a Host-submitted Outcome %s through the reducer and rebroadcasts the resolved GameState',
+    async (outcome, expectedPoints, expectedPayouts) => {
+      const hostTransport = new FakeTransport();
+      const hostId = await hostTransport.connect();
+      const hostGameStates: GameState[] = [];
+      const manager = new ConnectionManager(
+        hostTransport,
+        roomWith([]),
+        () => {},
+        (candidateIds) => candidateIds[0],
+        () => 'host-1',
+        (gameState) => hostGameStates.push(gameState),
+      );
+      const alex = await joinGuest(hostId, 'Alex');
+      const sam = await joinGuest(hostId, 'Sam');
+
+      const alexStates: GameState[] = [];
+      const samStates: GameState[] = [];
+      const alexProtocol = new GuestProtocol(alex.guestTransport);
+      const samProtocol = new GuestProtocol(sam.guestTransport);
+      alexProtocol.on('state', (payload) => alexStates.push(payload));
+      samProtocol.on('state', (payload) => samStates.push(payload));
+
+      manager.startGame();
+      manager.startRound();
+      alexProtocol.placeBet({ amount: 20, prediction: 'YES' });
+      samProtocol.placeBet({ amount: 15, prediction: 'NO' });
+
+      const hostState = manager.resolveRound(outcome);
+      const alexState = alexStates.at(-1);
+      const samState = samStates.at(-1);
+
+      expect(hostState).toMatchObject({
+        roomId: 'ABCDEF',
+        status: 'active',
+        activePlayerId: alex.playerId,
+        players: [
+          { playerId: 'host-1', name: 'Host', points: expectedPoints.host, status: 'active', connected: true },
+          { playerId: alex.playerId, name: 'Alex', points: expectedPoints.alex, status: 'active', connected: true },
+          { playerId: sam.playerId, name: 'Sam', points: expectedPoints.sam, status: 'active', connected: true },
+        ],
+        round: null,
+        resolution: {
+          activePlayerId: 'host-1',
+          outcome,
+        },
+      });
+      expect(hostState.resolution?.payouts).toEqual(expect.arrayContaining(
+        expectedPayouts.map((payout) => ({
+          ...payout,
+          playerId: payout.playerId === 'guest-1' ? alex.playerId : payout.playerId === 'guest-2' ? sam.playerId : payout.playerId,
+        })),
+      ));
+      expect(alexState).toEqual(hostState);
+      expect(samState).toEqual(hostState);
+      expect(hostGameStates.at(-1)).toEqual(hostState);
+    },
+  );
 });
