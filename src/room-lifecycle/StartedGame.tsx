@@ -9,6 +9,8 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
 import { hasPlacedBet, resolveBettingPanel } from './betting-panel';
+import { resolveResolutionSummary } from './resolution-summary';
+import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
 
@@ -20,6 +22,8 @@ type Props = {
   guestGameStartedCode: string | null;
   gameState: GameState | null;
   onPlaceBet: (payload: PlaceBetPayload) => void;
+  onResolveRound: (outcome: Prediction) => void;
+  onStartRound: () => void;
 };
 
 /**
@@ -29,7 +33,15 @@ type Props = {
  * (see `resolveStartedGameView`). While a round is open, it shows the Challenge card plus
  * per-Bettor public bet status, and it lets an eligible local Bettor submit a Bet.
  */
-export function StartedGame({ code, room, guestGameStartedCode, gameState, onPlaceBet }: Props) {
+export function StartedGame({
+  code,
+  room,
+  guestGameStartedCode,
+  gameState,
+  onPlaceBet,
+  onResolveRound,
+  onStartRound,
+}: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
   const [amount, setAmount] = useState('1');
   const [prediction, setPrediction] = useState<Prediction>('YES');
@@ -77,6 +89,8 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onPla
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
     : null;
   const localBetPlaced = bettingPanel.bettors.some((bettor) => bettor.isLocalPlayer && bettor.hasBet);
+  const roundControls = resolveRoundControls({ code, room, gameState });
+  const resolutionSummary = resolveResolutionSummary(gameState);
 
   const handleBetSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,7 +104,7 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onPla
   return (
     <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
       <div class="vb-giant-title" style="font-size:24px">
-        {gameState?.round ? 'Round in progress' : 'Game started'}
+        {gameState?.round ? 'Round in progress' : resolutionSummary ? 'Round resolved' : 'Game started'}
       </div>
       {gameState?.round ? (
         <>
@@ -152,7 +166,37 @@ export function StartedGame({ code, room, guestGameStartedCode, gameState, onPla
           ) : localBetPlaced ? (
             <div class="vb-status-pill">Bet placed.</div>
           ) : null}
+          {roundControls.kind === 'resolve-round' ? (
+            <div style="width:100%;display:flex;gap:12px">
+              <button class="vb-cta" type="button" onClick={() => onResolveRound('YES')}>Outcome: YES</button>
+              <button class="vb-cta" type="button" onClick={() => onResolveRound('NO')}>Outcome: NO</button>
+            </div>
+          ) : null}
         </>
+      ) : resolutionSummary ? (
+        <>
+          <div class="vb-status-pill">
+            {resolutionSummary.activePlayerName} {resolutionSummary.outcome === 'YES' ? 'succeeded' : 'failed'}
+          </div>
+          <div style="width:100%;display:flex;flex-direction:column;gap:8px">
+            {resolutionSummary.pointChanges.map((pointChange) => (
+              <div class="vb-status-pill" key={pointChange.playerId}>
+                {pointChange.name}: {pointChange.change >= 0 ? '+' : ''}{pointChange.change} pts · {pointChange.points} total
+              </div>
+            ))}
+          </div>
+          {roundControls.kind === 'start-round' ? (
+            <button class="vb-cta" type="button" onClick={onStartRound}>
+              Start next round for {roundControls.activePlayerName}
+            </button>
+          ) : (
+            <div class="vb-giant-sub">Waiting for the Host to start the next round.</div>
+          )}
+        </>
+      ) : roundControls.kind === 'start-round' ? (
+        <button class="vb-cta" type="button" onClick={onStartRound}>
+          Start round for {roundControls.activePlayerName}
+        </button>
       ) : (
         <div class="vb-giant-sub">Starting the round…</div>
       )}

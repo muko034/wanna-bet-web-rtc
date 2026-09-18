@@ -1,4 +1,4 @@
-import type { GameState } from '../protocol/messages';
+import type { GameState, ResolutionState } from '../protocol/messages';
 import type { Room } from './room';
 import type { RoundEngineState } from '../round-engine/round-engine';
 
@@ -15,6 +15,8 @@ export function buildInitialGameState(room: Room): GameState {
   return {
     roomId: room.code,
     status: 'active',
+    activePlayerId: null,
+    resolution: null,
     round: null,
     players: [
       { playerId: room.hostPlayerId, name: room.hostName, points: STARTING_POINTS, status: 'active', connected: true },
@@ -41,9 +43,15 @@ export function buildInitialRoundEngineState(room: Room): RoundEngineState {
   };
 }
 
-export function applyRoundEngineState(gameState: GameState, roundEngineState: RoundEngineState): GameState {
+export function applyRoundEngineState(
+  gameState: GameState,
+  roundEngineState: RoundEngineState,
+  resolution: ResolutionState | null = null,
+): GameState {
   return {
     ...gameState,
+    activePlayerId: roundEngineState.round?.activePlayerId ?? roundEngineState.playerOrder[0] ?? null,
+    resolution,
     players: gameState.players.map((player) => ({
       ...player,
       points: roundEngineState.points[player.playerId] ?? player.points,

@@ -152,6 +152,8 @@ describe('ConnectionManager', () => {
         payload: {
           roomId: 'ABCDEF',
           status: 'active',
+          activePlayerId: null,
+          resolution: null,
           round: null,
           players: [
             expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
