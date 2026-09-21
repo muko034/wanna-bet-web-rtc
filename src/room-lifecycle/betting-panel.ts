@@ -19,7 +19,7 @@ export type BettingPanel =
       bettors: BettorStatus[];
       /** The local player's own Bet, or `null` when this device no longer remembers it. */
       ownBet: PlaceBetPayload | null;
-      waitingOnCount: number;
+      waitingLabel: string;
     }
   | {
       kind: 'form';
@@ -31,7 +31,8 @@ export type BettingPanel =
 
 type Params = {
   gameState: GameState | null;
-  localPlayerId: string;
+  /** `null` until this device's identity is known. */
+  localPlayerId: string | null;
   /** The Bet this device sent for the current Round, which the Host's public broadcast never echoes back. */
   localBet?: PlaceBetPayload | null;
 };
@@ -41,13 +42,20 @@ export function hasPlacedBet(round: GameState['round'], playerId: string): boole
   return !!round?.bets.some((bet) => bet.playerId === playerId);
 }
 
+function waitingLabel(waitingOnCount: number): string {
+  if (waitingOnCount === 0) {
+    return 'Everyone has bet.';
+  }
+  return `Waiting on ${waitingOnCount} more player${waitingOnCount === 1 ? '' : 's'}…`;
+}
+
 export function resolveBettingPanel({
   gameState,
   localPlayerId,
   localBet = null,
 }: Params): BettingPanel {
   const round = gameState?.round;
-  if (!round) {
+  if (!round || localPlayerId === null) {
     return { kind: 'hidden', background: 'vb-bg-wait', bettors: [] };
   }
 
@@ -74,7 +82,7 @@ export function resolveBettingPanel({
       background: 'vb-bg-wait',
       bettors,
       ownBet: localBet,
-      waitingOnCount: bettors.filter((bettor) => !bettor.hasBet).length,
+      waitingLabel: waitingLabel(bettors.filter((bettor) => !bettor.hasBet).length),
     };
   }
 

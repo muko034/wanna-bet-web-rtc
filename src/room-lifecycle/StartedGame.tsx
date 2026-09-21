@@ -73,11 +73,7 @@ export function StartedGame({
   }, [roundKey]);
 
   const bettingPanel = useMemo(
-    () => (
-      localPlayerId
-        ? resolveBettingPanel({ gameState, localPlayerId, localBet })
-        : { kind: 'hidden' as const, background: 'vb-bg-wait' as const, bettors: [] }
-    ),
+    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet }),
     [gameState, localBet, localPlayerId],
   );
   const challengeCard = localPlayerId
@@ -95,7 +91,7 @@ export function StartedGame({
   };
 
   return (
-    <PhoneShell background={gameState?.round ? bettingPanel.background : 'vb-bg-wait'} roomCode={view.roomCode}>
+    <PhoneShell background={bettingPanel.background} roomCode={view.roomCode}>
       <div class="vb-giant-title vb-title-small">
         {gameState?.round ? 'Round in progress' : resolutionSummary ? 'Round resolved' : 'Game started'}
       </div>
@@ -159,11 +155,7 @@ export function StartedGame({
                   You bet {bettingPanel.ownBet.amount} pts on {bettingPanel.ownBet.prediction}
                 </div>
               )}
-              <div class="vb-giant-sub">
-                {bettingPanel.waitingOnCount === 0
-                  ? 'Everyone has bet.'
-                  : `Waiting on ${bettingPanel.waitingOnCount} more player${bettingPanel.waitingOnCount === 1 ? '' : 's'}…`}
-              </div>
+              <div class="vb-giant-sub">{bettingPanel.waitingLabel}</div>
             </>
           ) : null}
           {roundControls.kind === 'resolve-round' ? (

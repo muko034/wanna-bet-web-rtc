@@ -112,7 +112,7 @@ describe('resolveBettingPanel', () => {
       kind: 'locked',
       background: 'vb-bg-wait',
       ownBet: { amount: 7, prediction: 'NO' },
-      waitingOnCount: 1,
+      waitingLabel: 'Waiting on 1 more player…',
       bettors: [
         { playerId: 'host-1', name: 'Host', hasBet: false, isLocalPlayer: false },
         { playerId: 'guest-2', name: 'Sam', hasBet: true, isLocalPlayer: true },
@@ -134,7 +134,34 @@ describe('resolveBettingPanel', () => {
       localBet: { amount: 3, prediction: 'YES' },
     });
 
-    expect(panel).toMatchObject({ kind: 'locked', ownBet: { amount: 3, prediction: 'YES' }, waitingOnCount: 1 });
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: { amount: 3, prediction: 'YES' }, waitingLabel: 'Waiting on 1 more player…' });
+  });
+
+  it('pluralises the waiting label for several Bettors who have yet to bet', () => {
+    const gameState = stateWith({
+      players: [
+        { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+        { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },
+        { playerId: 'guest-2', name: 'Sam', points: 100, status: 'active', connected: true },
+        { playerId: 'guest-3', name: 'Kim', points: 100, status: 'active', connected: true },
+      ],
+    });
+
+    const panel = resolveBettingPanel({
+      gameState,
+      localPlayerId: 'guest-2',
+      localBet: { amount: 3, prediction: 'YES' },
+    });
+
+    expect(panel).toMatchObject({ kind: 'locked', waitingLabel: 'Waiting on 2 more players…' });
+  });
+
+  it('is hidden on the waiting background when the local player is not yet known', () => {
+    expect(resolveBettingPanel({ gameState: stateWith(), localPlayerId: null })).toEqual({
+      kind: 'hidden',
+      background: 'vb-bg-wait',
+      bettors: [],
+    });
   });
 
   it('shows the locked-in confirmation without a Bet when the local Bet is no longer known but the Host has recorded it', () => {
@@ -150,7 +177,7 @@ describe('resolveBettingPanel', () => {
       localPlayerId: 'guest-2',
     });
 
-    expect(panel).toMatchObject({ kind: 'locked', ownBet: null, waitingOnCount: 0 });
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: null, waitingLabel: 'Everyone has bet.' });
   });
 
   it('derives each Bettor\'s public "has bet" status from the broadcast GameState without any amount or Prediction fields', () => {
