@@ -11,7 +11,7 @@ next Active Player to start a new Round (looping back to task 15's Round-start c
 
 ## Acceptance criteria
 
-- [x] Only the Host's device shows the Outcome (YES/NO) control, and only once a Round is open.
+- [x] Only the Host's device shows the Outcome (YES/NO) control, and only once all Bettors have bet (see 19).
 - [x] Submitting an Outcome runs `RESOLVE_ROUND` via the reducer, producing Payouts and a rotated Active Player, and
       broadcasts the resulting `GameState`.
 - [x] Every device shows the Resolution's result (at least: the Outcome and each visible player's resulting Points

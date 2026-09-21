@@ -9,8 +9,6 @@ waiting state.
 - **Host, once all Bets are in:** a judging screen on the dark judge background asking "Did <Active Player> pull it
   off?" with ✅ Success (Outcome YES) and ❌ Fail (Outcome NO) tap zones. This replaces the current always-visible
   "Outcome: YES/NO" buttons.
-- **Active Player (not the Host):** the "🙈 Hidden from you" card, a big "n/n locked" count of Bettors who have bet, the
-  per-Bettor status list from 16, and "Waiting for the Host to judge…" once all Bets are in.
 - **Everyone else:** unchanged from 18 (their own Bet screen, then the "Locked in" confirmation).
 
 If a Bettor never bets (e.g. a dropped connection), the round waits — the Host's way out is Pause or Remove from the
@@ -18,15 +16,13 @@ If a Bettor never bets (e.g. a dropped connection), the round waits — the Host
 
 ## Acceptance criteria
 
-- [ ] The Host's Outcome control is not shown while any Bettor has yet to bet, and appears as soon as the last Bet is
+- [x] The Host's Outcome control is not shown while any Bettor has yet to bet, and appears as soon as the last Bet is
       in; it is never shown on a non-Host device.
-- [ ] The judging screen's Success / Fail tap zones submit Outcome YES / NO through the existing Resolution flow from
+- [x] The judging screen's Success / Fail tap zones submit Outcome YES / NO through the existing Resolution flow from
       17.
-- [ ] When the Host is also the Active Player or a Bettor, the Host's screen still behaves correctly (a Host who is a
+- [x] When the Host is also the Active Player or a Bettor, the Host's screen still behaves correctly (a Host who is a
       Bettor sees their own Bet screen first, then the judging screen once everyone has bet).
-- [ ] The Active Player's device shows the hidden-Challenge card, the "n/n locked" count and the per-Bettor status; no
-      Bet amount or Prediction is exposed. After all Bets are in it says the Host is judging.
-- [ ] Which control/background/copy each role sees is resolved in a pure resolver with unit tests covering Host vs
+- [x] Which control/background/copy each role sees is resolved in a pure resolver with unit tests covering Host vs
       non-Host, Active Player vs Bettor, and all-bets-in vs not.
-- [ ] Spec 17's acceptance criteria are amended to say the Outcome control appears once all Bettors have bet (rather
+- [x] Spec 17's acceptance criteria are amended to say the Outcome control appears once all Bettors have bet (rather
       than as soon as a Round is open).
