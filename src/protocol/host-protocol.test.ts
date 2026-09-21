@@ -18,6 +18,8 @@ async function connectedPair(): Promise<{
 const gameState: GameState = {
   roomId: 'ABCDEF',
   status: 'active',
+  activePlayerId: null,
+  resolution: null,
   players: [],
   round: null,
 };

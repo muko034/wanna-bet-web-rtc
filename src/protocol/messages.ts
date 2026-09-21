@@ -16,12 +16,23 @@ const privateBetSchema = z.object({
   prediction: z.enum(['YES', 'NO']),
 });
 
+const payoutSchema = z.object({
+  playerId: z.string(),
+  amount: z.number(),
+});
+
 const roundStateSchema = z.object({
   activePlayerId: z.string(),
   challengeId: z.string(),
   /** Public broadcast state: only whether a player has already bet, never the amount/prediction. */
   bets: z.array(publicBetSchema),
   outcome: z.enum(['YES', 'NO']).nullable(),
+});
+
+const resolutionStateSchema = z.object({
+  activePlayerId: z.string(),
+  outcome: z.enum(['YES', 'NO']),
+  payouts: z.array(payoutSchema),
 });
 
 const playerSchema = z.object({
@@ -35,14 +46,18 @@ const playerSchema = z.object({
 const gameStateSchema = z.object({
   roomId: z.string(),
   status: z.enum(['active', 'ended']),
+  activePlayerId: z.string().nullable(),
   players: z.array(playerSchema),
   round: roundStateSchema.nullable(),
+  resolution: resolutionStateSchema.nullable(),
 });
 
 export type Prediction = z.infer<typeof privateBetSchema.shape.prediction>;
 export type Bet = z.infer<typeof publicBetSchema>;
 export type PrivateBet = z.infer<typeof privateBetSchema>;
+export type Payout = z.infer<typeof payoutSchema>;
 export type RoundState = z.infer<typeof roundStateSchema>;
+export type ResolutionState = z.infer<typeof resolutionStateSchema>;
 export type Player = z.infer<typeof playerSchema>;
 export type GameState = z.infer<typeof gameStateSchema>;
 
