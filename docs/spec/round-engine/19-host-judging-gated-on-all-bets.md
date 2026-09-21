@@ -1,5 +1,7 @@
 **Blocked by**: 18 (Bettor bet screen in Big State style)
 
+**Status**: Implemented
+
 ## What to build
 
 The Host's Outcome control appears only once every Bettor has placed a Bet, matching `game-rules.md` ("after all bets
