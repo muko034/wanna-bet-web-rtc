@@ -4,6 +4,10 @@
  * called internally, keeping the function itself deterministic and side-effect free.
  */
 
+import { maxBetAmount } from './bet-cap';
+
+const MIN_POINTS = 1;
+
 export type Prediction = 'YES' | 'NO';
 
 export type Bet = {
@@ -53,9 +57,17 @@ export type RoundEngineAction = StartRoundAction | PlaceBetAction | ResolveRound
 
 export type Payout = { playerId: string; amount: number };
 
+export type BetRejection =
+  | 'UNKNOWN_PLAYER'
+  | 'ACTIVE_PLAYER_CANNOT_BET'
+  | 'DUPLICATE_BET'
+  | 'INVALID_BET_AMOUNT';
+
 export type RoundEngineResult = {
   state: RoundEngineState;
   payouts: Payout[];
+  /** Set when the action was refused; `state` is then the unchanged input state. */
+  rejection?: BetRejection;
 };
 
 export function roundEngineReducer(
@@ -97,6 +109,11 @@ function startRound(state: RoundEngineState, action: StartRoundAction): RoundEng
 
 function placeBet(state: RoundEngineState, action: PlaceBetAction): RoundEngineResult {
   const round = requireRound(state);
+  const rejection = validateBet(state, round, action);
+  if (rejection) {
+    return { state, payouts: [], rejection };
+  }
+
   const bet: Bet = {
     playerId: action.playerId,
     amount: action.amount,
@@ -110,6 +127,21 @@ function placeBet(state: RoundEngineState, action: PlaceBetAction): RoundEngineR
     },
     payouts: [],
   };
+}
+
+function validateBet(
+  state: RoundEngineState,
+  round: Round,
+  action: PlaceBetAction,
+): BetRejection | undefined {
+  const points = state.points[action.playerId];
+  if (points === undefined) return 'UNKNOWN_PLAYER';
+  if (action.playerId === round.activePlayerId) return 'ACTIVE_PLAYER_CANNOT_BET';
+  if (round.bets.some((bet) => bet.playerId === action.playerId)) return 'DUPLICATE_BET';
+  if (!Number.isInteger(action.amount) || action.amount < 1 || action.amount > maxBetAmount(points)) {
+    return 'INVALID_BET_AMOUNT';
+  }
+  return undefined;
 }
 
 function requireRound(state: RoundEngineState): Round {
@@ -136,9 +168,12 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
   }
 
   const points = { ...state.points };
-  for (const payout of payouts) {
-    points[payout.playerId] = (points[payout.playerId] ?? 0) + payout.amount;
-  }
+  const appliedPayouts = payouts.map((payout) => {
+    const before = points[payout.playerId] ?? 0;
+    const after = Math.max(MIN_POINTS, before + payout.amount);
+    points[payout.playerId] = after;
+    return { playerId: payout.playerId, amount: after - before };
+  });
 
   return {
     state: {
@@ -147,7 +182,7 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
       round: null,
       playerOrder: rotate(state.playerOrder, round.activePlayerId),
     },
-    payouts,
+    payouts: appliedPayouts,
   };
 }
 
