@@ -29,3 +29,16 @@ export function resolveResolutionSummary(
   // map GameState to display-ready copy here
 }
 ```
+
+## Let resolvers own the absent-input fallback
+
+Type resolver params to accept the values a component may not have yet, such as a `null` game state, room, or local player id, and have the resolver return its own `hidden` variant or `null` for them. The component passes its raw values straight in instead of pre-guarding the call or hand-building a placeholder result, so the fallback is defined and tested in one place.
+
+```ts
+export function resolveRoundControls({ code, room, gameState }: Params): RoundControls {
+  if (!code || !room || room.code !== code || !gameState) {
+    return { kind: 'hidden' };
+  }
+  // ...
+}
+```
