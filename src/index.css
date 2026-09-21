@@ -55,6 +55,9 @@ input {
 .vb-bg-wait {
   background: linear-gradient(160deg, #232335, #0a0a10);
 }
+.vb-bg-bet {
+  background: linear-gradient(160deg, #ff9f43, #c96f13);
+}
 .vb-topbar {
   padding: 18px 20px 0;
   display: flex;
@@ -233,4 +236,53 @@ input {
   width: 100%;
   border-radius: 14px;
   margin-top: 14px;
+}
+
+.vb-title-small {
+  font-size: 24px;
+}
+.vb-bet-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.vb-tapzones {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin: 8px 0 18px;
+}
+.vb-tapzone {
+  flex: 1;
+  border: none;
+  border-radius: 24px;
+  padding: 34px 12px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+.vb-tapzone:active {
+  transform: scale(0.97);
+}
+.vb-tapzone.yes {
+  background: rgba(34, 176, 107, 0.9);
+}
+.vb-tapzone.no {
+  background: rgba(229, 83, 75, 0.9);
+}
+.vb-tapzone.chosen {
+  outline: 3px solid #fff;
+}
+.vb-amount-value {
+  font-size: 36px;
+  font-weight: 900;
+}
+.vb-slider-white {
+  width: 100%;
+  accent-color: #fff;
+  margin: 6px 0 4px;
+}
+.vb-slider-caption {
+  margin: 6px 0 18px;
 }

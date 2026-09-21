@@ -52,20 +52,105 @@ describe('resolveBettingPanel', () => {
     expect(panel.kind).not.toBe('form');
   });
 
-  it('returns an optimistic submitted status before the Host rebroadcast arrives', () => {
+  it('offers the Bet form on the orange betting background with the slider bounds from the local Points', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        players: [
+          { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-2', name: 'Sam', points: 11, status: 'active', connected: true },
+        ],
+      }),
+      localPlayerId: 'guest-2',
+    });
+
+    expect(panel).toMatchObject({ kind: 'form', background: 'vb-bg-bet', points: 11, maxBet: 5 });
+  });
+
+  it('lets a Bettor with exactly 1 Point bet 1 Point', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        players: [
+          { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-2', name: 'Sam', points: 1, status: 'active', connected: true },
+        ],
+      }),
+      localPlayerId: 'guest-2',
+    });
+
+    expect(panel).toMatchObject({ kind: 'form', maxBet: 1 });
+  });
+
+  it.each([
+    ['the Active Player', 'guest-1'],
+    ['a Bettor who already placed a Bet', 'guest-2'],
+  ])('uses the waiting background for %s', (_label, localPlayerId) => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        round: {
+          activePlayerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: localPlayerId === 'guest-2' ? [{ playerId: 'guest-2' }] : [],
+          outcome: null,
+        },
+      }),
+      localPlayerId,
+    });
+
+    expect(panel.background).toBe('vb-bg-wait');
+  });
+
+  it('shows a locked-in confirmation with the local Bet before the Host rebroadcast arrives', () => {
     const panel = resolveBettingPanel({
       gameState: stateWith(),
       localPlayerId: 'guest-2',
-      locallySubmittedBet: true,
+      localBet: { amount: 7, prediction: 'NO' },
     });
 
-    expect(panel).toMatchObject({
-      kind: 'submitted',
+    expect(panel).toEqual({
+      kind: 'locked',
+      background: 'vb-bg-wait',
+      ownBet: { amount: 7, prediction: 'NO' },
+      waitingOnCount: 1,
       bettors: [
-        { playerId: 'host-1', hasBet: false },
-        { playerId: 'guest-2', hasBet: false },
+        { playerId: 'host-1', name: 'Host', hasBet: false, isLocalPlayer: false },
+        { playerId: 'guest-2', name: 'Sam', hasBet: true, isLocalPlayer: true },
       ],
     });
+  });
+
+  it('counts how many Bettors have yet to bet once the Host has rebroadcast the local Bet', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        round: {
+          activePlayerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: [{ playerId: 'guest-2' }],
+          outcome: null,
+        },
+      }),
+      localPlayerId: 'guest-2',
+      localBet: { amount: 3, prediction: 'YES' },
+    });
+
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: { amount: 3, prediction: 'YES' }, waitingOnCount: 1 });
+  });
+
+  it('shows the locked-in confirmation without a Bet when the local Bet is no longer known but the Host has recorded it', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        round: {
+          activePlayerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: [{ playerId: 'guest-2' }, { playerId: 'host-1' }],
+          outcome: null,
+        },
+      }),
+      localPlayerId: 'guest-2',
+    });
+
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: null, waitingOnCount: 0 });
   });
 
   it('derives each Bettor\'s public "has bet" status from the broadcast GameState without any amount or Prediction fields', () => {
