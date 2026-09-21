@@ -36,9 +36,9 @@ describe('resolveResultScreen', () => {
       background: 'vb-bg-success',
       title: 'Host succeeded 🎉',
       rows: [
-        { playerId: 'guest-1', rank: 1, name: 'Alex', isLocalPlayer: false, isActivePlayer: false, points: 120, deltaLabel: '+20', deltaTone: 'gain' },
-        { playerId: 'host-1', rank: 2, name: 'Host', isLocalPlayer: false, isActivePlayer: true, points: 115, deltaLabel: '+15', deltaTone: 'gain' },
-        { playerId: 'guest-2', rank: 3, name: 'Sam', isLocalPlayer: true, isActivePlayer: false, points: 85, deltaLabel: '-15', deltaTone: 'loss' },
+        { playerId: 'guest-1', rank: 1, nameLabel: 'Alex', roleLabel: null, points: 120, deltaLabel: '+20', deltaClass: 'pos' },
+        { playerId: 'host-1', rank: 2, nameLabel: 'Host', roleLabel: 'Active player', points: 115, deltaLabel: '+15', deltaClass: 'pos' },
+        { playerId: 'guest-2', rank: 3, nameLabel: 'Sam (you)', roleLabel: null, points: 85, deltaLabel: '-15', deltaClass: 'neg' },
       ],
     });
   });
@@ -50,7 +50,7 @@ describe('resolveResultScreen', () => {
 
     expect(screen?.background).toBe('vb-bg-fail');
     expect(screen?.title).toBe('Host failed 💥');
-    expect(screen?.rows.find((row) => row.playerId === 'host-1')).toMatchObject({ deltaLabel: '+0', deltaTone: 'gain' });
+    expect(screen?.rows.find((row) => row.playerId === 'host-1')).toMatchObject({ deltaLabel: '+0', deltaClass: 'pos' });
   });
 
   it('gives tied players the same rank and skips the following rank, keeping roster order among them', () => {
@@ -64,15 +64,15 @@ describe('resolveResultScreen', () => {
       }),
     );
 
-    expect(screen?.rows.map((row) => [row.name, row.rank])).toEqual([
+    expect(screen?.rows.map((row) => [row.nameLabel, row.rank])).toEqual([
       ['Alex', 1],
       ['Host', 2],
-      ['Sam', 2],
+      ['Sam (you)', 2],
     ]);
   });
 
   it('marks no row as the local player when the local identity is unknown', () => {
-    expect(screenFor(stateWith(), null)?.rows.some((row) => row.isLocalPlayer)).toBe(false);
+    expect(screenFor(stateWith(), null)?.rows.some((row) => row.nameLabel.includes('(you)'))).toBe(false);
   });
 
   it('exposes no Bet amount or Prediction on any row', () => {

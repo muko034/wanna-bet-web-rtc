@@ -107,12 +107,11 @@ export function StartedGame({
           {resultScreen.rows.map((row) => (
             <div class="vb-score-row" key={row.playerId}>
               <span class="vb-score-name">
-                #{row.rank} {row.name}
-                {row.isLocalPlayer ? ' (you)' : ''}
-                {row.isActivePlayer && <span class="vb-score-sub">Active player</span>}
+                #{row.rank} {row.nameLabel}
+                {row.roleLabel && <span class="vb-score-sub">{row.roleLabel}</span>}
               </span>
               <span>
-                {row.points} <span class={`vb-delta ${row.deltaTone === 'gain' ? 'pos' : 'neg'}`}>{row.deltaLabel}</span>
+                {row.points} <span class={`vb-delta ${row.deltaClass}`}>{row.deltaLabel}</span>
               </span>
             </div>
           ))}

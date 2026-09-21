@@ -17,12 +17,13 @@ export const initialResultMemory: ResultMemory = { shown: null, broadcast: null 
 export type ResultRow = {
   playerId: string;
   rank: number;
-  name: string;
-  isLocalPlayer: boolean;
-  isActivePlayer: boolean;
+  /** Name, suffixed with "(you)" on the local player's own row. */
+  nameLabel: string;
+  /** "Active player" on the Active Player's row, otherwise `null`. */
+  roleLabel: string | null;
   points: number;
   deltaLabel: string;
-  deltaTone: 'gain' | 'loss';
+  deltaClass: 'pos' | 'neg';
 };
 
 export type ResultScreen = {
@@ -56,13 +57,12 @@ export function observeResolution(memory: ResultMemory, gameState: GameState | n
   return { shown: { resolution, players: gameState.players }, broadcast: resolution };
 }
 
-/** The local player tapped "Next round". */
 export function dismissResult(memory: ResultMemory): ResultMemory {
   return memory.shown === null ? memory : { ...memory, shown: null };
 }
 
-function formatDelta(delta: number): string {
-  return delta >= 0 ? `+${delta}` : `${delta}`;
+function resolveDelta(delta: number): Pick<ResultRow, 'deltaLabel' | 'deltaClass'> {
+  return delta >= 0 ? { deltaLabel: `+${delta}`, deltaClass: 'pos' } : { deltaLabel: `${delta}`, deltaClass: 'neg' };
 }
 
 export function resolveResultScreen({
@@ -94,12 +94,10 @@ export function resolveResultScreen({
       return {
         playerId: player.playerId,
         rank: ranked.findIndex((other) => other.points === player.points) + 1,
-        name: player.name,
-        isLocalPlayer: player.playerId === localPlayerId,
-        isActivePlayer: player.playerId === resolution.activePlayerId,
+        nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
+        roleLabel: player.playerId === resolution.activePlayerId ? 'Active player' : null,
         points: player.points,
-        deltaLabel: formatDelta(delta),
-        deltaTone: delta >= 0 ? 'gain' : 'loss',
+        ...resolveDelta(delta),
       };
     }),
   };
