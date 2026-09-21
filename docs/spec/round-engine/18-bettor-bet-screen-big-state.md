@@ -1,5 +1,7 @@
 **Blocked by**: 16 (Bettor places a Bet)
 
+**Status**: Implemented
+
 ## What to build
 
 Bring the Bettor's Bet screen in line with the validated "Big State" prototype (see the UI design README): the Challenge
@@ -15,18 +17,18 @@ Prototype-only tooling (device switcher, simulated bots) is not part of this wor
 
 ## Acceptance criteria
 
-- [ ] A Bettor sees the Challenge card, YES and NO tap zones, an amount slider, and a "Lock in bet" button on the
+- [x] A Bettor sees the Challenge card, YES and NO tap zones, an amount slider, and a "Lock in bet" button on the
       betting background while a Round is open and they have not yet bet.
-- [ ] No Prediction is selected by default; "Lock in bet" is disabled until YES or NO has been chosen. The chosen tap
+- [x] No Prediction is selected by default; "Lock in bet" is disabled until YES or NO has been chosen. The chosen tap
       zone is visibly marked.
-- [ ] The slider's minimum is 1 and its maximum is `max(1, floor(current Points / 2))` (a player with exactly 1 Point
+- [x] The slider's minimum is 1 and its maximum is `max(1, floor(current Points / 2))` (a player with exactly 1 Point
       can still bet 1); the current value, "Max N" and the player's Points are shown. The default amount is 1.
-- [ ] Locking in sends the same `placeBet` as before and swaps the screen for a "Locked in" confirmation showing the
+- [x] Locking in sends the same `placeBet` as before and swaps the screen for a "Locked in" confirmation showing the
       player's own amount and Prediction and how many Bettors have yet to bet, with the per-Bettor status list from 16
       still visible. No other player's Bet amount or Prediction is ever shown.
-- [ ] The Active Player's screen still has no Bet form.
-- [ ] The Bet cap is computed by a single pure helper, and the screen's branching (which panel, which background) is
+- [x] The Active Player's screen still has no Bet form.
+- [x] The Bet cap is computed by a single pure helper, and the screen's branching (which panel, which background) is
       resolved in a pure resolver per `docs/conventions/view-resolvers.md`; both have unit tests, including the
       1-Point exception and odd-Points rounding.
-- [ ] Styles this screen needs are ported from the prototype into the app's stylesheet; the Bet form no longer relies on
+- [x] Styles this screen needs are ported from the prototype into the app's stylesheet; the Bet form no longer relies on
       inline styles.

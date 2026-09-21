@@ -1,6 +1,5 @@
 import { route } from 'preact-router';
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
@@ -8,7 +7,7 @@ import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
-import { hasPlacedBet, resolveBettingPanel } from './betting-panel';
+import { resolveBettingPanel } from './betting-panel';
 import { resolveResolutionSummary } from './resolution-summary';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView } from './started-game-view';
@@ -43,9 +42,9 @@ export function StartedGame({
   onStartRound,
 }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
-  const [amount, setAmount] = useState('1');
-  const [prediction, setPrediction] = useState<Prediction>('YES');
-  const [submittedRoundKey, setSubmittedRoundKey] = useState<string | null>(null);
+  const [amount, setAmount] = useState(1);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
 
   useEffect(() => {
     if (view.view === 'redirect-to-lobby') {
@@ -65,45 +64,35 @@ export function StartedGame({
     ? room?.hostPlayerId
     : (code ? loadIdentity(localStorage, code)?.playerId : null);
   const roundKey = gameState?.round ? `${gameState.round.activePlayerId}:${gameState.round.challengeId}` : null;
-  const localBetSeenInBroadcast = !!localPlayerId && hasPlacedBet(gameState?.round ?? null, localPlayerId);
+  const localBet = submittedBet?.roundKey === roundKey ? submittedBet.bet : null;
 
   useEffect(() => {
-    setSubmittedRoundKey(null);
-    setAmount('1');
-    setPrediction('YES');
+    setSubmittedBet(null);
+    setAmount(1);
+    setPrediction(null);
   }, [roundKey]);
 
   const bettingPanel = useMemo(
-    () => (
-      localPlayerId
-        ? resolveBettingPanel({
-          gameState,
-          localPlayerId,
-          locallySubmittedBet: submittedRoundKey === roundKey && !localBetSeenInBroadcast,
-        })
-        : { kind: 'hidden', bettors: [] as const }
-    ),
-    [gameState, localBetSeenInBroadcast, localPlayerId, roundKey, submittedRoundKey],
+    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet }),
+    [gameState, localBet, localPlayerId],
   );
   const challengeCard = localPlayerId
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
     : null;
-  const localBetPlaced = bettingPanel.bettors.some((bettor) => bettor.isLocalPlayer && bettor.hasBet);
   const roundControls = resolveRoundControls({ code, room, gameState });
   const resolutionSummary = resolveResolutionSummary(gameState);
 
-  const handleBetSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!roundKey) {
+  const handleLockIn = () => {
+    if (!roundKey || prediction === null) {
       return;
     }
-    onPlaceBet({ amount: Number(amount), prediction });
-    setSubmittedRoundKey(roundKey);
+    onPlaceBet({ amount, prediction });
+    setSubmittedBet({ roundKey, bet: { amount, prediction } });
   };
 
   return (
-    <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
-      <div class="vb-giant-title" style="font-size:24px">
+    <PhoneShell background={bettingPanel.background} roomCode={view.roomCode}>
+      <div class="vb-giant-title vb-title-small">
         {gameState?.round ? 'Round in progress' : resolutionSummary ? 'Round resolved' : 'Game started'}
       </div>
       {gameState?.round ? (
@@ -127,44 +116,47 @@ export function StartedGame({
               : bettingPanel.bettors.map((bettor) => `${bettor.hasBet ? '✓' : '○'} ${bettor.name}`).join(' · ')}
           </div>
           {bettingPanel.kind === 'form' ? (
-            <form onSubmit={handleBetSubmit} style="width:100%;display:flex;flex-direction:column;gap:12px">
-              <input
-                class="vb-input-white"
-                type="number"
-                min="1"
-                inputMode="numeric"
-                value={amount}
-                onInput={(event) => setAmount((event.target as HTMLInputElement).value)}
-                required
-              />
-              <div style="display:flex;gap:12px">
-                <label>
-                  <input
-                    type="radio"
-                    name="prediction"
-                    value="YES"
-                    checked={prediction === 'YES'}
-                    onChange={() => setPrediction('YES')}
-                  />
-                  YES
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="prediction"
-                    value="NO"
-                    checked={prediction === 'NO'}
-                    onChange={() => setPrediction('NO')}
-                  />
-                  NO
-                </label>
+            <div class="vb-bet-form">
+              <div class="vb-tapzones">
+                {(['YES', 'NO'] as const).map((choice) => (
+                  <button
+                    key={choice}
+                    type="button"
+                    class={`vb-tapzone ${choice === 'YES' ? 'yes' : 'no'}${prediction === choice ? ' chosen' : ''}`}
+                    aria-pressed={prediction === choice}
+                    onClick={() => setPrediction(choice)}
+                  >
+                    {choice}
+                  </button>
+                ))}
               </div>
-              <button class="vb-cta" type="submit">Place bet</button>
-            </form>
-          ) : bettingPanel.kind === 'submitted' ? (
-            <div class="vb-status-pill">Bet submitted.</div>
-          ) : localBetPlaced ? (
-            <div class="vb-status-pill">Bet placed.</div>
+              <div class="vb-amount-value">{amount} pts</div>
+              <input
+                class="vb-slider-white"
+                type="range"
+                min="1"
+                max={bettingPanel.maxBet}
+                value={amount}
+                aria-label="Bet amount"
+                onInput={(event) => setAmount(Number((event.target as HTMLInputElement).value))}
+              />
+              <div class="vb-giant-sub vb-slider-caption">
+                Max {bettingPanel.maxBet} &middot; you have {bettingPanel.points} pts
+              </div>
+              <button class="vb-cta" type="button" disabled={prediction === null} onClick={handleLockIn}>
+                Lock in bet
+              </button>
+            </div>
+          ) : bettingPanel.kind === 'locked' ? (
+            <>
+              <div class="vb-giant-title vb-title-small">Locked in 🔒</div>
+              {bettingPanel.ownBet && (
+                <div class="vb-status-pill">
+                  You bet {bettingPanel.ownBet.amount} pts on {bettingPanel.ownBet.prediction}
+                </div>
+              )}
+              <div class="vb-giant-sub">{bettingPanel.waitingLabel}</div>
+            </>
           ) : null}
           {roundControls.kind === 'resolve-round' ? (
             <div style="width:100%;display:flex;gap:12px">
