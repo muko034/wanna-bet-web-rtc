@@ -4,6 +4,12 @@ import { PeerUnavailableError, RequestedIdTakenError, type Transport } from './t
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
 
+function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): void {
+  if (import.meta.env.DEV) {
+    console.debug(`[${direction}]`, peerId, message);
+  }
+}
+
 /**
  * Real, PeerJS-backed `Transport` implementation used by the app. Not covered by the
  * fake-transport unit suite — a distinct smoke-test suite against a live/local `peerjs-server`
@@ -59,6 +65,7 @@ export class PeerJsTransport implements Transport {
   }
 
   send(message: unknown, peerId?: string): void {
+    logTraffic('tx', peerId ?? 'all', message);
     if (peerId !== undefined) {
       this.connections.get(peerId)?.send(message);
       return;
@@ -91,6 +98,7 @@ export class PeerJsTransport implements Transport {
     this.notifyConnectionChange(connection.peer, true);
 
     connection.on('data', (data) => {
+      logTraffic('rx', connection.peer, data);
       for (const handler of this.messageHandlers) {
         handler(data, connection.peer);
       }
