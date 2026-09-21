@@ -91,11 +91,27 @@ export function StartedGame({
   };
 
   return (
-    <PhoneShell background={bettingPanel.background} roomCode={view.roomCode}>
+    <PhoneShell
+      background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
+      roomCode={view.roomCode}
+    >
       <div class="vb-giant-title vb-title-small">
         {gameState?.round ? 'Round in progress' : resolutionSummary ? 'Round resolved' : 'Game started'}
       </div>
-      {gameState?.round ? (
+      {gameState?.round && roundControls.kind === 'judge-round' ? (
+        <>
+          <div class="vb-giant-title vb-title-small">Did {roundControls.activePlayerName} pull it off?</div>
+          <div class="vb-giant-sub">Every bet is already locked in.</div>
+          <div class="vb-tapzones">
+            <button class="vb-tapzone success" type="button" onClick={() => onResolveRound('YES')}>
+              ✅<br />Success
+            </button>
+            <button class="vb-tapzone fail" type="button" onClick={() => onResolveRound('NO')}>
+              ❌<br />Fail
+            </button>
+          </div>
+        </>
+      ) : gameState?.round ? (
         <>
           {challengeCard?.kind === 'hidden' ? (
             <div class="vb-task-card vb-task-hidden">
@@ -157,12 +173,6 @@ export function StartedGame({
               )}
               <div class="vb-giant-sub">{bettingPanel.waitingLabel}</div>
             </>
-          ) : null}
-          {roundControls.kind === 'resolve-round' ? (
-            <div style="width:100%;display:flex;gap:12px">
-              <button class="vb-cta" type="button" onClick={() => onResolveRound('YES')}>Outcome: YES</button>
-              <button class="vb-cta" type="button" onClick={() => onResolveRound('NO')}>Outcome: NO</button>
-            </div>
           ) : null}
         </>
       ) : resolutionSummary ? (

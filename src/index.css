@@ -55,6 +55,9 @@ input {
 .vb-bg-wait {
   background: linear-gradient(160deg, #232335, #0a0a10);
 }
+.vb-bg-judge {
+  background: linear-gradient(160deg, #14151a, #000);
+}
 .vb-bg-bet {
   background: linear-gradient(160deg, #ff9f43, #c96f13);
 }
@@ -269,6 +272,12 @@ input {
   background: rgba(34, 176, 107, 0.9);
 }
 .vb-tapzone.no {
+  background: rgba(229, 83, 75, 0.9);
+}
+.vb-tapzone.success {
+  background: rgba(34, 176, 107, 0.9);
+}
+.vb-tapzone.fail {
   background: rgba(229, 83, 75, 0.9);
 }
 .vb-tapzone.chosen {
