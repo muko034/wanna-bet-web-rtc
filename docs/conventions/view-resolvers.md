@@ -42,3 +42,11 @@ export function resolveRoundControls({ code, room, gameState }: Params): RoundCo
   // ...
 }
 ```
+
+## Let resolvers pick the screen background
+
+When a resolver's variants map to a different screen background, put the `vb-bg-*` class name in the returned shape and type it as a string-literal union (or a single literal on a variant that has only one). The component passes it straight to `PhoneShell` instead of choosing a background from `kind` itself, so the mapping from state to look stays in the unit-tested resolver.
+
+```ts
+| { kind: 'judge-round'; activePlayerName: string; background: 'vb-bg-judge' }
+```
