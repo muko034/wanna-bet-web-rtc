@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Creates a GitHub Pull Request with Jira link and auto-generated summary using gh CLI.
+description: Creates a GitHub Pull Request with an auto-generated summary using gh CLI.
 ---
 
 Create a GitHub Pull Request using `gh pr create`.

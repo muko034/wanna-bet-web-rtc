@@ -1,6 +1,6 @@
 ---
 name: spec-reviewer
-description: Reviews a diff against the originating issue/spec. Use only for the Spec axis of a two-axis code review (see the code-review skill) — never for the Standards axis, and never to run a full review end to end.
+description: Reviews a diff against the originating issue/spec. Use only for the Spec axis of a two-axis code review (see the two-axis-review skill) — never for the Standards axis, and never to run a full review end to end.
 tools:
   - read
   - search
@@ -26,6 +26,6 @@ Quote the spec line for each finding.
 
 Output only the review report, under 400 words.
 
-**Do not** review the Standards axis, invoke the `code-review` skill, or spawn any further sub-agents —
+**Do not** review the Standards axis, invoke the `two-axis-review` skill, or spawn any further sub-agents —
 you don't have the tools for any of that, and it's out of scope for this agent. Just do the spec review
 described above and return the report.

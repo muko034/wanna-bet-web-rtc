@@ -1,6 +1,6 @@
 ---
 name: conventions-reviewer
-description: Reviews a diff against this repo's documented coding conventions and the Fowler smell baseline. Use only for the Conventions axis of a two-axis code review (see the code-review skill) — never for the Spec axis, and never to run a full review end to end.
+description: Reviews a diff against this repo's documented coding conventions and the Fowler smell baseline. Use only for the Conventions axis of a two-axis code review (see the two-axis-review skill) — never for the Spec axis, and never to run a full review end to end.
 tools:
   - read
   - search
@@ -26,6 +26,6 @@ calls). A documented repo convention always overrides the baseline. Skip anythin
 
 Output only the review report, under 400 words, organized by file/hunk.
 
-**Do not** review the Spec axis, fetch or reason about tasks/spec, invoke the `code-review` skill, or spawn any further
+**Do not** review the Spec axis, fetch or reason about tasks/spec, invoke the `two-axis-review` skill, or spawn any further
 sub-agents — you don't have the tools for any of that, and it's out of scope for this agent. Just do the conventions
 review described above and return the report.

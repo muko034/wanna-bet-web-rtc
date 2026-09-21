@@ -40,7 +40,7 @@ Completion criterion: the subagent reports a completed implementation, changes e
 
 ## 3. Self-review
 
-Invoke `/code-review` with `origin/main` as the fixed point. Review the complete `origin/main...HEAD` change and commit
+Invoke `/two-axis-review` with `origin/main` as the fixed point. Review the complete `origin/main...HEAD` change and commit
 range on both Conventions and Spec axes, using the fetched issue and specification as the originating requirements
 (point to files paths).
 
