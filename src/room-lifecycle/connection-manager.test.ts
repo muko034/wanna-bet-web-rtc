@@ -3,8 +3,8 @@ import { FakeTransport } from '../transport/fake-transport';
 import { ConnectionManager } from './connection-manager';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
 
-function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
+function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false, ...overrides };
 }
 
 async function connectGuest(hostId: string) {
@@ -93,6 +93,37 @@ describe('ConnectionManager', () => {
 
     expect(received).toEqual([{ type: 'rejected', seq: 0, payload: { reason: 'ROOM_FULL', action: 'join' } }]);
     expect(manager.room.players).toHaveLength(MAX_ROOM_PLAYERS - 1);
+  });
+
+  it('rejects a fresh join once the Game has started, and does not add the Guest', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([], { started: true }), () => {});
+
+    const guestTransport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    guestTransport.onMessage((message) => received.push(message));
+    guestTransport.send({ type: 'join', payload: { name: 'Latecomer' } });
+
+    expect(received).toEqual([{ type: 'rejected', seq: 0, payload: { reason: 'GAME_STARTED', action: 'join' } }]);
+    expect(manager.room.players).toHaveLength(0);
+  });
+
+  it('still allows a previously-joined Guest to rejoin after the Game has started', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const { playerId, reconnectToken } = await joinAndAwaitWelcome(hostId, 'Alex');
+
+    manager.room = { ...manager.room, started: true };
+
+    const rejoiningGuest = await connectGuest(hostId);
+    const received: unknown[] = [];
+    rejoiningGuest.onMessage((message) => received.push(message));
+    rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
+
+    expect(received).toEqual([{ type: 'welcome', seq: 1, payload: { playerId, reconnectToken } }]);
+    expect(manager.room.players).toEqual([expect.objectContaining({ playerId, name: 'Alex', connected: true })]);
   });
 
   it('disambiguates a joining Guest\'s display name when it collides with one already connected', async () => {

@@ -7,7 +7,8 @@ export type JoinResult =
   | { status: 'joined'; playerId: string; reconnectToken: string }
   | { status: 'invalid-room' }
   | { status: 'unreachable' }
-  | { status: 'room-full' };
+  | { status: 'room-full' }
+  | { status: 'game-started' };
 
 export type RejoinResult =
   | { status: 'joined'; playerId: string; reconnectToken: string }
@@ -59,7 +60,11 @@ export function joinRoom(transport: Transport, registry: RoomRegistry, code: str
     registry,
     code,
     (protocol) => protocol.join({ name }),
-    (reason) => (reason === 'ROOM_FULL' ? { status: 'room-full' } : { status: 'invalid-room' }),
+    (reason) => (
+      reason === 'ROOM_FULL' ? { status: 'room-full' } :
+      reason === 'GAME_STARTED' ? { status: 'game-started' } :
+      { status: 'invalid-room' }
+    ),
   );
 }
 

@@ -5,8 +5,8 @@ import { ConnectionManager } from './connection-manager';
 import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd } from './join-room';
 import type { Room } from './room';
 
-function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
+function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false, ...overrides };
 }
 
 async function hostRoom(registry: RoomRegistry, room: Room = roomWith([])) {
@@ -58,6 +58,15 @@ describe('joinRoom', () => {
     const result = await joinRoom(new FakeTransport(), registry, code, 'Overflow');
 
     expect(result).toEqual({ status: 'room-full' });
+  });
+
+  it('resolves with a "game already started" error and does not connect, once the Room\'s game has started', async () => {
+    const registry = new RoomRegistry();
+    const code = await hostRoom(registry, roomWith([], { started: true }));
+
+    const result = await joinRoom(new FakeTransport(), registry, code, 'Latecomer');
+
+    expect(result).toEqual({ status: 'game-started' });
   });
 });
 

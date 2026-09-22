@@ -8,8 +8,12 @@ import { resolveChallengeCard } from './challenge-card';
 import { resolveBettingPanel } from './betting-panel';
 import type { Room } from './room';
 
+// `started: false` here, same as during the real Lobby phase — every test below joins its
+// Guests via the fresh-`join` flow first, which is blocked once `started` is true, and only
+// then calls `manager.startGame()` (mirroring `app.tsx`'s `handleStart`, which flips `Room.started`
+// before starting the game).
 function roomWith(players: Room['players']): Room {
-  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: true };
+  return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false };
 }
 
 async function connectGuest(hostId: string) {
@@ -205,9 +209,18 @@ describe('starting a round from the Host', () => {
       alexProtocol.placeBet({ amount: 20, prediction: 'YES' });
       samProtocol.placeBet({ amount: 15, prediction: 'NO' });
 
+      const hostGameStatesBefore = hostGameStates.length;
+      const alexStatesBefore = alexStates.length;
+      const samStatesBefore = samStates.length;
+
       const hostState = manager.resolveRound(outcome);
       const alexState = alexStates.at(-1);
       const samState = samStates.at(-1);
+
+      // Resolve broadcasts one state, not two — see the batching comment in resolveRound.
+      expect(hostGameStates.length).toBe(hostGameStatesBefore + 1);
+      expect(alexStates.length).toBe(alexStatesBefore + 1);
+      expect(samStates.length).toBe(samStatesBefore + 1);
 
       expect(hostState).toMatchObject({
         roomId: 'ABCDEF',
@@ -218,7 +231,14 @@ describe('starting a round from the Host', () => {
           { playerId: alex.playerId, name: 'Alex', points: expectedPoints.alex, status: 'active', connected: true },
           { playerId: sam.playerId, name: 'Sam', points: expectedPoints.sam, status: 'active', connected: true },
         ],
-        round: null,
+        // The next Round — for Alex, the next player in rotation after the Host — has already
+        // auto-started, bundled into this same GameState alongside the Resolution below.
+        round: {
+          activePlayerId: alex.playerId,
+          challengeId: challengeBank[1].id,
+          bets: [],
+          outcome: null,
+        },
         resolution: {
           activePlayerId: 'host-1',
           outcome,

@@ -22,7 +22,6 @@ type Props = {
   gameState: GameState | null;
   onPlaceBet: (payload: PlaceBetPayload) => void;
   onResolveRound: (outcome: Prediction) => void;
-  onStartRound: () => void;
 };
 
 /**
@@ -39,7 +38,6 @@ export function StartedGame({
   gameState,
   onPlaceBet,
   onResolveRound,
-  onStartRound,
 }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
   const [amount, setAmount] = useState(1);
@@ -128,9 +126,6 @@ export function StartedGame({
       background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
       roomCode={view.roomCode}
     >
-      <div class="vb-giant-title vb-title-small">
-        {gameState?.round ? 'Round in progress' : 'Game started'}
-      </div>
       {gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
           <div class="vb-giant-title vb-title-small">Did {roundControls.activePlayerName} pull it off?</div>
@@ -208,12 +203,8 @@ export function StartedGame({
             </>
           ) : null}
         </>
-      ) : roundControls.kind === 'start-round' ? (
-        <button class="vb-cta" type="button" onClick={onStartRound}>
-          Start round for {roundControls.activePlayerName}
-        </button>
       ) : (
-        <div class="vb-giant-sub">Starting the round…</div>
+        <div class="vb-giant-sub">Loading…</div>
       )}
     </PhoneShell>
   );
