@@ -6,9 +6,9 @@ the others predict and wager on the outcome.
 ## Language
 
 **Room**:
-A single play session tying one Host and its connected Guests together, identified by a shareable Room Code. _Avoid_:
-Game, session (a "Lobby" is a distinct, valid term — see below — for the pre-game view of a Room; don't conflate the
-Room-the-session with that view when naming either one)
+A single play session tying one Host and its connected Guests together, identified by a shareable Room Code. Spans
+both the pre-start Lobby phase and, once started, the Game phase — see Lobby and Game below. _Avoid_: session (don't
+conflate the Room-the-whole-session with either of its two phases when naming things)
 
 **Room Code**:
 The 6-character, uppercase, human-enterable public identifier for a Room, generated with a restricted alphabet that
@@ -25,10 +25,15 @@ The lookup that resolves a Room Code to its Transport ID, generating a fresh Roo
 Room is created. _Avoid_: Room map, code table
 
 **Lobby**:
-The pre-game view of a Room, shown to the Host (and, once joining exists, to Guests) after the Room is created and
+The pre-game phase of a Room, shown to the Host (and, once joining exists, to Guests) after the Room is created and
 before the Host starts play. Displays the Room Code/link and the connected Guests. Not itself the Room — the Lobby is
-one view of a Room's lifecycle, alongside the started-game view. _Avoid_: Waiting room (when used to mean something
-other than this view)
+one phase of a Room's lifecycle, the other being the Game (see below). _Avoid_: Waiting room (when used to mean
+something other than this phase)
+
+**Game**:
+The started phase of a Room: begins the moment the Host starts play (which auto-starts the first Round in that same
+action) and lasts until the Room ends. Contains one or more Rounds. Distinct from the Lobby phase that precedes it,
+and from the Room itself, which spans both phases. _Avoid_: Match, session
 
 **Host**:
 The player whose device holds the authoritative Game State for the Room and validates every action. _Avoid_: Server,
