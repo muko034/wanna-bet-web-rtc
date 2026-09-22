@@ -55,8 +55,6 @@ export class ConnectionManager {
   private readonly playerIdByPeerId = new Map<string, string>();
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
-  /** Active Player rotation order — starts as join order, then rotates so the drawn/next Active Player leads. */
-  private playerOrder: string[] = [];
   private firstRoundStarted = false;
 
   constructor(
@@ -84,42 +82,47 @@ export class ConnectionManager {
   startGame(): GameState {
     this.gameState = buildInitialGameState(this.room);
     this.roundEngineState = buildInitialRoundEngineState(this.room);
-    this.playerOrder = this.roundEngineState.playerOrder;
     this.emitGameState(this.gameState);
     return this.gameState;
   }
 
   /**
+   * Advances `roundEngineState` to a fresh Round for the next Active Player — picked at random the
+   * first time, then following the fixed rotation order that first pick establishes and
+   * `RESOLVE_ROUND` maintains thereafter (see docs/game-rules.md's rotation rule). Updates
+   * `this.firstRoundStarted` as a side effect.
+   */
+  private advanceRound(roundEngineState: RoundEngineState): RoundEngineState {
+    const activePlayerId = this.firstRoundStarted
+      ? roundEngineState.playerOrder[0]
+      : this.pickActivePlayer(roundEngineState.playerOrder);
+
+    const orderedState = this.firstRoundStarted
+      ? roundEngineState
+      : { ...roundEngineState, playerOrder: rotateToFront(roundEngineState.playerOrder, activePlayerId) };
+    this.firstRoundStarted = true;
+
+    const { state: nextRoundEngineState } = roundEngineReducer(orderedState, {
+      type: 'START_ROUND',
+      activePlayerId,
+      challengeBank,
+      pickChallenge: this.pickChallenge,
+    });
+
+    return nextRoundEngineState;
+  }
+
+  /**
    * Starts a Round for the next Active Player — picked at random the first time, then following the fixed
-   * rotation order that first pick establishes (see `docs/game-rules.md`'s rotation rule).
+   * rotation order that first pick establishes (see `docs/game-rules.md`'s rotation rule). Still used for
+   * Round 1 only; every Round after that auto-starts as part of `resolveRound`.
    */
   startRound(): GameState {
     if (this.gameState === null || this.roundEngineState === null) {
       throw new Error('Cannot start a Round before the game has started');
     }
-
-    const activePlayerId = this.firstRoundStarted
-      ? this.playerOrder[0]
-      : this.pickActivePlayer(this.playerOrder);
-
-    if (!this.firstRoundStarted) {
-      this.playerOrder = rotateToFront(this.playerOrder, activePlayerId);
-      this.firstRoundStarted = true;
-    }
-
-    const { state: nextRoundEngineState } = roundEngineReducer(
-      this.roundEngineState,
-      {
-        type: 'START_ROUND',
-        activePlayerId,
-        challengeBank,
-        pickChallenge: this.pickChallenge,
-      },
-    );
-
-    this.playerOrder = nextRoundEngineState.playerOrder;
-    this.roundEngineState = nextRoundEngineState;
-    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState);
+    this.roundEngineState = this.advanceRound(this.roundEngineState);
+    this.gameState = applyRoundEngineState(this.gameState, this.roundEngineState);
     this.emitGameState(this.gameState);
     return this.gameState;
   }
@@ -136,7 +139,6 @@ export class ConnectionManager {
       prediction,
     });
 
-    this.playerOrder = nextRoundEngineState.playerOrder;
     this.roundEngineState = nextRoundEngineState;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, this.gameState.resolution);
     this.emitGameState(this.gameState);
@@ -153,14 +155,15 @@ export class ConnectionManager {
       throw new Error('Cannot resolve a Round when no Round is open');
     }
 
-    const { state: nextRoundEngineState, payouts } = roundEngineReducer(this.roundEngineState, {
+    const { state: resolvedRoundEngineState, payouts } = roundEngineReducer(this.roundEngineState, {
       type: 'RESOLVE_ROUND',
       outcome,
     });
 
-    this.playerOrder = nextRoundEngineState.playerOrder;
-    this.roundEngineState = nextRoundEngineState;
-    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, {
+    // Advance and emit as one GameState, not two separate emits — Preact would batch two
+    // synchronous emits into a single render, hiding the Host's own result screen.
+    this.roundEngineState = this.advanceRound(resolvedRoundEngineState);
+    this.gameState = applyRoundEngineState(this.gameState, this.roundEngineState, {
       activePlayerId,
       outcome,
       payouts,
@@ -176,6 +179,10 @@ export class ConnectionManager {
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {
+    if (this.room.started) {
+      this.protocol.rejected(peerId, { reason: 'GAME_STARTED', action: 'join' });
+      return;
+    }
     if (this.room.playerCount >= MAX_ROOM_PLAYERS) {
       this.protocol.rejected(peerId, { reason: 'ROOM_FULL', action: 'join' });
       return;

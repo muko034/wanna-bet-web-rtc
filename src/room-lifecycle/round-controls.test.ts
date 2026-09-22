@@ -98,12 +98,12 @@ describe('resolveRoundControls', () => {
     })).toEqual({ kind: 'hidden' });
   });
 
-  it('offers to start the next Round on the Host device when no Round is open', () => {
+  it('shows no control while no Round is open (the brief gap before the next Round auto-starts)', () => {
     expect(resolveRoundControls({
       code: 'ABCDEF',
       room: roomWith(),
       gameState: stateWith({ round: null }),
-    })).toEqual({ kind: 'start-round', activePlayerName: 'Alex' });
+    })).toEqual({ kind: 'hidden' });
   });
 
   it('shows no control before the Room or game state is known', () => {

@@ -23,9 +23,9 @@ When a screen needs UI-facing derived data from authoritative state, compute tha
 Keep the returned shape as small as the view needs and cover it with a focused unit test file beside the resolver.
 
 ```ts
-export function resolveResolutionSummary(
-  gameState: GameState | null,
-): ResolutionSummary | null {
+export function resolveResultScreen(
+  { memory, localPlayerId }: Params,
+): ResultScreen | null {
   // map GameState to display-ready copy here
 }
 ```

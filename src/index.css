@@ -58,6 +58,12 @@ input {
 .vb-bg-judge {
   background: linear-gradient(160deg, #14151a, #000);
 }
+.vb-bg-success {
+  background: linear-gradient(160deg, #22b06b, #0d5c33);
+}
+.vb-bg-fail {
+  background: linear-gradient(160deg, #e5534b, #7a1e19);
+}
 .vb-bg-bet {
   background: linear-gradient(160deg, #ff9f43, #c96f13);
 }
@@ -294,4 +300,40 @@ input {
 }
 .vb-slider-caption {
   margin: 6px 0 18px;
+}
+
+.vb-score-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 18px;
+}
+.vb-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13px;
+  text-align: left;
+}
+.vb-score-name {
+  font-weight: 700;
+}
+.vb-score-sub {
+  display: block;
+  font-size: 11px;
+  opacity: 0.65;
+  margin-top: 2px;
+}
+.vb-delta {
+  font-weight: 800;
+}
+.vb-delta.pos {
+  color: #7cffb2;
+}
+.vb-delta.neg {
+  color: #ffafa9;
 }

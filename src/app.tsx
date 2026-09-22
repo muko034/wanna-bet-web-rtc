@@ -97,9 +97,6 @@ export function App() {
         onResolveRound={(outcome) => {
           connectionManagerRef.current?.resolveRound(outcome);
         }}
-        onStartRound={() => {
-          connectionManagerRef.current?.startRound();
-        }}
       />
       <NotFound default />
     </Router>

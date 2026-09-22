@@ -8,7 +8,7 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
 import { resolveBettingPanel } from './betting-panel';
-import { resolveResolutionSummary } from './resolution-summary';
+import { dismissResult, initialResultMemory, observeResolution, resolveResultScreen } from './result-screen';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
@@ -22,7 +22,6 @@ type Props = {
   gameState: GameState | null;
   onPlaceBet: (payload: PlaceBetPayload) => void;
   onResolveRound: (outcome: Prediction) => void;
-  onStartRound: () => void;
 };
 
 /**
@@ -39,12 +38,20 @@ export function StartedGame({
   gameState,
   onPlaceBet,
   onResolveRound,
-  onStartRound,
 }: Props) {
   const view = resolveStartedGameView({ code, room, guestGameStartedCode });
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
+  const [storedResultMemory, setStoredResultMemory] = useState(initialResultMemory);
+  // Pure and idempotent, so deriving it during render shows a new Resolution on the very frame it arrives.
+  const resultMemory = observeResolution(storedResultMemory, gameState);
+
+  useEffect(() => {
+    if (resultMemory !== storedResultMemory) {
+      setStoredResultMemory(resultMemory);
+    }
+  }, [resultMemory, storedResultMemory]);
 
   useEffect(() => {
     if (view.view === 'redirect-to-lobby') {
@@ -80,7 +87,7 @@ export function StartedGame({
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
     : null;
   const roundControls = resolveRoundControls({ code, room, gameState });
-  const resolutionSummary = resolveResolutionSummary(gameState);
+  const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
 
   const handleLockIn = () => {
     if (!roundKey || prediction === null) {
@@ -90,14 +97,35 @@ export function StartedGame({
     setSubmittedBet({ roundKey, bet: { amount, prediction } });
   };
 
+  if (resultScreen) {
+    return (
+      <PhoneShell background={resultScreen.background} roomCode={view.roomCode}>
+        <div class="vb-giant-title">{resultScreen.title}</div>
+        <div class="vb-score-list">
+          {resultScreen.rows.map((row) => (
+            <div class="vb-score-row" key={row.playerId}>
+              <span class="vb-score-name">
+                #{row.rank} {row.nameLabel}
+                {row.roleLabel && <span class="vb-score-sub">{row.roleLabel}</span>}
+              </span>
+              <span>
+                {row.points} <span class={`vb-delta ${row.deltaClass}`}>{row.deltaLabel}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <button class="vb-cta" type="button" onClick={() => setStoredResultMemory(dismissResult(resultMemory))}>
+          Next round
+        </button>
+      </PhoneShell>
+    );
+  }
+
   return (
     <PhoneShell
       background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
       roomCode={view.roomCode}
     >
-      <div class="vb-giant-title vb-title-small">
-        {gameState?.round ? 'Round in progress' : resolutionSummary ? 'Round resolved' : 'Game started'}
-      </div>
       {gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
           <div class="vb-giant-title vb-title-small">Did {roundControls.activePlayerName} pull it off?</div>
@@ -175,32 +203,8 @@ export function StartedGame({
             </>
           ) : null}
         </>
-      ) : resolutionSummary ? (
-        <>
-          <div class="vb-status-pill">
-            {resolutionSummary.activePlayerName} {resolutionSummary.outcome === 'YES' ? 'succeeded' : 'failed'}
-          </div>
-          <div style="width:100%;display:flex;flex-direction:column;gap:8px">
-            {resolutionSummary.pointChanges.map((pointChange) => (
-              <div class="vb-status-pill" key={pointChange.playerId}>
-                {pointChange.name}: {pointChange.change >= 0 ? '+' : ''}{pointChange.change} pts · {pointChange.points} total
-              </div>
-            ))}
-          </div>
-          {roundControls.kind === 'start-round' ? (
-            <button class="vb-cta" type="button" onClick={onStartRound}>
-              Start next round for {roundControls.activePlayerName}
-            </button>
-          ) : (
-            <div class="vb-giant-sub">Waiting for the Host to start the next round.</div>
-          )}
-        </>
-      ) : roundControls.kind === 'start-round' ? (
-        <button class="vb-cta" type="button" onClick={onStartRound}>
-          Start round for {roundControls.activePlayerName}
-        </button>
       ) : (
-        <div class="vb-giant-sub">Starting the round…</div>
+        <div class="vb-giant-sub">Loading…</div>
       )}
     </PhoneShell>
   );

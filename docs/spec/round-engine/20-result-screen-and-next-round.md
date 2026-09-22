@@ -21,19 +21,16 @@ and Game State has no round number.
 
 Because `resolution` leaves the broadcast once the next Round starts, each device keeps the last Resolution it observed
 locally until its player dismisses it. Tapping "Next round" shows whatever the game is in by then: the open Round (Bet
-screen, or waiting/Hidden for the Active Player) if the Host has already started it, otherwise a waiting state — and on
-the Host's device, the existing "Start round for <name>" control. The Host also taps "Next round" first, then starts the
-Round (two steps).
+screen, or waiting/Hidden for the Active Player).
 
 ## Acceptance criteria
 
 - [ ] After a Resolution, every device that observed it shows the result screen with the Outcome, ranked rows with
       "(you)", coloured Payout deltas and the "Active player" label; the background reflects the Outcome.
 - [ ] The result screen stays until that device's player taps "Next round"; it is not dismissed by the Host starting
-      the next Round, and it needs no action from the Host to be dismissed.
+      the next Round.
 - [ ] After "Next round": if the next Round is already open the player sees it (Bet screen, or the Active Player's
-      waiting view); otherwise Guests see "Waiting for the Host to start the round" and the Host sees "Start round for
-      <name>".
+      waiting view).
 - [ ] A device that never observed the Resolution (e.g. joined mid-game) shows no result screen.
 - [ ] No Bet amount or Prediction beyond the Payout deltas is shown, and no wire-protocol change is made.
 - [ ] Row ranking (including ties), "(you)"/"Active player" labelling and delta signs come from a pure resolver with

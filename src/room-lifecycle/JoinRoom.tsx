@@ -31,6 +31,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
   'invalid-room': "This room link doesn't exist or has expired.",
   unreachable: "Couldn't reach the Host — check the link and try again.",
   'room-full': 'This Room is already full (20 players).',
+  'game-started': 'This game has already started.',
 };
 
 /**
