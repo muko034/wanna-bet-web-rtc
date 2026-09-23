@@ -83,6 +83,12 @@ export function App() {
     guestPlaceBetRef.current?.(payload);
   }, [room]);
 
+  // Must stay referentially stable: `JoinRoom`'s rejoin effect depends on it, and a new
+  // identity per render would re-run that effect (opening a fresh Peer) on every `state`.
+  const handlePlaceBetReady = useCallback((placeBet: ((payload: PlaceBetPayload) => void) | null) => {
+    guestPlaceBetRef.current = placeBet;
+  }, []);
+
   return (
     <Router>
       <Home path={withBase('/')} />
@@ -96,9 +102,7 @@ export function App() {
         onStart={handleStart}
         onGameStarted={setGuestGameStartedCode}
         onGameState={setGuestGameState}
-        onPlaceBetReady={(placeBet) => {
-          guestPlaceBetRef.current = placeBet;
-        }}
+        onPlaceBetReady={handlePlaceBetReady}
       />
       <StartedGame
         path={withBase('room/:code/play')}

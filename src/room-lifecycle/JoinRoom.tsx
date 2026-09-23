@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
@@ -49,6 +49,28 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
 
+  // Read through a ref so the rejoin effect below depends on `code` alone: a caller passing
+  // a fresh callback per render must not re-run it, since each run opens a new Peer.
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady };
+
+  /** Wires a freshly welcomed `transport` up as this Guest's live connection to the Host. */
+  const handleJoined = (transport: PeerJsTransport, roomCode: string, playerId: string, reconnectToken: string) => {
+    const protocol = new GuestProtocol(transport);
+    saveIdentity(localStorage, roomCode, { playerId, reconnectToken });
+    setStatus({ kind: 'joined', playerId });
+    callbacksRef.current.onPlaceBetReady((payload) => protocol.placeBet(payload));
+    watchGameState(transport, (state) => callbacksRef.current.onGameState(state));
+    watchForSessionEnd(transport, () => {
+      callbacksRef.current.onPlaceBetReady(null);
+      setStatus({ kind: 'session-ended' });
+    });
+    watchForGameStart(transport, () => {
+      callbacksRef.current.onGameStarted(roomCode);
+      route(withBase(`room/${roomCode}/play`));
+    });
+  };
+
   useEffect(() => {
     if (!code) return;
     const stored = loadIdentity(localStorage, code);
@@ -56,30 +78,30 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
     setStatus({ kind: 'rejoining' });
     const transport = new PeerJsTransport();
+    let pending = true;
     rejoinRoom(transport, roomRegistry, code, stored.reconnectToken).then((result) => {
+      if (!pending) return;
+      pending = false;
       if (result.status === 'joined') {
-        const protocol = new GuestProtocol(transport);
-        saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
-        setStatus({ kind: 'joined', playerId: result.playerId });
-        onPlaceBetReady((payload) => protocol.placeBet(payload));
-        watchGameState(transport, onGameState);
-        watchForSessionEnd(transport, () => {
-          onPlaceBetReady(null);
-          setStatus({ kind: 'session-ended' });
-        });
-        watchForGameStart(transport, () => {
-          onGameStarted(code);
-          route(withBase(`room/${code}/play`));
-        });
+        handleJoined(transport, code, result.playerId, result.reconnectToken);
       } else if (result.status === 'unknown-player') {
-        onPlaceBetReady(null);
+        callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'form' });
       } else {
-        onPlaceBetReady(null);
+        callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
-  }, [code, onGameStarted, onGameState, onPlaceBetReady]);
+
+    // Only abandon a rejoin still in flight: a joined transport is the live game connection
+    // and must outlive this screen (it unmounts when the Guest routes to `/play`).
+    return () => {
+      if (pending) {
+        pending = false;
+        transport.close();
+      }
+    };
+  }, [code]);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -88,21 +110,9 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     const transport = new PeerJsTransport();
     joinRoom(transport, roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
-        const protocol = new GuestProtocol(transport);
-        saveIdentity(localStorage, code, { playerId: result.playerId, reconnectToken: result.reconnectToken });
-        setStatus({ kind: 'joined', playerId: result.playerId });
-        onPlaceBetReady((payload) => protocol.placeBet(payload));
-        watchGameState(transport, onGameState);
-        watchForSessionEnd(transport, () => {
-          onPlaceBetReady(null);
-          setStatus({ kind: 'session-ended' });
-        });
-        watchForGameStart(transport, () => {
-          onGameStarted(code);
-          route(withBase(`room/${code}/play`));
-        });
+        handleJoined(transport, code, result.playerId, result.reconnectToken);
       } else {
-        onPlaceBetReady(null);
+        callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
