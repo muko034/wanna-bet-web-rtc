@@ -44,4 +44,8 @@ describe('resolveLobbyRoster', () => {
   it('returns an empty roster for an empty player list', () => {
     expect(resolveLobbyRoster({ players: [], localPlayerId: null })).toEqual([]);
   });
+
+  it('returns an empty roster when no Lobby snapshot has arrived yet', () => {
+    expect(resolveLobbyRoster({ players: null, localPlayerId: null })).toEqual([]);
+  });
 });

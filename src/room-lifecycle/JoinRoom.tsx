@@ -120,7 +120,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   }
 
   if (status.kind === 'joined') {
-    const roster = resolveLobbyRoster({ players: gameState?.players ?? [], localPlayerId: status.playerId });
+    const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: status.playerId });
     return (
       <PhoneShell background="vb-bg-wait" roomCode={code}>
         <div class="vb-giant-title" style="font-size:24px">

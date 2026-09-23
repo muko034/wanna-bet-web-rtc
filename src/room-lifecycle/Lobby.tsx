@@ -25,7 +25,7 @@ export function Lobby({ room, gameState, code, onStart }: Props) {
 
   const link = `${window.location.origin}${withBase(`room/${room.code}`)}`;
   const hasGuests = room.players.length > 0;
-  const roster = resolveLobbyRoster({ players: gameState?.players ?? [], localPlayerId: room.hostPlayerId });
+  const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: room.hostPlayerId });
 
   return (
     <PhoneShell background="vb-bg-lobby" roomCode={room.code}>

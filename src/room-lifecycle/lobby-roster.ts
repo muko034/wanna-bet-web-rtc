@@ -9,18 +9,19 @@ export type LobbyRosterEntry = {
 /**
  * Resolves the Lobby roster's display shape — shared by the Host's own Lobby and a Guest's
  * waiting screen, both of which render the same `GameState.players` list from a Lobby
- * snapshot (see `docs/spec/round-engine/21-lobby-roster-for-host-and-guests.md`). No Points
- * are shown here (unlike the in-game scoreboard) — the Lobby only ever displays names.
+ * snapshot. No Points are shown here (unlike the in-game scoreboard) — the Lobby only ever
+ * displays names.
  */
 export function resolveLobbyRoster({
   players,
   localPlayerId,
 }: {
-  players: Player[];
+  /** `null` before any Lobby snapshot has arrived. */
+  players: Player[] | null;
   /** `null` until this device's own identity is known (e.g. a Guest mid-join). */
   localPlayerId: string | null;
 }): LobbyRosterEntry[] {
-  return players.map((player) => ({
+  return (players ?? []).map((player) => ({
     playerId: player.playerId,
     nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
   }));

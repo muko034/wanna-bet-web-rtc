@@ -252,7 +252,7 @@ export class ConnectionManager {
   /**
    * Handles a Guest's self-initiated `leave`, pre-game only: removes them from the Room
    * entirely and broadcasts the refreshed Lobby snapshot. Once the game has started, Leave
-   * becomes an alias for Host-initiated Remove (see `docs/domain-glossary.md`) — that reducer
+   * becomes an alias for Host-initiated Remove — that reducer
    * logic belongs to the `host-admin` slice and isn't implemented yet, so a `leave` received
    * mid-game is a no-op here.
    */

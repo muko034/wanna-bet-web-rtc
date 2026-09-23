@@ -44,7 +44,7 @@ export function buildInitialGameState(room: Room): GameState {
 /**
  * Builds a Lobby `GameState` snapshot for `room` — the Host and every connected Guest, no
  * open Round, no Resolution — broadcast before the game starts so every device's Lobby/waiting
- * screen can render the full roster (see round-engine spec 21). Never starts the game on a
+ * screen can render the full roster. Never starts the game on a
  * Guest: only a `status: 'active'` snapshot does that (see `watchForGameStart`).
  */
 export function buildLobbyGameState(room: Room): GameState {
