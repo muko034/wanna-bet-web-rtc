@@ -45,7 +45,8 @@ const playerSchema = z.object({
 
 const gameStateSchema = z.object({
   roomId: z.string(),
-  status: z.enum(['active', 'ended']),
+  /** `lobby`: pre-game, broadcast on every join/rejoin/leave/disconnect. */
+  status: z.enum(['lobby', 'active', 'ended']),
   activePlayerId: z.string().nullable(),
   players: z.array(playerSchema),
   round: roundStateSchema.nullable(),

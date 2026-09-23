@@ -28,3 +28,4 @@ per ADR 0002's grouping of the message protocol and the state-snapshot schema as
   "only an explicit Host action" wording to include the player's own Leave.
 - No protocol version field and no room-join PIN were deliberately left out of scope — both are cheap to add later if
   this project's trust model (small, trusted friend group, per ADR 0001) ever changes.
+

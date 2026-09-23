@@ -71,9 +71,11 @@ Guest needs to render — it is not a dumping ground for Host-internal bookkeepi
 ```ts
 type GameState = {
   roomId: string;
-  status: 'active' | 'ended';
+  status: 'lobby' | 'active' | 'ended';
+  activePlayerId: string | null;
   players: Player[];
   round: RoundState | null;
+  resolution: ResolutionState | null;
 };
 
 type Player = {
@@ -97,10 +99,31 @@ type Bet = {
   amount: number;
   prediction: 'YES' | 'NO';
 };
+
+type ResolutionState = {
+  activePlayerId: string;
+  outcome: 'YES' | 'NO';
+  payouts: Payout[];
+};
+
+type Payout = {
+  playerId: string;
+  amount: number;         // signed: negative on a loss
+};
 ```
 
 Notes:
 
+- `status: 'lobby'`: broadcast before the game starts (on every Guest join, rejoin, leave and disconnect), so every
+  device's Lobby/waiting screen can render the live roster — the Host included, with "(you)" on the viewer's own
+  entry. `round` and `resolution` are always `null` here, and `activePlayerId` is always `null`. A Guest only ever
+  leaves its waiting screen on a `status: 'active'` broadcast (see `watchForGameStart` in `room-lifecycle`) — a Lobby
+  snapshot never starts the game. Lobby snapshots are not written to the Host's persisted `localStorage` snapshot (see
+  host-persistence spec).
+- `activePlayerId` tracks the current (or, right after a Resolution, the next) Active Player; `null` before the first
+  Round starts.
+- `resolution` carries the most recently completed Round's outcome and Payouts, so a Guest can render the result
+  screen; `null` once no Resolution is pending display (see round-engine spec 20).
 - Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove, and the scoreboard must keep
   showing them (see host-admin spec).
 - Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls

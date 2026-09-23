@@ -105,6 +105,16 @@ describe('parseHostToGuestMessage', () => {
     ).toBeUndefined();
   });
 
+  it('accepts a state message with status "lobby", no open Round and no Resolution', () => {
+    const message = {
+      type: 'state',
+      seq: 5,
+      payload: { ...gameState, status: 'lobby', round: null, activePlayerId: null },
+    } as const;
+
+    expect(parseHostToGuestMessage(message)).toEqual(message);
+  });
+
   it('accepts a state message carrying the next Active Player and a Resolution summary after a round closes', () => {
     const message = {
       type: 'state',

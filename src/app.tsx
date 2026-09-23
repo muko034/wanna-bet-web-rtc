@@ -17,6 +17,8 @@ type RoomRouteProps = {
   path?: string;
   code?: string;
   room: Room | null;
+  hostGameState: GameState | null;
+  guestGameState: GameState | null;
   onStart: () => void;
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
@@ -24,11 +26,19 @@ type RoomRouteProps = {
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, onStart, onGameStarted, onGameState, onPlaceBetReady }: RoomRouteProps) {
+function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady }: RoomRouteProps) {
   if (room && room.code === code) {
-    return <Lobby code={code} room={room} onStart={onStart} />;
+    return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} />;
   }
-  return <JoinRoom code={code} onGameStarted={onGameStarted} onGameState={onGameState} onPlaceBetReady={onPlaceBetReady} />;
+  return (
+    <JoinRoom
+      code={code}
+      onGameStarted={onGameStarted}
+      onGameState={onGameState}
+      gameState={guestGameState}
+      onPlaceBetReady={onPlaceBetReady}
+    />
+  );
 }
 
 export function App() {
@@ -73,6 +83,12 @@ export function App() {
     guestPlaceBetRef.current?.(payload);
   }, [room]);
 
+  // Must stay referentially stable: `JoinRoom`'s rejoin effect depends on it, and a new
+  // identity per render would re-run that effect (opening a fresh Peer) on every `state`.
+  const handlePlaceBetReady = useCallback((placeBet: ((payload: PlaceBetPayload) => void) | null) => {
+    guestPlaceBetRef.current = placeBet;
+  }, []);
+
   return (
     <Router>
       <Home path={withBase('/')} />
@@ -81,12 +97,12 @@ export function App() {
       <RoomRoute
         path={withBase('room/:code')}
         room={room}
+        hostGameState={hostGameState}
+        guestGameState={guestGameState}
         onStart={handleStart}
         onGameStarted={setGuestGameStartedCode}
         onGameState={setGuestGameState}
-        onPlaceBetReady={(placeBet) => {
-          guestPlaceBetRef.current = placeBet;
-        }}
+        onPlaceBetReady={handlePlaceBetReady}
       />
       <StartedGame
         path={withBase('room/:code/play')}

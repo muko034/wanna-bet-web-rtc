@@ -1,9 +1,28 @@
-import type { GameState, ResolutionState } from '../protocol/messages';
+import type { GameState, Player, ResolutionState } from '../protocol/messages';
 import type { Room } from './room';
 import type { RoundEngineState } from '../round-engine/round-engine';
 
 /** Every Player's Points at the start of a fresh game, per the game rules. */
 export const STARTING_POINTS = 100;
+
+/**
+ * The Round Engine's player list for `room` — the Host included, first in rotation order,
+ * followed by each Guest in join order — distinct from `Room.players` (Guests only). Shared
+ * by `buildInitialGameState` and `buildLobbyGameState`, since both list the same players; only
+ * `status`/`round`/`resolution` differ between the two.
+ */
+function buildPlayers(room: Room): Player[] {
+  return [
+    { playerId: room.hostPlayerId, name: room.hostName, points: STARTING_POINTS, status: 'active', connected: true },
+    ...room.players.map((player) => ({
+      playerId: player.playerId,
+      name: player.name,
+      points: STARTING_POINTS,
+      status: 'active' as const,
+      connected: player.connected,
+    })),
+  ];
+}
 
 /**
  * Builds the initial `GameState` for `room` at the moment its game starts: no Round yet,
@@ -18,16 +37,24 @@ export function buildInitialGameState(room: Room): GameState {
     activePlayerId: null,
     resolution: null,
     round: null,
-    players: [
-      { playerId: room.hostPlayerId, name: room.hostName, points: STARTING_POINTS, status: 'active', connected: true },
-      ...room.players.map((player) => ({
-        playerId: player.playerId,
-        name: player.name,
-        points: STARTING_POINTS,
-        status: 'active' as const,
-        connected: player.connected,
-      })),
-    ],
+    players: buildPlayers(room),
+  };
+}
+
+/**
+ * Builds a Lobby `GameState` snapshot for `room` — the Host and every connected Guest, no
+ * open Round, no Resolution — broadcast before the game starts so every device's Lobby/waiting
+ * screen can render the full roster. Never starts the game on a
+ * Guest: only a `status: 'active'` snapshot does that (see `watchForGameStart`).
+ */
+export function buildLobbyGameState(room: Room): GameState {
+  return {
+    roomId: room.code,
+    status: 'lobby',
+    activePlayerId: null,
+    resolution: null,
+    round: null,
+    players: buildPlayers(room),
   };
 }
 
