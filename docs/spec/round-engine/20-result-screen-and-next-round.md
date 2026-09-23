@@ -1,5 +1,7 @@
 **Blocked by**: 17 (Host resolves outcome)
 
+**Status**: Implemented
+
 ## What to build
 
 After the Host submits the Outcome, the game state moves straight on to the next Round (the Active Player has already
@@ -25,14 +27,14 @@ screen, or waiting/Hidden for the Active Player).
 
 ## Acceptance criteria
 
-- [ ] After a Resolution, every device that observed it shows the result screen with the Outcome, ranked rows with
+- [x] After a Resolution, every device that observed it shows the result screen with the Outcome, ranked rows with
       "(you)", coloured Payout deltas and the "Active player" label; the background reflects the Outcome.
-- [ ] The result screen stays until that device's player taps "Next round"; it is not dismissed by the Host starting
+- [x] The result screen stays until that device's player taps "Next round"; it is not dismissed by the Host starting
       the next Round.
-- [ ] After "Next round": if the next Round is already open the player sees it (Bet screen, or the Active Player's
+- [x] After "Next round": if the next Round is already open the player sees it (Bet screen, or the Active Player's
       waiting view).
-- [ ] A device that never observed the Resolution (e.g. joined mid-game) shows no result screen.
-- [ ] No Bet amount or Prediction beyond the Payout deltas is shown, and no wire-protocol change is made.
-- [ ] Row ranking (including ties), "(you)"/"Active player" labelling and delta signs come from a pure resolver with
+- [x] A device that never observed the Resolution (e.g. joined mid-game) shows no result screen.
+- [x] No Bet amount or Prediction beyond the Payout deltas is shown, and no wire-protocol change is made.
+- [x] Row ranking (including ties), "(you)"/"Active player" labelling and delta signs come from a pure resolver with
       unit tests; the dismiss/cache behaviour is covered by tests at the resolver level.
-- [ ] Styles the result screen needs are ported from the prototype into the app's stylesheet, without inline styles.
+- [x] Styles the result screen needs are ported from the prototype into the app's stylesheet, without inline styles.
