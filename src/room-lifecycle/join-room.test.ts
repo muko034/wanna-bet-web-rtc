@@ -162,4 +162,25 @@ describe('watchForGameStart', () => {
 
     expect(onGameStarted).not.toHaveBeenCalled();
   });
+
+  it('does not notify the caller for a Lobby snapshot (status "lobby"), only for the first "active" one', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+
+    const onGameStarted = vi.fn();
+    watchForGameStart(guestTransport, onGameStarted);
+    guestTransport.send({ type: 'join', payload: { name: 'Alex' } }); // triggers a Lobby snapshot broadcast
+
+    expect(onGameStarted).not.toHaveBeenCalled();
+
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+
+    expect(onGameStarted).toHaveBeenCalledOnce();
+  });
 });

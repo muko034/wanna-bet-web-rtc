@@ -1,9 +1,9 @@
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { GameState, PlaceBetPayload } from '../protocol/messages';
+import type { GameState, LeaveMessage, PlaceBetPayload } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
 import { roundEngineReducer, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
-import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState } from './game-state';
+import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 
 function randomId(): string {
@@ -75,7 +75,24 @@ export class ConnectionManager {
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
     this.protocol.on('placeBet', (payload, peerId) => this.handlePlaceBet(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
+    this.protocol.on('leave', (payload, peerId) => this.handleLeave(payload, peerId));
     this.transport.onConnectionChange((peerId, connected) => this.handleConnectionChange(peerId, connected));
+    this.refreshLobby();
+  }
+
+  /**
+   * (Re)builds and broadcasts a Lobby `GameState` snapshot from the current Room — a no-op
+   * once the game has started, since Round Engine state takes over `this.gameState` at that
+   * point. Called on construction (so the Host's own Lobby shows itself immediately, with no
+   * Guest yet) and after every join/rejoin/leave/disconnect while still in the Lobby, so a
+   * newly (re)joined Guest and everyone already connected all see the live roster.
+   */
+  private refreshLobby(): void {
+    if (this.room.started) {
+      return;
+    }
+    this.gameState = buildLobbyGameState(this.room);
+    this.emitGameState(this.gameState);
   }
 
   /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
@@ -204,6 +221,7 @@ export class ConnectionManager {
 
     this.protocol.welcome(peerId, { playerId: player.playerId, reconnectToken });
     this.onRoomChange(this.room);
+    this.refreshLobby();
   }
 
   /**
@@ -228,6 +246,30 @@ export class ConnectionManager {
 
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
+    this.refreshLobby();
+  }
+
+  /**
+   * Handles a Guest's self-initiated `leave`, pre-game only: removes them from the Room
+   * entirely and broadcasts the refreshed Lobby snapshot. Once the game has started, Leave
+   * becomes an alias for Host-initiated Remove (see `docs/domain-glossary.md`) — that reducer
+   * logic belongs to the `host-admin` slice and isn't implemented yet, so a `leave` received
+   * mid-game is a no-op here.
+   */
+  private handleLeave(_payload: LeaveMessage['payload'], peerId: string): void {
+    const playerId = this.playerIdByPeerId.get(peerId);
+    if (playerId === undefined || this.room.started) {
+      return;
+    }
+
+    this.playerIdByPeerId.delete(peerId);
+    this.room = {
+      ...this.room,
+      players: this.room.players.filter((p) => p.playerId !== playerId),
+      playerCount: this.room.playerCount - 1,
+    };
+    this.onRoomChange(this.room);
+    this.refreshLobby();
   }
 
   private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {
@@ -249,6 +291,7 @@ export class ConnectionManager {
       players: this.room.players.map((p) => (p.playerId === playerId ? { ...p, connected } : p)),
     };
     this.onRoomChange(this.room);
+    this.refreshLobby();
   }
 }
 

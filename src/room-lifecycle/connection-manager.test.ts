@@ -29,6 +29,144 @@ async function joinAndAwaitWelcome(hostId: string, name: string): Promise<Welcom
   return welcome;
 }
 
+describe('Lobby snapshots', () => {
+  it('builds a Lobby GameState — the Host alone — as soon as the Room exists, before any Guest joins', async () => {
+    const hostTransport = new FakeTransport();
+    await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+
+    expect(manager.gameState).toEqual({
+      roomId: 'ABCDEF',
+      status: 'lobby',
+      activePlayerId: null,
+      resolution: null,
+      round: null,
+      players: [expect.objectContaining({ playerId: 'host-1', name: 'Host' })],
+    });
+  });
+
+  it('does not build a Lobby GameState for a Room resumed already started', async () => {
+    const hostTransport = new FakeTransport();
+    await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([], { started: true }), () => {});
+
+    expect(manager.gameState).toBeNull();
+  });
+
+  it('broadcasts a fresh Lobby snapshot — reaching a newly joined Guest too — after a join', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+
+    const guestTransport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    guestTransport.onMessage((message) => received.push(message));
+    guestTransport.send({ type: 'join', payload: { name: 'Alex' } });
+
+    const lobbySnapshots = received.filter((m) => (m as { type?: unknown }).type === 'state');
+    expect(lobbySnapshots).toEqual([
+      {
+        type: 'state',
+        seq: expect.any(Number),
+        payload: expect.objectContaining({
+          status: 'lobby',
+          players: [
+            expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
+            expect.objectContaining({ name: 'Alex' }),
+          ],
+        }),
+      },
+    ]);
+    expect(manager.gameState?.status).toBe('lobby');
+  });
+
+  it('broadcasts a fresh Lobby snapshot — reaching a rejoining Guest too — after a rejoin', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const { reconnectToken } = await joinAndAwaitWelcome(hostId, 'Alex');
+
+    const rejoiningGuest = await connectGuest(hostId);
+    const received: unknown[] = [];
+    rejoiningGuest.onMessage((message) => received.push(message));
+    rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
+
+    const lobbySnapshots = received.filter((m) => (m as { type?: unknown }).type === 'state');
+    expect(lobbySnapshots).toHaveLength(1);
+    expect((lobbySnapshots[0] as { payload: { status: string } }).payload.status).toBe('lobby');
+  });
+
+  it('does not broadcast a Lobby snapshot on a rejoin once the Game has started', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const { reconnectToken } = await joinAndAwaitWelcome(hostId, 'Alex');
+    manager.room = { ...manager.room, started: true };
+    manager.gameState = { roomId: 'ABCDEF', status: 'active', activePlayerId: null, resolution: null, round: null, players: [] };
+
+    const rejoiningGuest = await connectGuest(hostId);
+    const received: unknown[] = [];
+    rejoiningGuest.onMessage((message) => received.push(message));
+    rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
+
+    expect(received).toEqual([{ type: 'welcome', seq: expect.any(Number), payload: expect.anything() }]);
+  });
+
+  it('broadcasts a fresh Lobby snapshot, without the Guest, after that Guest leaves', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    await joinAndAwaitWelcome(hostId, 'Alex');
+    const secondGuest = await connectGuest(hostId);
+    const { playerId: samId } = await (async () => {
+      const welcome = new Promise<WelcomePayload>((resolve) => {
+        secondGuest.onMessage((message) => {
+          if ((message as { type?: unknown }).type === 'welcome') {
+            resolve((message as { payload: WelcomePayload }).payload);
+          }
+        });
+      });
+      secondGuest.send({ type: 'join', payload: { name: 'Sam' } });
+      return welcome;
+    })();
+
+    secondGuest.send({ type: 'leave', payload: {} });
+
+    expect(manager.room.players.map((p) => p.playerId)).not.toContain(samId);
+    expect(manager.gameState?.players.map((p) => p.playerId)).not.toContain(samId);
+    expect(manager.gameState?.status).toBe('lobby');
+  });
+
+  it('broadcasts a fresh Lobby snapshot after a Guest disconnects, before the Game has started', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const guestTransport = await connectGuest(hostId);
+    guestTransport.send({ type: 'join', payload: { name: 'Alex' } });
+
+    guestTransport.disconnect();
+
+    expect(manager.gameState?.status).toBe('lobby');
+    expect(manager.gameState?.players).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'Alex', connected: false })]),
+    );
+  });
+
+  it('does not overwrite the in-progress Game with a Lobby snapshot when a Guest disconnects mid-game', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const guestTransport = await connectGuest(hostId);
+    guestTransport.send({ type: 'join', payload: { name: 'Alex' } });
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+
+    guestTransport.disconnect();
+
+    expect(manager.gameState?.status).toBe('active');
+  });
+});
+
 describe('ConnectionManager', () => {
   it("adds a Guest to the Room once it sends a join message, and notifies of the Room's new state", async () => {
     const hostTransport = new FakeTransport();
@@ -70,8 +208,13 @@ describe('ConnectionManager', () => {
     expect(received).toEqual([
       {
         type: 'welcome',
-        seq: 0,
+        seq: expect.any(Number),
         payload: { playerId: expect.any(String), reconnectToken: expect.any(String) },
+      },
+      {
+        type: 'state',
+        seq: expect.any(Number),
+        payload: expect.objectContaining({ status: 'lobby' }),
       },
     ]);
   });
@@ -91,7 +234,7 @@ describe('ConnectionManager', () => {
     guestTransport.onMessage((message) => received.push(message));
     guestTransport.send({ type: 'join', payload: { name: 'Overflow' } });
 
-    expect(received).toEqual([{ type: 'rejected', seq: 0, payload: { reason: 'ROOM_FULL', action: 'join' } }]);
+    expect(received).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'ROOM_FULL', action: 'join' } }]);
     expect(manager.room.players).toHaveLength(MAX_ROOM_PLAYERS - 1);
   });
 
@@ -122,7 +265,7 @@ describe('ConnectionManager', () => {
     rejoiningGuest.onMessage((message) => received.push(message));
     rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
 
-    expect(received).toEqual([{ type: 'welcome', seq: 1, payload: { playerId, reconnectToken } }]);
+    expect(received).toEqual([{ type: 'welcome', seq: expect.any(Number), payload: { playerId, reconnectToken } }]);
     expect(manager.room.players).toEqual([expect.objectContaining({ playerId, name: 'Alex', connected: true })]);
   });
 
@@ -152,7 +295,10 @@ describe('ConnectionManager', () => {
     rejoiningGuest.onMessage((message) => received.push(message));
     rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
 
-    expect(received).toEqual([{ type: 'welcome', seq: 1, payload: { playerId, reconnectToken } }]);
+    expect(received).toEqual([
+      { type: 'welcome', seq: expect.any(Number), payload: { playerId, reconnectToken } },
+      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ status: 'lobby' }) },
+    ]);
     expect(manager.room.players).toEqual([expect.objectContaining({ playerId, name: 'Alex', connected: true })]);
     expect(rooms.at(-1)).toEqual(manager.room);
 
@@ -161,7 +307,7 @@ describe('ConnectionManager', () => {
     strangerGuest.onMessage((message) => strangerReceived.push(message));
     strangerGuest.send({ type: 'rejoin', payload: { reconnectToken: 'not-a-real-token' } });
 
-    expect(strangerReceived).toEqual([{ type: 'rejected', seq: 2, payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
+    expect(strangerReceived).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
     expect(manager.room.players).toHaveLength(1);
   });
 

@@ -28,3 +28,9 @@ per ADR 0002's grouping of the message protocol and the state-snapshot schema as
   "only an explicit Host action" wording to include the player's own Leave.
 - No protocol version field and no room-join PIN were deliberately left out of scope — both are cheap to add later if
   this project's trust model (small, trusted friend group, per ADR 0001) ever changes.
+
+## Amendments
+
+- **`lobby` status** (round-engine spec 21): `GameState.status` gained a third value, `lobby`, broadcast before the
+  game starts (on every join/rejoin/leave/disconnect) so the Host's and every Guest's roster stays live pre-game. This
+  stays within the single-`state`-snapshot decision above — no new message type, no per-concern broadcast.

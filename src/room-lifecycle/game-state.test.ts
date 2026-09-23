@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyRoundEngineState, buildInitialGameState, STARTING_POINTS } from './game-state';
+import { applyRoundEngineState, buildInitialGameState, buildLobbyGameState, STARTING_POINTS } from './game-state';
 import type { Room } from './room';
 import type { RoundEngineState } from '../round-engine/round-engine';
 
@@ -38,6 +38,30 @@ describe('buildInitialGameState', () => {
     expect(state.players.find((p) => p.playerId === 'p1')).toEqual(
       expect.objectContaining({ connected: false }),
     );
+  });
+});
+
+describe('buildLobbyGameState', () => {
+  it('includes the Host alongside every connected Guest, with no open Round and no Resolution', () => {
+    const room = roomWith([
+      { playerId: 'p1', name: 'Alex', connected: true },
+      { playerId: 'p2', name: 'Sam', connected: false },
+    ]);
+
+    const state = buildLobbyGameState(room);
+
+    expect(state).toEqual({
+      roomId: 'ABCDEF',
+      status: 'lobby',
+      activePlayerId: null,
+      resolution: null,
+      round: null,
+      players: [
+        { playerId: 'host-1', name: 'Host', points: STARTING_POINTS, status: 'active', connected: true },
+        { playerId: 'p1', name: 'Alex', points: STARTING_POINTS, status: 'active', connected: true },
+        { playerId: 'p2', name: 'Sam', points: STARTING_POINTS, status: 'active', connected: false },
+      ],
+    });
   });
 });
 
