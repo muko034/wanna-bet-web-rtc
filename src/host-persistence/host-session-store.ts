@@ -27,15 +27,31 @@ export const HOST_SESSION_SCHEMA_VERSION = 1;
 
 const KEY_PREFIX = 'wanna-bet:host-session:';
 
+function hostSessionKeys(storage: Storage): string[] {
+  const keys: string[] = [];
+  for (let i = 0; i < storage.length; i++) {
+    const key = storage.key(i);
+    if (key !== null && key.startsWith(KEY_PREFIX)) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
 /**
  * Persists the Host's `session` in `storage` (the browser's own `localStorage` in production),
- * keyed by its Room Code. Best-effort: a failed write (e.g. storage full or disabled) is
- * swallowed, since losing a save must never interrupt the game in progress.
+ * keyed by its Room Code, dropping any other Room's saved session so only the most recent one
+ * is kept. Best-effort: a failed write (e.g. storage full or disabled) is swallowed, since
+ * losing a save must never interrupt the game in progress.
  */
 export function saveHostSession(storage: Storage, session: HostSession, now: number = Date.now()): void {
   const snapshot: HostSessionSnapshot = { schemaVersion: HOST_SESSION_SCHEMA_VERSION, savedAt: now, state: session };
+  const key = KEY_PREFIX + session.room.code;
   try {
-    storage.setItem(KEY_PREFIX + session.room.code, JSON.stringify(snapshot));
+    for (const staleKey of hostSessionKeys(storage).filter((k) => k !== key)) {
+      storage.removeItem(staleKey);
+    }
+    storage.setItem(key, JSON.stringify(snapshot));
   } catch (error) {
     console.warn('host-session-store: failed to save the Host session', error);
   }
@@ -64,11 +80,7 @@ export function loadHostSession(storage: Storage, code: string): HostSession | n
  */
 export function findLatestHostSession(storage: Storage): HostSession | null {
   let latest: HostSessionSnapshot | null = null;
-  for (let i = 0; i < storage.length; i++) {
-    const key = storage.key(i);
-    if (key === null || !key.startsWith(KEY_PREFIX)) {
-      continue;
-    }
+  for (const key of hostSessionKeys(storage)) {
     const snapshot = readSnapshot(storage, key);
     if (snapshot && (latest === null || snapshot.savedAt > latest.savedAt)) {
       latest = snapshot;

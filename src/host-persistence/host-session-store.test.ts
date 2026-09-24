@@ -51,12 +51,21 @@ describe('host-session-store', () => {
     expect(loadHostSession(storage, 'ZZZZZZ')).toBeNull();
   });
 
-  it('finds the most recently saved session to offer for resuming, ignoring unrelated storage entries', () => {
+  it('finds the saved session to offer for resuming, ignoring unrelated storage entries', () => {
     const storage = new FakeStorage();
     storage.setItem('wanna-bet:identity:QQQQQQ', JSON.stringify({ playerId: 'p9', reconnectToken: 't9' }));
-    saveHostSession(storage, sessionFor('NEWER1', 80), 2_000);
-    saveHostSession(storage, sessionFor('OLDER1', 70), 1_000);
+    saveHostSession(storage, sessionFor('ABCDEF', 80));
 
+    expect(findLatestHostSession(storage)).toEqual(sessionFor('ABCDEF', 80));
+    expect(storage.getItem('wanna-bet:identity:QQQQQQ')).not.toBeNull();
+  });
+
+  it("keeps only the most recent session: saving another Room's session drops the older one", () => {
+    const storage = new FakeStorage();
+    saveHostSession(storage, sessionFor('OLDER1', 70), 1_000);
+    saveHostSession(storage, sessionFor('NEWER1', 80), 2_000);
+
+    expect(loadHostSession(storage, 'OLDER1')).toBeNull();
     expect(findLatestHostSession(storage)).toEqual(sessionFor('NEWER1', 80));
   });
 
