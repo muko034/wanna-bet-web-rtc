@@ -5,6 +5,7 @@ import { roundEngineReducer, type Prediction, type RoundEngineState } from '../r
 import type { Transport } from '../transport/transport';
 import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
+import type { HostSession } from '../host-persistence/host-session-store';
 
 function randomId(): string {
   return Math.random().toString(36).slice(2);
@@ -48,6 +49,8 @@ export class ConnectionManager {
   private readonly onRoomChange: (room: Room) => void;
   /** Notifies the Host's own UI of every GameState change — including ones triggered by a Guest's `placeBet`, which the Host would otherwise never observe locally. */
   private readonly onGameStateChange: (gameState: GameState) => void;
+  /** Notified with the full Host session after every in-progress GameState change, for autosave — never for a Lobby snapshot. */
+  private readonly onSessionChange: (session: HostSession) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
   /** Picks the very first Active Player at random; every Round after that follows the fixed order it establishes. */
   private readonly pickActivePlayer: (candidateIds: string[]) => string;
@@ -64,10 +67,12 @@ export class ConnectionManager {
     pickChallenge: (candidateIds: string[]) => string = randomChallenge,
     pickActivePlayer: (candidateIds: string[]) => string = randomPlayer,
     onGameStateChange: (gameState: GameState) => void = () => {},
+    onSessionChange: (session: HostSession) => void = () => {},
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.onGameStateChange = onGameStateChange;
+    this.onSessionChange = onSessionChange;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
     this.pickActivePlayer = pickActivePlayer;
@@ -93,6 +98,23 @@ export class ConnectionManager {
     }
     this.gameState = buildLobbyGameState(this.room);
     this.emitGameState(this.gameState);
+  }
+
+  /**
+   * Picks a saved in-progress `session` back up after the Host's own reload: restores the Room
+   * (same Room Code), GameState, Round Engine state and reconnect registry, so returning Guests
+   * `rejoin` as themselves. Every Guest starts out disconnected until they do.
+   */
+  resume(session: HostSession): void {
+    this.room = { ...session.room, players: session.room.players.map((p) => ({ ...p, connected: false })) };
+    this.gameState = session.gameState;
+    this.roundEngineState = session.roundEngineState;
+    this.firstRoundStarted = session.firstRoundStarted;
+    for (const [reconnectToken, playerId] of Object.entries(session.reconnectTokens)) {
+      this.playerIdByReconnectToken.set(reconnectToken, playerId);
+    }
+    this.onRoomChange(this.room);
+    this.onGameStateChange(this.gameState);
   }
 
   /** Builds the initial GameState from the current Room — the Host included — and broadcasts it to every Guest. */
@@ -193,6 +215,15 @@ export class ConnectionManager {
   private emitGameState(gameState: GameState): void {
     this.protocol.broadcastState(gameState);
     this.onGameStateChange(gameState);
+    if (gameState.status !== 'lobby' && this.roundEngineState !== null) {
+      this.onSessionChange({
+        room: this.room,
+        gameState,
+        roundEngineState: this.roundEngineState,
+        firstRoundStarted: this.firstRoundStarted,
+        reconnectTokens: Object.fromEntries(this.playerIdByReconnectToken),
+      });
+    }
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {
@@ -247,6 +278,19 @@ export class ConnectionManager {
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
     this.refreshLobby();
+    this.resendInProgressState();
+  }
+
+  /**
+   * Re-broadcasts the in-progress GameState so a Guest who just rejoined mid-game — e.g. after
+   * the Host resumed a saved session — immediately sees the current Round and their own Points.
+   * A no-op before the game has started, where `refreshLobby` covers it instead.
+   */
+  private resendInProgressState(): void {
+    if (!this.room.started || this.gameState === null || this.gameState.status === 'lobby') {
+      return;
+    }
+    this.emitGameState(this.gameState);
   }
 
   /**
