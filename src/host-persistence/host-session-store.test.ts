@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { findLatestHostSession, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
+import { loadHostSession, saveHostSession, type HostSession } from './host-session-store';
 
 function sessionFor(code: string, hostPoints = 100): HostSession {
   return {
@@ -51,25 +51,31 @@ describe('host-session-store', () => {
     expect(loadHostSession(storage, 'ZZZZZZ')).toBeNull();
   });
 
-  it('finds the saved session to offer for resuming, ignoring unrelated storage entries', () => {
+  it("keeps each Room's session separately: saving one Room never overwrites or drops another's", () => {
+    const storage = new FakeStorage();
+    saveHostSession(storage, sessionFor('ROOM01', 70));
+    saveHostSession(storage, sessionFor('ROOM02', 80));
+    saveHostSession(storage, sessionFor('ROOM01', 75));
+
+    expect(loadHostSession(storage, 'ROOM01')).toEqual(sessionFor('ROOM01', 75));
+    expect(loadHostSession(storage, 'ROOM02')).toEqual(sessionFor('ROOM02', 80));
+  });
+
+  it("leaves other areas' storage entries untouched", () => {
     const storage = new FakeStorage();
     storage.setItem('wanna-bet:identity:QQQQQQ', JSON.stringify({ playerId: 'p9', reconnectToken: 't9' }));
-    saveHostSession(storage, sessionFor('ABCDEF', 80));
 
-    expect(findLatestHostSession(storage)).toEqual(sessionFor('ABCDEF', 80));
-    expect(storage.getItem('wanna-bet:identity:QQQQQQ')).not.toBeNull();
+    saveHostSession(storage, sessionFor('ABCDEF'));
+
+    expect(storage.getItem('wanna-bet:identity:QQQQQQ')).toBe(JSON.stringify({ playerId: 'p9', reconnectToken: 't9' }));
   });
 
-  it("keeps only the most recent session: saving another Room's session drops the older one", () => {
+  it('finds nothing, rather than throwing, when storage is unavailable', () => {
     const storage = new FakeStorage();
-    saveHostSession(storage, sessionFor('OLDER1', 70), 1_000);
-    saveHostSession(storage, sessionFor('NEWER1', 80), 2_000);
+    storage.getItem = () => {
+      throw new Error('SecurityError: storage disabled');
+    };
 
-    expect(loadHostSession(storage, 'OLDER1')).toBeNull();
-    expect(findLatestHostSession(storage)).toEqual(sessionFor('NEWER1', 80));
-  });
-
-  it('finds nothing to resume when no session was ever saved', () => {
-    expect(findLatestHostSession(new FakeStorage())).toBeNull();
+    expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
   });
 });

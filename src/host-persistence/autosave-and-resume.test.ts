@@ -38,13 +38,18 @@ async function autosavingHost(storage: Storage) {
 }
 
 describe('autosaving the Host session', () => {
-  it('saves nothing while the Room is still in the Lobby', async () => {
+  it('saves the Lobby from the moment the Room is created, and again as Guests join', async () => {
     const storage = new FakeStorage();
     const { hostId } = await autosavingHost(storage);
+    expect(loadHostSession(storage, 'ABCDEF')).toEqual(
+      expect.objectContaining({ room: lobbyRoom(), gameState: expect.objectContaining({ status: 'lobby' }), roundEngineState: null }),
+    );
 
-    await joinGuest(hostId, 'Alex');
+    const alex = await joinGuest(hostId, 'Alex');
 
-    expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
+    const saved = loadHostSession(storage, 'ABCDEF');
+    expect(saved?.room.players).toEqual([expect.objectContaining({ playerId: alex.playerId, name: 'Alex' })]);
+    expect(saved?.reconnectTokens).toEqual({ [alex.reconnectToken]: alex.playerId });
   });
 
   it('saves the latest Game State after every state-changing action once the game is in progress', async () => {
@@ -146,5 +151,53 @@ describe('resuming a saved Host session', () => {
     resumed.placeBet('host-1', 5, 'NO');
 
     expect(resumed.gameState?.round?.bets).toEqual([{ playerId: 'host-1' }]);
+  });
+});
+
+/** Opens the Room with Alex in the Lobby, then "reloads" the Host before the game starts. */
+async function hostReloadedInLobby() {
+  const storage = new FakeStorage();
+  const { hostId } = await autosavingHost(storage);
+  const alex = await joinGuest(hostId, 'Alex');
+
+  const session = loadHostSession(storage, 'ABCDEF');
+  if (!session) throw new Error('expected a saved session');
+  const resumedTransport = new FakeTransport();
+  const resumedHostId = await resumedTransport.connect();
+  const resumed = new ConnectionManager(
+    resumedTransport,
+    session.room,
+    () => {},
+    (candidateIds) => candidateIds[0],
+    (candidateIds) => candidateIds[0],
+    () => {},
+    (next) => saveHostSession(storage, next),
+  );
+  resumed.resume(session);
+
+  return { storage, resumed, resumedHostId, alex };
+}
+
+describe('resuming a saved Lobby', () => {
+  it('lets a returning Guest rejoin the Lobby as themselves, and the Host start the game with them', async () => {
+    const { resumed, resumedHostId, alex } = await hostReloadedInLobby();
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(resumedHostId);
+    new GuestProtocol(guestTransport).rejoin({ reconnectToken: alex.reconnectToken });
+
+    expect(resumed.gameState).toEqual(expect.objectContaining({ status: 'lobby' }));
+    expect(resumed.room.players).toEqual([expect.objectContaining({ playerId: alex.playerId, connected: true })]);
+
+    resumed.room = { ...resumed.room, started: true };
+    resumed.startGame();
+    resumed.startRound();
+
+    expect(resumed.gameState?.players.map((player) => player.playerId)).toEqual(['host-1', alex.playerId]);
+  });
+
+  it("saves the resumed Lobby straight away, so reloading again before anyone rejoins still keeps every Guest's reconnect token", async () => {
+    const { storage, alex } = await hostReloadedInLobby();
+
+    expect(loadHostSession(storage, 'ABCDEF')?.reconnectTokens).toEqual({ [alex.reconnectToken]: alex.playerId });
   });
 });

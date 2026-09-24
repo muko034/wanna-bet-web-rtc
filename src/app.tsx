@@ -1,5 +1,5 @@
 import { Router, route } from 'preact-router';
-import { useCallback, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Home } from './room-lifecycle/Home';
 import { CreateRoom } from './room-lifecycle/CreateRoom';
 import { JoinCode } from './room-lifecycle/JoinCode';
@@ -10,9 +10,9 @@ import { NotFound } from './NotFound';
 import { withBase } from './base-path';
 import { reopenRoom, startGame, type Room } from './room-lifecycle/room';
 import { roomRegistry } from './room-lifecycle/room-registry-instance';
-import { findLatestHostSession, saveHostSession, type HostSession } from './host-persistence/host-session-store';
-import { resolveResumePrompt } from './host-persistence/resume-prompt';
-import { ResumePrompt } from './host-persistence/ResumePrompt';
+import { saveHostSession, type HostSession } from './host-persistence/host-session-store';
+import { resolveAutoResume, type AutoResume } from './host-persistence/auto-resume';
+import { ReopeningRoom } from './host-persistence/ReopeningRoom';
 import { PeerJsTransport } from './transport/peerjs-transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import type { Transport } from './transport/transport';
@@ -51,16 +51,12 @@ function autosave(session: HostSession): void {
   setTimeout(() => saveHostSession(localStorage, session), 0);
 }
 
-function routeRoomCode(): string | null {
-  return window.location.pathname.match(/\/room\/([^/]+)/)?.[1] ?? null;
-}
+type Reopening = Extract<AutoResume, { kind: 'resume' }> & { failed: boolean };
 
-function savedHostSession(): HostSession | null {
-  try {
-    return findLatestHostSession(localStorage);
-  } catch {
-    return null;
-  }
+/** Checked once, against the URL the app was opened on — later in-app navigation never resumes a Room. */
+function openedReopening(): Reopening | null {
+  const autoResume = resolveAutoResume(localStorage, window.location.pathname);
+  return autoResume.kind === 'resume' ? { ...autoResume, failed: false } : null;
 }
 
 export function App() {
@@ -70,12 +66,8 @@ export function App() {
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
-  const [savedSession, setSavedSession] = useState<HostSession | null>(savedHostSession);
-  // Captured once as the app opens, so navigating elsewhere later (e.g. to join someone else's
-  // Room) never pops the prompt mid-use.
-  const [openedRouteCode] = useState(routeRoomCode);
-  const [resuming, setResuming] = useState(false);
-  const [resumeError, setResumeError] = useState<string | null>(null);
+  // Decided before the first render, so the Room's link never mounts the Guest join form meanwhile.
+  const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
 
   const hostRoom = (transport: Transport, initialRoom: Room): ConnectionManager => {
     const manager = new ConnectionManager(
@@ -97,22 +89,26 @@ export function App() {
     route(withBase(`room/${createdRoom.code}`));
   };
 
-  const handleResume = (session: HostSession) => {
-    setResuming(true);
-    setResumeError(null);
+  const reopen = (target: Reopening) => {
+    setReopening({ ...target, failed: false });
     const transport = new PeerJsTransport();
-    reopenRoom(transport, roomRegistry, session.room)
+    reopenRoom(transport, roomRegistry, target.session.room)
       .then(() => {
-        hostRoom(transport, session.room).resume(session);
-        setSavedSession(null);
-        route(withBase(`room/${session.room.code}/play`));
+        hostRoom(transport, target.session.room).resume(target.session);
+        setReopening(null);
+        route(withBase(target.landingPath), true);
       })
       .catch(() => {
         transport.close();
-        setResumeError("Couldn't reopen the Room yet — try again in a moment.");
-      })
-      .finally(() => setResuming(false));
+        setReopening({ ...target, failed: true });
+      });
   };
+
+  useEffect(() => {
+    if (reopening) {
+      reopen(reopening);
+    }
+  }, []);
 
   const handleStart = () => {
     if (!room) return;
@@ -141,16 +137,9 @@ export function App() {
     guestPlaceBetRef.current = placeBet;
   }, []);
 
-  const resumePrompt = resolveResumePrompt({ session: savedSession, routeCode: openedRouteCode, room });
-  if (resumePrompt.kind === 'prompt') {
+  if (reopening) {
     return (
-      <ResumePrompt
-        roomCode={resumePrompt.roomCode}
-        resuming={resuming}
-        error={resumeError}
-        onResume={() => handleResume(resumePrompt.session)}
-        onDecline={() => setSavedSession(null)}
-      />
+      <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} />
     );
   }
 
