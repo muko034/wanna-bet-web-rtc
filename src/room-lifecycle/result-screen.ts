@@ -14,6 +14,15 @@ export type ResultMemory = {
 
 export const initialResultMemory: ResultMemory = { shown: null, broadcast: null };
 
+/**
+ * The memory of a view opening onto `gameState`: a Resolution already sitting in the broadcast
+ * counts as seen, since it belongs to a Round the game has already moved past — so a resumed
+ * Host or a rejoining Guest lands on the current Round, not a stale result screen.
+ */
+export function resultMemoryOpenedOn(gameState: GameState | null): ResultMemory {
+  return { shown: null, broadcast: gameState?.resolution ?? null };
+}
+
 export type ResultRow = {
   playerId: string;
   rank: number;

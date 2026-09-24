@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from '../protocol/messages';
-import { dismissResult, initialResultMemory, observeResolution, resolveResultScreen } from './result-screen';
+import { dismissResult, initialResultMemory, observeResolution, resolveResultScreen, resultMemoryOpenedOn } from './result-screen';
 
 function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
@@ -144,6 +144,25 @@ describe('result screen memory', () => {
     );
 
     expect(resolveResultScreen({ memory: newer, localPlayerId: 'guest-2' })?.title).toBe('Alex failed 💥');
+  });
+
+  it('treats a Resolution already broadcast when the view opens as seen — e.g. after the Host resumes mid-game', () => {
+    const opened = resultMemoryOpenedOn(stateWith());
+
+    expect(resolveResultScreen({ memory: observeResolution(opened, stateWith()), localPlayerId: 'guest-2' })).toBeNull();
+  });
+
+  it('still shows the next Resolution after opening onto an earlier one', () => {
+    const roundStarted = observeResolution(resultMemoryOpenedOn(stateWith()), nextRoundOpen);
+    const resolvedAgain = observeResolution(roundStarted, stateWith());
+
+    expect(resolveResultScreen({ memory: resolvedAgain, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
+  });
+
+  it('shows the first Resolution for a view opened before any Game State arrived', () => {
+    const opened = resultMemoryOpenedOn(null);
+
+    expect(resolveResultScreen({ memory: observeResolution(opened, stateWith()), localPlayerId: 'guest-2' })).not.toBeNull();
   });
 
   it('returns the same memory object when nothing changes, so callers can detect a no-op', () => {
