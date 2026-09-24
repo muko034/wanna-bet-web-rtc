@@ -55,18 +55,12 @@ function routeRoomCode(): string | null {
   return window.location.pathname.match(/\/room\/([^/]+)/)?.[1] ?? null;
 }
 
-/**
- * The saved session to offer resuming, decided once as the app opens — so navigating
- * elsewhere later (e.g. to join someone else's Room) never pops the prompt mid-use.
- */
-function sessionToOfferOnOpen(): HostSession | null {
-  let session: HostSession | null;
+function savedHostSession(): HostSession | null {
   try {
-    session = findLatestHostSession(localStorage);
+    return findLatestHostSession(localStorage);
   } catch {
     return null;
   }
-  return resolveResumePrompt({ session, routeCode: routeRoomCode() }).kind === 'prompt' ? session : null;
 }
 
 export function App() {
@@ -76,7 +70,10 @@ export function App() {
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
-  const [savedSession, setSavedSession] = useState<HostSession | null>(sessionToOfferOnOpen);
+  const [savedSession, setSavedSession] = useState<HostSession | null>(savedHostSession);
+  // Captured once as the app opens, so navigating elsewhere later (e.g. to join someone else's
+  // Room) never pops the prompt mid-use.
+  const [openedRouteCode] = useState(routeRoomCode);
   const [resuming, setResuming] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
@@ -144,13 +141,14 @@ export function App() {
     guestPlaceBetRef.current = placeBet;
   }, []);
 
-  if (savedSession && !room) {
+  const resumePrompt = resolveResumePrompt({ session: savedSession, routeCode: openedRouteCode, room });
+  if (resumePrompt.kind === 'prompt') {
     return (
       <ResumePrompt
-        roomCode={savedSession.room.code}
+        roomCode={resumePrompt.roomCode}
         resuming={resuming}
         error={resumeError}
-        onResume={() => handleResume(savedSession)}
+        onResume={() => handleResume(resumePrompt.session)}
         onDecline={() => setSavedSession(null)}
       />
     );

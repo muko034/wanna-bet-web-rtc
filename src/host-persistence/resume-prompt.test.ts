@@ -17,16 +17,24 @@ describe('resolveResumePrompt', () => {
     { where: 'the landing page', routeCode: null },
     { where: "that Room's own page", routeCode: 'ABCDEF' },
   ])('offers to resume a saved session when the app is reopened on $where', ({ routeCode }) => {
-    expect(resolveResumePrompt({ session: sessionFor('ABCDEF'), routeCode })).toEqual({
+    const session = sessionFor('ABCDEF');
+    expect(resolveResumePrompt({ session, routeCode, room: null })).toEqual({
       kind: 'prompt',
       roomCode: 'ABCDEF',
+      session,
     });
   });
 
   it.each([
-    { why: 'no session was saved', session: null, routeCode: null },
-    { why: "the app was opened on a different Room's link, as a Guest", session: sessionFor('ABCDEF'), routeCode: 'ZZZZZZ' },
-  ])('offers nothing when $why', ({ session, routeCode }) => {
-    expect(resolveResumePrompt({ session, routeCode })).toEqual({ kind: 'hidden' });
+    { why: 'no session was saved', session: null, routeCode: null, room: null },
+    {
+      why: "the app was opened on a different Room's link, as a Guest",
+      session: sessionFor('ABCDEF'),
+      routeCode: 'ZZZZZZ',
+      room: null,
+    },
+    { why: 'the Host already has a Room open', session: sessionFor('ABCDEF'), routeCode: null, room: sessionFor('QQQQQQ').room },
+  ])('offers nothing when $why', ({ session, routeCode, room }) => {
+    expect(resolveResumePrompt({ session, routeCode, room })).toEqual({ kind: 'hidden' });
   });
 });

@@ -15,7 +15,7 @@ export function ResumePrompt({ roomCode, resuming, error, onResume, onDecline }:
       <div class="vb-giant-title" style="font-size:24px">
         Resume this session?
       </div>
-      <div class="vb-giant-sub">Your game in room {roomCode} is still in progress.</div>
+      <div class="vb-giant-sub">Your game is still in progress.</div>
       {error && <div class="vb-status-pill">{error}</div>}
       <button class="vb-cta" type="button" disabled={resuming} onClick={onResume}>
         {resuming ? 'Resuming…' : 'Resume'}
