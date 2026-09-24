@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
-import { createRoom, MAX_ROOM_PLAYERS } from './room';
+import { createRoom, MAX_ROOM_PLAYERS, reopenRoom } from './room';
 import { RoomRegistry } from './room-registry';
 
 describe('createRoom', () => {
@@ -49,5 +49,17 @@ describe('createRoom', () => {
 
     expect(room.hostName).toBe('Alex');
     expect(room.hostPlayerId).toEqual(expect.any(String));
+  });
+});
+
+describe('reopenRoom', () => {
+  it("makes a resumed Room reachable again under its original Room Code's Transport ID", async () => {
+    const registry = new RoomRegistry();
+    const room = { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players: [], playerCount: 1, started: true };
+
+    await reopenRoom(new FakeTransport(), registry, room);
+
+    const guest = new FakeTransport();
+    await expect(guest.connect(registry.transportIdFor('ABCDEF'))).resolves.toEqual(expect.any(String));
   });
 });

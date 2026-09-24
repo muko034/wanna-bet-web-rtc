@@ -47,6 +47,15 @@ export async function createRoom(transport: Transport, registry: RoomRegistry, h
   }
 }
 
+/**
+ * Reclaims `room`'s original Transport ID when the Host resumes a saved session, so Guests
+ * reconnect through the same Room Code/link. Rejects with `RequestedIdTakenError` while the
+ * networking layer still holds the id for the Host's previous, now-closed tab.
+ */
+export async function reopenRoom(transport: Transport, registry: RoomRegistry, room: Room): Promise<void> {
+  await transport.connect(undefined, registry.transportIdFor(room.code));
+}
+
 /** Starts `room`'s game. Requires at least one Guest to have joined. */
 export function startGame(room: Room): Room {
   if (room.players.length === 0) {

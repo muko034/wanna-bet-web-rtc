@@ -8,7 +8,12 @@ import { JoinRoom } from './room-lifecycle/JoinRoom';
 import { StartedGame } from './room-lifecycle/StartedGame';
 import { NotFound } from './NotFound';
 import { withBase } from './base-path';
-import { startGame, type Room } from './room-lifecycle/room';
+import { reopenRoom, startGame, type Room } from './room-lifecycle/room';
+import { roomRegistry } from './room-lifecycle/room-registry-instance';
+import { findLatestHostSession, saveHostSession, type HostSession } from './host-persistence/host-session-store';
+import { resolveResumePrompt } from './host-persistence/resume-prompt';
+import { ResumePrompt } from './host-persistence/ResumePrompt';
+import { PeerJsTransport } from './transport/peerjs-transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import type { Transport } from './transport/transport';
 import type { GameState, PlaceBetPayload } from './protocol/messages';
@@ -41,6 +46,29 @@ function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameS
   );
 }
 
+/** Deferred so gameplay never waits on the storage write. */
+function autosave(session: HostSession): void {
+  setTimeout(() => saveHostSession(localStorage, session), 0);
+}
+
+function routeRoomCode(): string | null {
+  return window.location.pathname.match(/\/room\/([^/]+)/)?.[1] ?? null;
+}
+
+/**
+ * The saved session to offer resuming, decided once as the app opens — so navigating
+ * elsewhere later (e.g. to join someone else's Room) never pops the prompt mid-use.
+ */
+function sessionToOfferOnOpen(): HostSession | null {
+  let session: HostSession | null;
+  try {
+    session = findLatestHostSession(localStorage);
+  } catch {
+    return null;
+  }
+  return resolveResumePrompt({ session, routeCode: routeRoomCode() }).kind === 'prompt' ? session : null;
+}
+
 export function App() {
   const [room, setRoom] = useState<Room | null>(null);
   const [guestGameStartedCode, setGuestGameStartedCode] = useState<string | null>(null);
@@ -48,18 +76,45 @@ export function App() {
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
+  const [savedSession, setSavedSession] = useState<HostSession | null>(sessionToOfferOnOpen);
+  const [resuming, setResuming] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
-  const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
-    connectionManagerRef.current = new ConnectionManager(
+  const hostRoom = (transport: Transport, initialRoom: Room): ConnectionManager => {
+    const manager = new ConnectionManager(
       transport,
-      createdRoom,
+      initialRoom,
       setRoom,
       undefined,
       undefined,
       setHostGameState,
+      autosave,
     );
+    connectionManagerRef.current = manager;
+    return manager;
+  };
+
+  const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
+    hostRoom(transport, createdRoom);
     setRoom(createdRoom);
     route(withBase(`room/${createdRoom.code}`));
+  };
+
+  const handleResume = (session: HostSession) => {
+    setResuming(true);
+    setResumeError(null);
+    const transport = new PeerJsTransport();
+    reopenRoom(transport, roomRegistry, session.room)
+      .then(() => {
+        hostRoom(transport, session.room).resume(session);
+        setSavedSession(null);
+        route(withBase(`room/${session.room.code}/play`));
+      })
+      .catch(() => {
+        transport.close();
+        setResumeError("Couldn't reopen the Room yet — try again in a moment.");
+      })
+      .finally(() => setResuming(false));
   };
 
   const handleStart = () => {
@@ -88,6 +143,18 @@ export function App() {
   const handlePlaceBetReady = useCallback((placeBet: ((payload: PlaceBetPayload) => void) | null) => {
     guestPlaceBetRef.current = placeBet;
   }, []);
+
+  if (savedSession && !room) {
+    return (
+      <ResumePrompt
+        roomCode={savedSession.room.code}
+        resuming={resuming}
+        error={resumeError}
+        onResume={() => handleResume(savedSession)}
+        onDecline={() => setSavedSession(null)}
+      />
+    );
+  }
 
   return (
     <Router>
