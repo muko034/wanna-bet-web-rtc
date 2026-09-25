@@ -23,6 +23,23 @@ export function resultMemoryOpenedOn(gameState: GameState | null): ResultMemory 
   return { shown: null, broadcast: gameState?.resolution ?? null };
 }
 
+/**
+ * Folds `gameState` into a possibly not-yet-seeded `storedMemory`: `null` when the view hasn't
+ * opened onto any real `gameState` yet, such as a Guest whose reconnect is still in flight.
+ * Opens onto the first `gameState` that arrives (treating an already-broadcast Resolution as
+ * seen, as `resultMemoryOpenedOn` does), rather than at mount — a `gameState` that only becomes
+ * available asynchronously must not be treated as "nothing to open onto yet, resolution is new".
+ */
+export function deriveResultMemory(storedMemory: ResultMemory | null, gameState: GameState | null): ResultMemory {
+  if (gameState === null) {
+    return storedMemory ?? initialResultMemory;
+  }
+  if (storedMemory === null) {
+    return resultMemoryOpenedOn(gameState);
+  }
+  return observeResolution(storedMemory, gameState);
+}
+
 export type ResultRow = {
   playerId: string;
   rank: number;

@@ -3,11 +3,12 @@ import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { withBase } from '../base-path';
-import { GuestProtocol } from '../protocol/guest-protocol';
 import { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd, watchGameState, type JoinResult } from './join-room';
-import { loadIdentity, saveIdentity } from './player-identity';
+import { joinRoom, type JoinResult } from './join-room';
+import { attemptReconnect, completeGuestConnection, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
+import { loadIdentity } from './player-identity';
 import { resolveLobbyRoster } from './lobby-roster';
+import { ReconnectingScreen } from './ReconnectingScreen';
 import { roomRegistry } from './room-registry-instance';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
@@ -49,27 +50,24 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
 
-  // Read through a ref so the rejoin effect below depends on `code` alone: a caller passing
-  // a fresh callback per render must not re-run it, since each run opens a new Peer.
+  // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
+  // callback per render must not re-run them, since each run opens a new Peer.
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady };
 
-  /** Wires a freshly welcomed `transport` up as this Guest's live connection to the Host. */
-  const handleJoined = (transport: PeerJsTransport, roomCode: string, playerId: string, reconnectToken: string) => {
-    const protocol = new GuestProtocol(transport);
-    saveIdentity(localStorage, roomCode, { playerId, reconnectToken });
-    setStatus({ kind: 'joined', playerId });
-    callbacksRef.current.onPlaceBetReady((payload) => protocol.placeBet(payload));
-    watchGameState(transport, (state) => callbacksRef.current.onGameState(state));
-    watchForSessionEnd(transport, () => {
+  /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
+  const makeCallbacks = (): ReconnectCallbacks => ({
+    onGameState: (state) => callbacksRef.current.onGameState(state),
+    onGameStarted: (startedCode) => {
+      callbacksRef.current.onGameStarted(startedCode);
+      route(withBase(`room/${startedCode}/play`));
+    },
+    onSessionEnded: () => {
       callbacksRef.current.onPlaceBetReady(null);
       setStatus({ kind: 'session-ended' });
-    });
-    watchForGameStart(transport, () => {
-      callbacksRef.current.onGameStarted(roomCode);
-      route(withBase(`room/${roomCode}/play`));
-    });
-  };
+    },
+    onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
+  });
 
   useEffect(() => {
     if (!code) return;
@@ -79,15 +77,15 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     setStatus({ kind: 'rejoining' });
     const transport = new PeerJsTransport();
     let pending = true;
-    rejoinRoom(transport, roomRegistry, code, stored.reconnectToken).then((result) => {
+    attemptReconnect(transport, roomRegistry, localStorage, code, makeCallbacks()).then((result) => {
       if (!pending) return;
       pending = false;
       if (result.status === 'joined') {
-        handleJoined(transport, code, result.playerId, result.reconnectToken);
+        setStatus({ kind: 'joined', playerId: result.playerId });
       } else if (result.status === 'unknown-player') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'form' });
-      } else {
+      } else if (result.status !== 'no-identity') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
@@ -108,9 +106,12 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     if (!code) return;
     setStatus({ kind: 'joining' });
     const transport = new PeerJsTransport();
+    const callbacks = makeCallbacks();
+    wireGuestConnection(transport, code, callbacks);
     joinRoom(transport, roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
-        handleJoined(transport, code, result.playerId, result.reconnectToken);
+        completeGuestConnection(transport, code, localStorage, result.playerId, result.reconnectToken, callbacks);
+        setStatus({ kind: 'joined', playerId: result.playerId });
       } else {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
@@ -149,13 +150,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   }
 
   if (status.kind === 'rejoining') {
-    return (
-      <PhoneShell background="vb-bg-wait" roomCode={code}>
-        <div class="vb-giant-title" style="font-size:24px">
-          Reconnecting…
-        </div>
-      </PhoneShell>
-    );
+    return <ReconnectingScreen roomCode={code} />;
   }
 
   return (

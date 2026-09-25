@@ -167,6 +167,9 @@ export function App() {
         onResolveRound={(outcome) => {
           connectionManagerRef.current?.resolveRound(outcome);
         }}
+        onGameStarted={setGuestGameStartedCode}
+        onGameState={setGuestGameState}
+        onPlaceBetReady={handlePlaceBetReady}
       />
       <NotFound default />
     </Router>

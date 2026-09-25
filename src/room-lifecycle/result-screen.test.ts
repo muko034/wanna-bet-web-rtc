@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from '../protocol/messages';
-import { dismissResult, initialResultMemory, observeResolution, resolveResultScreen, resultMemoryOpenedOn } from './result-screen';
+import {
+  deriveResultMemory,
+  dismissResult,
+  initialResultMemory,
+  observeResolution,
+  resolveResultScreen,
+  resultMemoryOpenedOn,
+} from './result-screen';
 
 function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
@@ -169,5 +176,24 @@ describe('result screen memory', () => {
     const shown = observeResolution(initialResultMemory, stateWith());
 
     expect(observeResolution(shown, stateWith())).toBe(shown);
+  });
+});
+
+describe('deriveResultMemory', () => {
+  it('treats an already-broadcast Resolution as seen once Game State first arrives, however late — e.g. a Guest whose reconnect resolves asynchronously', () => {
+    const opened = deriveResultMemory(null, stateWith());
+
+    expect(resolveResultScreen({ memory: opened, localPlayerId: 'guest-2' })).toBeNull();
+  });
+
+  it('keeps waiting (never seeds memory) while Game State is still null', () => {
+    expect(deriveResultMemory(null, null)).toEqual(initialResultMemory);
+  });
+
+  it('still shows a Resolution that arrives after Game State was already loaded', () => {
+    const opened = deriveResultMemory(null, stateWith({ resolution: null }));
+    const resolved = deriveResultMemory(opened, stateWith());
+
+    expect(resolveResultScreen({ memory: resolved, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
   });
 });
