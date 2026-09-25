@@ -79,15 +79,13 @@ describe('host-session-store', () => {
     expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
   });
 
-  it('treats a snapshot written by an incompatible schema version as no snapshot present, and discards it', () => {
+  it('treats a snapshot written by an incompatible schema version as no snapshot present, but leaves it in storage', () => {
     const storage = new FakeStorage();
-    storage.setItem(
-      'wanna-bet:host-session:ABCDEF',
-      JSON.stringify({ schemaVersion: HOST_SESSION_SCHEMA_VERSION + 1, savedAt: Date.now(), ttl: Math.floor(Date.now() / 1000) + 1, state: sessionFor('ABCDEF') }),
-    );
+    const raw = JSON.stringify({ schemaVersion: HOST_SESSION_SCHEMA_VERSION + 1, savedAt: Date.now(), ttl: Date.now() + 1000, state: sessionFor('ABCDEF') });
+    storage.setItem('wanna-bet:host-session:ABCDEF', raw);
 
     expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
-    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBeNull();
+    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBe(raw);
   });
 
   it('treats a stale (expired ttl) snapshot as no snapshot present, and discards it', () => {

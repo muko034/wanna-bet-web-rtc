@@ -66,17 +66,15 @@ export function saveHostSession(storage: Storage, session: HostSession, now: num
  * Reads back the session `saveHostSession` stored for `code`'s Room, or `null` if there is none.
  * Best-effort like saving: unreadable storage or a corrupt entry also reads as no session. A
  * snapshot written by a different `schemaVersion`, or whose `ttl` has passed `now`, is treated
- * the same as no snapshot present, never partially applied, and is discarded from storage.
+ * the same as no snapshot present, never partially applied. Only the expired case is discarded
+ * from storage — a schema mismatch may be read by a future app version that understands it.
  */
 export function loadHostSession(storage: Storage, code: string, now: number = Date.now()): HostSession | null {
   try {
     const raw = storage.getItem(KEY_PREFIX + code);
     if (raw === null) return null;
     const snapshot = JSON.parse(raw) as HostSessionSnapshot;
-    if (snapshot.schemaVersion !== HOST_SESSION_SCHEMA_VERSION) {
-      discard(storage, code);
-      return null;
-    }
+    if (snapshot.schemaVersion !== HOST_SESSION_SCHEMA_VERSION) return null;
     if (snapshot.ttl <= now) {
       discard(storage, code);
       return null;
