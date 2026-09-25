@@ -37,4 +37,12 @@ describe('resolveAutoResume', () => {
     expect(resolveAutoResume(storage, pathname)).toEqual({ kind: 'none' });
   });
 
+  it("does not resume a stale snapshot — opening its Room's link afterwards is left to the Guest join flow", () => {
+    const storage = new FakeStorage();
+    const savedAt = Date.now();
+    saveHostSession(storage, sessionFor('ABCDEF', true), savedAt);
+    const oneDayAndOneMsLater = savedAt + 24 * 60 * 60 * 1000 + 1;
+
+    expect(resolveAutoResume(storage, '/room/ABCDEF', oneDayAndOneMsLater)).toEqual({ kind: 'none' });
+  });
 });
