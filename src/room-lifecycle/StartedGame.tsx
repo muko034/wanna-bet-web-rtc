@@ -8,7 +8,7 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { resolveChallengeCard } from './challenge-card';
 import { resolveBettingPanel } from './betting-panel';
-import { dismissResult, initialResultMemory, observeResolution, resolveResultScreen } from './result-screen';
+import { dismissResult, observeResolution, resolveResultScreen, resultMemoryOpenedOn } from './result-screen';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView } from './started-game-view';
 import type { Room } from './room';
@@ -43,7 +43,7 @@ export function StartedGame({
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
-  const [storedResultMemory, setStoredResultMemory] = useState(initialResultMemory);
+  const [storedResultMemory, setStoredResultMemory] = useState(() => resultMemoryOpenedOn(gameState));
   // Pure and idempotent, so deriving it during render shows a new Resolution on the very frame it arrives.
   const resultMemory = observeResolution(storedResultMemory, gameState);
 

@@ -96,7 +96,7 @@ describe('Lobby snapshots', () => {
     expect((lobbySnapshots[0] as { payload: { status: string } }).payload.status).toBe('lobby');
   });
 
-  it('does not broadcast a Lobby snapshot on a rejoin once the Game has started', async () => {
+  it('re-broadcasts the in-progress GameState, not a Lobby snapshot, on a rejoin once the Game has started', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
     const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
@@ -109,7 +109,10 @@ describe('Lobby snapshots', () => {
     rejoiningGuest.onMessage((message) => received.push(message));
     rejoiningGuest.send({ type: 'rejoin', payload: { reconnectToken } });
 
-    expect(received).toEqual([{ type: 'welcome', seq: expect.any(Number), payload: expect.anything() }]);
+    expect(received).toEqual([
+      { type: 'welcome', seq: expect.any(Number), payload: expect.anything() },
+      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ status: 'active' }) },
+    ]);
   });
 
   it('broadcasts a fresh Lobby snapshot, without the Guest, after that Guest leaves', async () => {

@@ -47,6 +47,40 @@ export async function createRoom(transport: Transport, registry: RoomRegistry, h
   }
 }
 
+const REOPEN_RETRY_DELAY_MS = 3_000;
+/** Matches how long the signalling server takes to drop a vanished tab's Transport ID (its heartbeat timeout). */
+const REOPEN_GIVE_UP_AFTER_MS = 60_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Reclaims `room`'s original Transport ID when the Host resumes a saved session, so Guests
+ * reconnect through the same Room Code/link. Right after a crash the networking layer may still
+ * hold that id for the Host's previous tab, so a `RequestedIdTakenError` is retried every few
+ * seconds until the id frees up — rethrown once about a minute has passed. Any other error is
+ * rethrown straight away.
+ */
+export async function reopenRoom(
+  transport: Transport,
+  registry: RoomRegistry,
+  room: Room,
+  wait: (ms: number) => Promise<void> = delay,
+): Promise<void> {
+  for (let waited = 0; ; waited += REOPEN_RETRY_DELAY_MS) {
+    try {
+      await transport.connect(undefined, registry.transportIdFor(room.code));
+      return;
+    } catch (error) {
+      if (!(error instanceof RequestedIdTakenError) || waited >= REOPEN_GIVE_UP_AFTER_MS) {
+        throw error;
+      }
+    }
+    await wait(REOPEN_RETRY_DELAY_MS);
+  }
+}
+
 /** Starts `room`'s game. Requires at least one Guest to have joined. */
 export function startGame(room: Room): Room {
   if (room.players.length === 0) {
