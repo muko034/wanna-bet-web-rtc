@@ -46,12 +46,13 @@ identifier so Guests can reconnect via the standard `room-lifecycle` reconnect f
   (until its heartbeat times out). While the ID is taken, the Host sees a "Reopening your Room…" screen that retries
   automatically; if it is still taken after about a minute, or any other error occurs, an error with a manual Retry is
   shown.
-- **Schema versioning**: snapshots include a `schemaVersion` field; on load, a mismatched version is treated as absent
-  (discarded), never partially applied.
-- **Staleness**: snapshots include a `ttl` field — an absolute expiry timestamp set to `now + 24h` on every save (not
-  just the first). On load, a snapshot whose `ttl` has passed is treated as absent (discarded), same as a
-  `schemaVersion` mismatch. A stale snapshot's Room Code may since have been taken by another Host's Room; discarding
-  it must not stop this device from joining that Room as a Guest.
+- **Schema versioning**: snapshots include a `schemaVersion` field; on load, a mismatched version is removed from
+  storage and treated as absent, never partially applied.
+- **Staleness**: snapshots include a `ttl` field — an absolute expiry in seconds since epoch, set to
+  `now + TTL_SECONDS` (24h) on every save (not just the first). On load, a snapshot whose `ttl` has passed is removed
+  from storage (best-effort) and treated as absent, same as a `schemaVersion` mismatch. A stale snapshot's Room Code
+  may since have been taken by another Host's Room; discarding it must not stop this device from joining that Room as
+  a Guest.
 - **Snapshot lifecycle**: cleared on explicit "end game" (per `game-rules.md`'s Game Ending rules), and discarded once
   stale or incompatible.
 - Guests are unaffected by this slice beyond the existing `room-lifecycle` reconnect flow — they hold no Game State

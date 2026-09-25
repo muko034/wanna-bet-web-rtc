@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { HOST_SESSION_SCHEMA_VERSION, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
+import { HOST_SESSION_SCHEMA_VERSION, TTL_SECONDS, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
 
 function sessionFor(code: string, hostPoints = 100): HostSession {
   return {
@@ -79,33 +79,35 @@ describe('host-session-store', () => {
     expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
   });
 
-  it('treats a snapshot written by an incompatible schema version as no snapshot present', () => {
+  it('treats a snapshot written by an incompatible schema version as no snapshot present, and discards it', () => {
     const storage = new FakeStorage();
     storage.setItem(
       'wanna-bet:host-session:ABCDEF',
-      JSON.stringify({ schemaVersion: HOST_SESSION_SCHEMA_VERSION + 1, savedAt: Date.now(), ttl: Date.now() + 1000, state: sessionFor('ABCDEF') }),
+      JSON.stringify({ schemaVersion: HOST_SESSION_SCHEMA_VERSION + 1, savedAt: Date.now(), ttl: Math.floor(Date.now() / 1000) + 1, state: sessionFor('ABCDEF') }),
     );
 
     expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
+    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBeNull();
   });
 
-  it('treats a stale (expired ttl) snapshot as no snapshot present', () => {
+  it('treats a stale (expired ttl) snapshot as no snapshot present, and discards it', () => {
     const storage = new FakeStorage();
-    const savedAt = 1_000_000;
+    const savedAt = 1_000_000_000;
     saveHostSession(storage, sessionFor('ABCDEF'), savedAt);
 
-    expect(loadHostSession(storage, 'ABCDEF', savedAt + 24 * 60 * 60 * 1000 + 1)).toBeNull();
+    expect(loadHostSession(storage, 'ABCDEF', savedAt + (TTL_SECONDS + 1) * 1000)).toBeNull();
+    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBeNull();
   });
 
-  it("refreshes a snapshot's ttl to 24h from now on every save, not just the first", () => {
+  it("refreshes a snapshot's ttl from now on every save, not just the first", () => {
     const storage = new FakeStorage();
-    const firstSave = 1_000_000;
-    const secondSave = firstSave + 23 * 60 * 60 * 1000;
+    const firstSave = 1_000_000_000;
+    const secondSave = firstSave + (TTL_SECONDS - 3600) * 1000;
     saveHostSession(storage, sessionFor('ABCDEF'), firstSave);
     saveHostSession(storage, sessionFor('ABCDEF'), secondSave);
 
-    // Past the first save's original 24h ttl, but within 24h of the second save's refreshed ttl.
-    const afterOriginalTtl = firstSave + 24 * 60 * 60 * 1000 + 1;
+    // Past the first save's original ttl, but within TTL_SECONDS of the second save's refreshed ttl.
+    const afterOriginalTtl = firstSave + (TTL_SECONDS + 1) * 1000;
     expect(loadHostSession(storage, 'ABCDEF', afterOriginalTtl)).not.toBeNull();
   });
 });

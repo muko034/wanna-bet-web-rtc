@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { saveHostSession, type HostSession } from './host-session-store';
+import { TTL_SECONDS, saveHostSession, type HostSession } from './host-session-store';
 import { resolveAutoResume } from './auto-resume';
 
 function sessionFor(code: string, started: boolean): HostSession {
@@ -41,8 +41,8 @@ describe('resolveAutoResume', () => {
     const storage = new FakeStorage();
     const savedAt = Date.now();
     saveHostSession(storage, sessionFor('ABCDEF', true), savedAt);
-    const oneDayAndOneMsLater = savedAt + 24 * 60 * 60 * 1000 + 1;
+    const afterTtl = savedAt + (TTL_SECONDS + 1) * 1000;
 
-    expect(resolveAutoResume(storage, '/room/ABCDEF', oneDayAndOneMsLater)).toEqual({ kind: 'none' });
+    expect(resolveAutoResume(storage, '/room/ABCDEF', afterTtl)).toEqual({ kind: 'none' });
   });
 });
