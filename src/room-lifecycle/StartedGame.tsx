@@ -1,17 +1,27 @@
 import { route } from 'preact-router';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
+import { PeerJsTransport } from '../transport/peerjs-transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
+import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
 import { resolveBettingPanel } from './betting-panel';
 import { dismissResult, observeResolution, resolveResultScreen, resultMemoryOpenedOn } from './result-screen';
+import { JoinRoom } from './JoinRoom';
+import { ReconnectingScreen } from './ReconnectingScreen';
 import { resolveRoundControls } from './round-controls';
-import { resolveStartedGameView } from './started-game-view';
+import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
+import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
+
+const RECONNECT_ERROR_MESSAGES: Record<'invalid-room' | 'unreachable', string> = {
+  'invalid-room': "This room link doesn't exist or has expired.",
+  unreachable: "Couldn't reach the Host — check the link and try again.",
+};
 
 type Props = {
   path?: string;
@@ -22,6 +32,10 @@ type Props = {
   gameState: GameState | null;
   onPlaceBet: (payload: PlaceBetPayload) => void;
   onResolveRound: (outcome: Prediction) => void;
+  /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
+  onGameStarted: (code: string) => void;
+  onGameState: (state: GameState) => void;
+  onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
 /**
@@ -30,6 +44,10 @@ type Props = {
  * `guestGameStartedCode` signal instead, since a Guest never holds a local `Room` object
  * (see `resolveStartedGameView`). While a round is open, it shows the Challenge card plus
  * per-Bettor public bet status, and it lets an eligible local Bettor submit a Bet.
+ *
+ * A Guest whose device has no live signal yet for this Room (a fresh page reload) drives the
+ * same shared reconnect implementation used by the Lobby's join screen (`guest-reconnect.ts`)
+ * in place here, rather than bouncing through the Lobby route or showing "Page not found".
  */
 export function StartedGame({
   code,
@@ -38,8 +56,57 @@ export function StartedGame({
   gameState,
   onPlaceBet,
   onResolveRound,
+  onGameStarted,
+  onGameState,
+  onPlaceBetReady,
 }: Props) {
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode });
+  const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
+  const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
+  const isGuestUnresolved = !(room !== null && room.code === code) && guestGameStartedCode !== code;
+
+  // Read through a ref so the reconnect effect below depends on `code` alone: a caller
+  // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady };
+
+  useEffect(() => {
+    if (!code || !isGuestUnresolved || !hasStoredIdentity) return;
+
+    setReconnectPhase('pending');
+    const transport = new PeerJsTransport();
+    let pending = true;
+    const callbacks: ReconnectCallbacks = {
+      onGameState: (state) => callbacksRef.current.onGameState(state),
+      onGameStarted: (startedCode) => callbacksRef.current.onGameStarted(startedCode),
+      onSessionEnded: () => {
+        callbacksRef.current.onPlaceBetReady(null);
+        setReconnectPhase('session-ended');
+      },
+      onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
+    };
+    attemptReconnect(transport, roomRegistry, localStorage, code, callbacks).then((result) => {
+      if (!pending) return;
+      pending = false;
+      if (result.status === 'joined' || result.status === 'no-identity') {
+        setReconnectPhase(null);
+      } else if (result.status === 'unknown-player') {
+        setReconnectPhase('unknown-player');
+      } else {
+        setReconnectPhase({ kind: 'error', message: RECONNECT_ERROR_MESSAGES[result.status] });
+      }
+    });
+
+    // Only abandon a reconnect still in flight: a joined transport is the live game
+    // connection and must outlive this effect.
+    return () => {
+      if (pending) {
+        pending = false;
+        transport.close();
+      }
+    };
+  }, [code, isGuestUnresolved, hasStoredIdentity]);
+
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase });
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
@@ -65,6 +132,44 @@ export function StartedGame({
 
   if (view.view === 'redirect-to-lobby') {
     return null;
+  }
+
+  if (view.view === 'join-form') {
+    return (
+      <JoinRoom
+        code={code}
+        onGameStarted={onGameStarted}
+        onGameState={onGameState}
+        gameState={gameState}
+        onPlaceBetReady={onPlaceBetReady}
+      />
+    );
+  }
+
+  if (view.view === 'reconnecting') {
+    return <ReconnectingScreen roomCode={view.roomCode} />;
+  }
+
+  if (view.view === 'session-ended') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
+        <div class="vb-giant-title" style="font-size:24px">
+          Session ended
+        </div>
+        <div class="vb-giant-sub">The Host's connection was lost, so this Room has ended.</div>
+      </PhoneShell>
+    );
+  }
+
+  if (view.view === 'reconnect-failed') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
+        <div class="vb-giant-title" style="font-size:24px">
+          Can't reach the Host
+        </div>
+        <div class="vb-giant-sub">{view.message}</div>
+      </PhoneShell>
+    );
   }
 
   const localPlayerId = room?.code === code

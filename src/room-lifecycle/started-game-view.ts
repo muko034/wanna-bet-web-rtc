@@ -3,7 +3,18 @@ import type { Room } from './room';
 export type StartedGameView =
   | { view: 'started'; roomCode: string }
   | { view: 'redirect-to-lobby' }
-  | { view: 'not-found' };
+  | { view: 'not-found' }
+  | { view: 'join-form' }
+  | { view: 'reconnecting'; roomCode: string }
+  | { view: 'session-ended'; roomCode: string }
+  | { view: 'reconnect-failed'; roomCode: string; message: string };
+
+/**
+ * This device's own in-flight/settled attempt to rejoin `code` via its stored identity (see
+ * `guest-reconnect.ts`'s `attemptReconnect`) — `null` when no such attempt applies, either
+ * because this device has no stored identity for `code` or because it hasn't started one yet.
+ */
+export type ReconnectPhase = 'pending' | 'unknown-player' | 'session-ended' | { kind: 'error'; message: string } | null;
 
 type Params = {
   /** The `:code` route param at `/room/<code>/play`. */
@@ -16,23 +27,42 @@ type Params = {
    * one, including on the Host's own device (which uses `room.started` instead).
    */
   guestGameStartedCode: string | null;
+  /** Whether this device holds a stored identity (`playerId`/`reconnectToken`) for `code`. */
+  hasStoredIdentity: boolean;
+  reconnectPhase: ReconnectPhase;
 };
 
 /**
  * Decides what `/room/<code>/play` should show, for either role: the Host (whose own
- * `Room` object is authoritative) or a Guest (who has no local `Room`, only whatever it
- * has observed over the wire via `watchForGameStart`). Neither device holds both signals
- * at once, so this treats them as two independent ways to reach the same "started" view
- * rather than requiring a unified Room model between Host and Guest.
+ * `Room` object is authoritative), a Guest who has already resolved a live connection (via
+ * `guestGameStartedCode`), or a Guest whose device just mounted this route with no live
+ * signal yet — who drives the shared reconnect implementation in place, rather than bouncing
+ * through the Lobby route or a "Page not found" dead end.
  */
-export function resolveStartedGameView({ code, room, guestGameStartedCode }: Params): StartedGameView {
-  if (code !== undefined && room !== null && room.code === code) {
+export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase }: Params): StartedGameView {
+  if (code === undefined) {
+    return { view: 'not-found' };
+  }
+
+  if (room !== null && room.code === code) {
     return room.started ? { view: 'started', roomCode: room.code } : { view: 'redirect-to-lobby' };
   }
 
-  if (code !== undefined && guestGameStartedCode === code) {
+  if (guestGameStartedCode === code) {
     return { view: 'started', roomCode: code };
   }
 
-  return { view: 'not-found' };
+  if (!hasStoredIdentity || reconnectPhase === 'unknown-player') {
+    return { view: 'join-form' };
+  }
+
+  if (reconnectPhase === 'session-ended') {
+    return { view: 'session-ended', roomCode: code };
+  }
+
+  if (reconnectPhase !== null && typeof reconnectPhase === 'object') {
+    return { view: 'reconnect-failed', roomCode: code, message: reconnectPhase.message };
+  }
+
+  return { view: 'reconnecting', roomCode: code };
 }
