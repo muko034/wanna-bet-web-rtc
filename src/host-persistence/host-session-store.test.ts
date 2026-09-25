@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { HOST_SESSION_SCHEMA_VERSION, TTL_SECONDS, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
+import { HOST_SESSION_SCHEMA_VERSION, TTL_MS, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
 
 function sessionFor(code: string, hostPoints = 100): HostSession {
   return {
@@ -95,19 +95,19 @@ describe('host-session-store', () => {
     const savedAt = 1_000_000_000;
     saveHostSession(storage, sessionFor('ABCDEF'), savedAt);
 
-    expect(loadHostSession(storage, 'ABCDEF', savedAt + (TTL_SECONDS + 1) * 1000)).toBeNull();
+    expect(loadHostSession(storage, 'ABCDEF', savedAt + TTL_MS + 1)).toBeNull();
     expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBeNull();
   });
 
   it("refreshes a snapshot's ttl from now on every save, not just the first", () => {
     const storage = new FakeStorage();
     const firstSave = 1_000_000_000;
-    const secondSave = firstSave + (TTL_SECONDS - 3600) * 1000;
+    const secondSave = firstSave + TTL_MS - 3_600_000;
     saveHostSession(storage, sessionFor('ABCDEF'), firstSave);
     saveHostSession(storage, sessionFor('ABCDEF'), secondSave);
 
-    // Past the first save's original ttl, but within TTL_SECONDS of the second save's refreshed ttl.
-    const afterOriginalTtl = firstSave + (TTL_SECONDS + 1) * 1000;
+    // Past the first save's original ttl, but within TTL_MS of the second save's refreshed ttl.
+    const afterOriginalTtl = firstSave + TTL_MS + 1;
     expect(loadHostSession(storage, 'ABCDEF', afterOriginalTtl)).not.toBeNull();
   });
 });

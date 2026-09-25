@@ -21,7 +21,7 @@ export type HostSession = {
 export type HostSessionSnapshot = {
   schemaVersion: number;
   savedAt: number;
-  /** Absolute expiry, in seconds since epoch — set to `now + TTL_SECONDS` on every save, not just the first. */
+  /** Absolute expiry timestamp, in epoch-ms — set to `now + TTL_MS` on every save, not just the first. */
   ttl: number;
   state: HostSession;
 };
@@ -29,13 +29,9 @@ export type HostSessionSnapshot = {
 export const HOST_SESSION_SCHEMA_VERSION = 1;
 
 /** How long a snapshot stays resumable after its most recent save before it's considered stale. */
-export const TTL_SECONDS = 24 * 60 * 60;
+export const TTL_MS = 24 * 60 * 60 * 1000;
 
 const KEY_PREFIX = 'wanna-bet:host-session:';
-
-function nowInSeconds(now: number): number {
-  return Math.floor(now / 1000);
-}
 
 /** Best-effort removal of a Room's stored snapshot — a failed remove is swallowed like a failed save. */
 function discard(storage: Storage, code: string): void {
@@ -50,13 +46,13 @@ function discard(storage: Storage, code: string): void {
  * Persists the Host's `session` in `storage` (the browser's own `localStorage` in production),
  * keyed by its Room Code, so every Room hosted on this device keeps its own session. Best-effort: a failed write (e.g. storage full or disabled) is swallowed, since
  * losing a save must never interrupt the game in progress. Every save refreshes the snapshot's
- * `ttl` to `now + TTL_SECONDS`, not just the first.
+ * `ttl` to `now + TTL_MS`, not just the first.
  */
 export function saveHostSession(storage: Storage, session: HostSession, now: number = Date.now()): void {
   const snapshot: HostSessionSnapshot = {
     schemaVersion: HOST_SESSION_SCHEMA_VERSION,
     savedAt: now,
-    ttl: nowInSeconds(now) + TTL_SECONDS,
+    ttl: now + TTL_MS,
     state: session,
   };
   try {
@@ -81,7 +77,7 @@ export function loadHostSession(storage: Storage, code: string, now: number = Da
       discard(storage, code);
       return null;
     }
-    if (snapshot.ttl <= nowInSeconds(now)) {
+    if (snapshot.ttl <= now) {
       discard(storage, code);
       return null;
     }
