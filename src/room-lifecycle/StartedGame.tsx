@@ -10,7 +10,7 @@ import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
 import { resolveBettingPanel } from './betting-panel';
-import { dismissResult, observeResolution, resolveResultScreen, resultMemoryOpenedOn } from './result-screen';
+import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { resolveRoundControls } from './round-controls';
@@ -110,15 +110,18 @@ export function StartedGame({
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
-  const [storedResultMemory, setStoredResultMemory] = useState(() => resultMemoryOpenedOn(gameState));
+  // `null` until the first real `gameState` arrives: a Guest's reconnect resolves this
+  // asynchronously, so seeding from `gameState` at mount (as the Host's synchronous resume can)
+  // would seed from a not-yet-loaded `null` and then replay the next, already-past Resolution as new.
+  const [storedResultMemory, setStoredResultMemory] = useState<ResultMemory | null>(null);
   // Pure and idempotent, so deriving it during render shows a new Resolution on the very frame it arrives.
-  const resultMemory = observeResolution(storedResultMemory, gameState);
+  const resultMemory = deriveResultMemory(storedResultMemory, gameState);
 
   useEffect(() => {
-    if (resultMemory !== storedResultMemory) {
+    if (gameState !== null && resultMemory !== storedResultMemory) {
       setStoredResultMemory(resultMemory);
     }
-  }, [resultMemory, storedResultMemory]);
+  }, [gameState, resultMemory, storedResultMemory]);
 
   useEffect(() => {
     if (view.view === 'redirect-to-lobby') {
