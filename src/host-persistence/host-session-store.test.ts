@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { loadHostSession, saveHostSession, type HostSession } from './host-session-store';
+import { HOST_SESSION_SCHEMA_VERSION, TTL_MS, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
 
 function sessionFor(code: string, hostPoints = 100): HostSession {
   return {
@@ -77,5 +77,35 @@ describe('host-session-store', () => {
     };
 
     expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
+  });
+
+  it('treats a snapshot written by an incompatible schema version as no snapshot present, but leaves it in storage', () => {
+    const storage = new FakeStorage();
+    const raw = JSON.stringify({ schemaVersion: HOST_SESSION_SCHEMA_VERSION + 1, savedAt: Date.now(), ttl: Date.now() + 1000, state: sessionFor('ABCDEF') });
+    storage.setItem('wanna-bet:host-session:ABCDEF', raw);
+
+    expect(loadHostSession(storage, 'ABCDEF')).toBeNull();
+    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBe(raw);
+  });
+
+  it('treats a stale (expired ttl) snapshot as no snapshot present, and discards it', () => {
+    const storage = new FakeStorage();
+    const savedAt = 1_000_000_000;
+    saveHostSession(storage, sessionFor('ABCDEF'), savedAt);
+
+    expect(loadHostSession(storage, 'ABCDEF', savedAt + TTL_MS + 1)).toBeNull();
+    expect(storage.getItem('wanna-bet:host-session:ABCDEF')).toBeNull();
+  });
+
+  it("refreshes a snapshot's ttl from now on every save, not just the first", () => {
+    const storage = new FakeStorage();
+    const firstSave = 1_000_000_000;
+    const secondSave = firstSave + TTL_MS - 3_600_000;
+    saveHostSession(storage, sessionFor('ABCDEF'), firstSave);
+    saveHostSession(storage, sessionFor('ABCDEF'), secondSave);
+
+    // Past the first save's original ttl, but within TTL_MS of the second save's refreshed ttl.
+    const afterOriginalTtl = firstSave + TTL_MS + 1;
+    expect(loadHostSession(storage, 'ABCDEF', afterOriginalTtl)).not.toBeNull();
   });
 });

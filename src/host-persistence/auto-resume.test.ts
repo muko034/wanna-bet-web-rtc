@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { saveHostSession, type HostSession } from './host-session-store';
+import { TTL_MS, saveHostSession, type HostSession } from './host-session-store';
 import { resolveAutoResume } from './auto-resume';
 
 function sessionFor(code: string, started: boolean): HostSession {
@@ -37,4 +37,12 @@ describe('resolveAutoResume', () => {
     expect(resolveAutoResume(storage, pathname)).toEqual({ kind: 'none' });
   });
 
+  it("does not resume a stale snapshot — opening its Room's link afterwards is left to the Guest join flow", () => {
+    const storage = new FakeStorage();
+    const savedAt = Date.now();
+    saveHostSession(storage, sessionFor('ABCDEF', true), savedAt);
+    const afterTtl = savedAt + TTL_MS + 1;
+
+    expect(resolveAutoResume(storage, '/room/ABCDEF', afterTtl)).toEqual({ kind: 'none' });
+  });
 });

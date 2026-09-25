@@ -21,20 +21,40 @@ export type HostSession = {
 export type HostSessionSnapshot = {
   schemaVersion: number;
   savedAt: number;
+  /** Absolute expiry timestamp, in epoch-ms — set to `now + TTL_MS` on every save, not just the first. */
+  ttl: number;
   state: HostSession;
 };
 
 export const HOST_SESSION_SCHEMA_VERSION = 1;
 
+/** How long a snapshot stays resumable after its most recent save before it's considered stale. */
+export const TTL_MS = 24 * 60 * 60 * 1000;
+
 const KEY_PREFIX = 'wanna-bet:host-session:';
+
+/** Best-effort removal of a Room's stored snapshot — a failed remove is swallowed like a failed save. */
+function discard(storage: Storage, code: string): void {
+  try {
+    storage.removeItem(KEY_PREFIX + code);
+  } catch (error) {
+    console.warn('host-session-store: failed to discard the Host session', error);
+  }
+}
 
 /**
  * Persists the Host's `session` in `storage` (the browser's own `localStorage` in production),
  * keyed by its Room Code, so every Room hosted on this device keeps its own session. Best-effort: a failed write (e.g. storage full or disabled) is swallowed, since
- * losing a save must never interrupt the game in progress.
+ * losing a save must never interrupt the game in progress. Every save refreshes the snapshot's
+ * `ttl` to `now + TTL_MS`, not just the first.
  */
 export function saveHostSession(storage: Storage, session: HostSession, now: number = Date.now()): void {
-  const snapshot: HostSessionSnapshot = { schemaVersion: HOST_SESSION_SCHEMA_VERSION, savedAt: now, state: session };
+  const snapshot: HostSessionSnapshot = {
+    schemaVersion: HOST_SESSION_SCHEMA_VERSION,
+    savedAt: now,
+    ttl: now + TTL_MS,
+    state: session,
+  };
   try {
     storage.setItem(KEY_PREFIX + session.room.code, JSON.stringify(snapshot));
   } catch (error) {
@@ -44,12 +64,22 @@ export function saveHostSession(storage: Storage, session: HostSession, now: num
 
 /**
  * Reads back the session `saveHostSession` stored for `code`'s Room, or `null` if there is none.
- * Best-effort like saving: unreadable storage or a corrupt entry also reads as no session.
+ * Best-effort like saving: unreadable storage or a corrupt entry also reads as no session. A
+ * snapshot written by a different `schemaVersion`, or whose `ttl` has passed `now`, is treated
+ * the same as no snapshot present, never partially applied. Only the expired case is discarded
+ * from storage — a schema mismatch may be read by a future app version that understands it.
  */
-export function loadHostSession(storage: Storage, code: string): HostSession | null {
+export function loadHostSession(storage: Storage, code: string, now: number = Date.now()): HostSession | null {
   try {
     const raw = storage.getItem(KEY_PREFIX + code);
-    return raw === null ? null : (JSON.parse(raw) as HostSessionSnapshot).state;
+    if (raw === null) return null;
+    const snapshot = JSON.parse(raw) as HostSessionSnapshot;
+    if (snapshot.schemaVersion !== HOST_SESSION_SCHEMA_VERSION) return null;
+    if (snapshot.ttl <= now) {
+      discard(storage, code);
+      return null;
+    }
+    return snapshot.state;
   } catch {
     return null;
   }

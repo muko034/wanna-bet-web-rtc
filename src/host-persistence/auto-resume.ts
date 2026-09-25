@@ -10,9 +10,9 @@ export type AutoResume =
  * only on that Room's own link (`/room/<code>` or `/room/<code>/play`) and only when `storage`
  * holds a session for `<code>` — any other Room's link is left to the Guest join flow.
  */
-export function resolveAutoResume(storage: Storage, pathname: string): AutoResume {
+export function resolveAutoResume(storage: Storage, pathname: string, now: number = Date.now()): AutoResume {
   const code = pathname.match(/\/room\/([^/]+)/)?.[1];
-  const session = code === undefined ? null : loadHostSession(storage, code);
+  const session = code === undefined ? null : loadHostSession(storage, code, now);
   if (!session) {
     return { kind: 'none' };
   }
