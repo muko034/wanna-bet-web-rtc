@@ -1,5 +1,7 @@
 **Blocked by**: none
 
+**Status**: Implemented
+
 ## What to build
 
 Reloading `/room/<code>/play` currently shows "Page not found" — the started-game route never attempts to reconnect,
@@ -20,14 +22,14 @@ form, exactly as it does today on the Lobby route.
 
 ## Acceptance criteria
 
-- [ ] Reloading `/room/<code>/play` with a stored identity for `<code>` reconnects the Guest instead of showing "Page
+- [x] Reloading `/room/<code>/play` with a stored identity for `<code>` reconnects the Guest instead of showing "Page
       not found".
-- [ ] A Guest reconnecting into an already-started game sees the current, live Game State, not a stale Lobby view.
-- [ ] Reloading `/room/<code>/play` with no stored identity for `<code>` shows the ordinary join form, not "Page not
+- [x] A Guest reconnecting into an already-started game sees the current, live Game State, not a stale Lobby view.
+- [x] Reloading `/room/<code>/play` with no stored identity for `<code>` shows the ordinary join form, not "Page not
       found".
-- [ ] Submitting the join form for a Room whose game has already started is rejected with the existing "game already
+- [x] Submitting the join form for a Room whose game has already started is rejected with the existing "game already
       started" message.
-- [ ] A stored identity rejected by the Host as unknown falls back to the ordinary join form, exactly as it does
+- [x] A stored identity rejected by the Host as unknown falls back to the ordinary join form, exactly as it does
       today on the Lobby route.
-- [ ] The Lobby's join screen and `/room/<code>/play` drive the same shared reconnect implementation — not two
+- [x] The Lobby's join screen and `/room/<code>/play` drive the same shared reconnect implementation — not two
       separate copies.
