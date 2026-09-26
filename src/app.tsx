@@ -28,10 +28,11 @@ type RoomRouteProps = {
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  onConnectionLost: () => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady }: RoomRouteProps) {
+function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onConnectionLost }: RoomRouteProps) {
   if (room && room.code === code) {
     return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} />;
   }
@@ -42,6 +43,7 @@ function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameS
       onGameState={onGameState}
       gameState={guestGameState}
       onPlaceBetReady={onPlaceBetReady}
+      onConnectionLost={onConnectionLost}
     />
   );
 }
@@ -137,6 +139,21 @@ export function App() {
     guestPlaceBetRef.current = placeBet;
   }, []);
 
+  /**
+   * A Guest's live connection was lost, on whichever route wired the connection that
+   * dropped. Resets `guestGameStartedCode` — held here, at the App level, rather than inside
+   * either route — so it outlives whichever route happens to be mounted when the drop is
+   * detected: the connection a Guest is using while playing was often established earlier,
+   * on the Lobby's join screen, before the game started and the Guest navigated to `/play`.
+   * Clearing it makes `StartedGame`'s own `isGuestUnresolved` true again, which re-enters its
+   * reconnect effect the same way a stored-identity mount does; `watchForGameStart` restores
+   * it once the Host resends the in-progress GameState on the follow-up rejoin.
+   */
+  const handleGuestConnectionLost = useCallback(() => {
+    setGuestGameStartedCode(null);
+    handlePlaceBetReady(null);
+  }, [handlePlaceBetReady]);
+
   if (reopening) {
     return (
       <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} />
@@ -157,6 +174,7 @@ export function App() {
         onGameStarted={setGuestGameStartedCode}
         onGameState={setGuestGameState}
         onPlaceBetReady={handlePlaceBetReady}
+        onConnectionLost={handleGuestConnectionLost}
       />
       <StartedGame
         path={withBase('room/:code/play')}
@@ -170,6 +188,7 @@ export function App() {
         onGameStarted={setGuestGameStartedCode}
         onGameState={setGuestGameState}
         onPlaceBetReady={handlePlaceBetReady}
+        onConnectionLost={handleGuestConnectionLost}
       />
       <NotFound default />
     </Router>

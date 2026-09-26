@@ -83,18 +83,6 @@ describe('resolveStartedGameView', () => {
     expect(result).toEqual({ view: 'join-form' });
   });
 
-  it("shows session-ended once a reconnected Guest's connection to the Host is lost", () => {
-    const result = resolveStartedGameView({
-      code: 'ABCDEF',
-      room: null,
-      guestGameStartedCode: null,
-      hasStoredIdentity: true,
-      reconnectPhase: 'session-ended',
-    });
-
-    expect(result).toEqual({ view: 'session-ended', roomCode: 'ABCDEF' });
-  });
-
   it("shows a reconnect-failed view, with the underlying error message, when the reconnect attempt itself fails", () => {
     const result = resolveStartedGameView({
       code: 'ABCDEF',

@@ -6,15 +6,17 @@ export type StartedGameView =
   | { view: 'not-found' }
   | { view: 'join-form' }
   | { view: 'reconnecting'; roomCode: string }
-  | { view: 'session-ended'; roomCode: string }
   | { view: 'reconnect-failed'; roomCode: string; message: string };
 
 /**
  * This device's own in-flight/settled attempt to rejoin `code` via its stored identity (see
  * `guest-reconnect.ts`'s `attemptReconnect`) — `null` when no such attempt applies, either
- * because this device has no stored identity for `code` or because it hasn't started one yet.
+ * because this device has no stored identity for `code` or because it hasn't started one
+ * yet. Driven identically by a page reload and by a detected connection drop — there is no
+ * separate terminal "session ended" state for a Guest-side dropped connection; a drop always
+ * resolves through this same automatic-retry-then-manual-fallback phase.
  */
-export type ReconnectPhase = 'pending' | 'unknown-player' | 'session-ended' | { kind: 'error'; message: string } | null;
+export type ReconnectPhase = 'pending' | 'unknown-player' | { kind: 'error'; message: string } | null;
 
 type Params = {
   /** The `:code` route param at `/room/<code>/play`. */
@@ -54,10 +56,6 @@ export function resolveStartedGameView({ code, room, guestGameStartedCode, hasSt
 
   if (!hasStoredIdentity || reconnectPhase === 'unknown-player') {
     return { view: 'join-form' };
-  }
-
-  if (reconnectPhase === 'session-ended') {
-    return { view: 'session-ended', roomCode: code };
   }
 
   if (reconnectPhase !== null && typeof reconnectPhase === 'object') {

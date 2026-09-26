@@ -36,6 +36,14 @@ type Props = {
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  /**
+   * This Guest's live connection was lost. Notifies App-level state (see `app.tsx`) so a
+   * drop is recovered from the same way regardless of which route happened to establish the
+   * connection that dropped — this route's own reconnect effect only runs when it's the one
+   * currently unresolved, but a live connection can just as easily have been made by the
+   * Lobby's join screen before the game started.
+   */
+  onConnectionLost: () => void;
 };
 
 /**
@@ -59,6 +67,7 @@ export function StartedGame({
   onGameStarted,
   onGameState,
   onPlaceBetReady,
+  onConnectionLost,
 }: Props) {
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
@@ -70,8 +79,8 @@ export function StartedGame({
 
   // Read through a ref so the reconnect effect below depends on `code` alone: a caller
   // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
   useEffect(() => {
     if (!code || !isGuestUnresolved || !hasStoredIdentity) return;
@@ -82,9 +91,14 @@ export function StartedGame({
     const callbacks: ReconnectCallbacks = {
       onGameState: (state) => callbacksRef.current.onGameState(state),
       onGameStarted: (startedCode) => callbacksRef.current.onGameStarted(startedCode),
-      onSessionEnded: () => {
+      // A drop is never a dead end: hand it to App-level state, which resets
+      // `guestGameStartedCode` so this route's own `isGuestUnresolved` (below) becomes true
+      // again and this same effect re-enters to reconnect — even if the connection that just
+      // dropped was actually established elsewhere (e.g. the Lobby's join screen, before the
+      // game started).
+      onConnectionDropped: () => {
         callbacksRef.current.onPlaceBetReady(null);
-        setReconnectPhase('session-ended');
+        callbacksRef.current.onConnectionLost();
       },
       onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
     };
@@ -149,23 +163,13 @@ export function StartedGame({
         onGameState={onGameState}
         gameState={gameState}
         onPlaceBetReady={onPlaceBetReady}
+        onConnectionLost={onConnectionLost}
       />
     );
   }
 
   if (view.view === 'reconnecting') {
     return <ReconnectingScreen roomCode={view.roomCode} />;
-  }
-
-  if (view.view === 'session-ended') {
-    return (
-      <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
-        <div class="vb-giant-title" style="font-size:24px">
-          Session ended
-        </div>
-        <div class="vb-giant-sub">The Host's connection was lost, so this Room has ended.</div>
-      </PhoneShell>
-    );
   }
 
   if (view.view === 'reconnect-failed') {
