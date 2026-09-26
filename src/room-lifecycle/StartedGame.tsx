@@ -63,6 +63,10 @@ export function StartedGame({
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
   const isGuestUnresolved = !(room !== null && room.code === code) && guestGameStartedCode !== code;
+  // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
+  // effect below from scratch (including its own automatic retry budget) rather than a
+  // single bare attempt.
+  const [retryKey, setRetryKey] = useState(0);
 
   // Read through a ref so the reconnect effect below depends on `code` alone: a caller
   // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
@@ -104,7 +108,7 @@ export function StartedGame({
         transport.close();
       }
     };
-  }, [code, isGuestUnresolved, hasStoredIdentity]);
+  }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
   const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase });
   const [amount, setAmount] = useState(1);
@@ -171,6 +175,9 @@ export function StartedGame({
           Can't reach the Host
         </div>
         <div class="vb-giant-sub">{view.message}</div>
+        <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
+          Retry
+        </button>
       </PhoneShell>
     );
   }

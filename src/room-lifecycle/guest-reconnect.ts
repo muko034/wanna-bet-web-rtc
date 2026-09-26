@@ -20,6 +20,15 @@ export type ReconnectCallbacks = {
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
+/** Total `rejoin` attempts (the first try plus these retries) before giving up as `unreachable`. */
+const RECONNECT_RETRY_ATTEMPTS = 3;
+/** Delay between automatic retry attempts — short enough that a brief blip resolves without the Guest noticing. */
+const RECONNECT_RETRY_DELAY_MS = 1_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Subscribes `callbacks` to `transport`'s game-state, session-end, and game-started signals.
  * Safe to call before the Host has confirmed this connection (even before `transport.connect`)
@@ -61,29 +70,41 @@ export function completeGuestConnection(
  * no stored identity resolves immediately as `no-identity`, without ever touching
  * `transport`, so a caller can fall back to the ordinary join form without an unnecessary
  * connection attempt.
+ *
+ * Retries a `rejoin` attempt that gets no response at all from the Host (`unreachable` —
+ * the Host is briefly unreachable, a slow network) automatically, up to
+ * `RECONNECT_RETRY_ATTEMPTS` tries total with `RECONNECT_RETRY_DELAY_MS` between them,
+ * before resolving `unreachable` for the caller to show a manual-Retry state. An explicit
+ * rejection from the Host (`unknown-player`, or a definite `invalid-room` answer) is never
+ * retried — retrying an answer the Host already gave can't change the outcome. `wait` is
+ * injectable so tests can assert the retry delay without real timers (see `reopenRoom` in
+ * `room.ts` for the same pattern).
  */
-export function attemptReconnect(
+export async function attemptReconnect(
   transport: Transport,
   registry: RoomRegistry,
   storage: Storage,
   code: string,
   callbacks: ReconnectCallbacks,
+  wait: (ms: number) => Promise<void> = delay,
 ): Promise<ReconnectResult> {
   const stored = loadIdentity(storage, code);
   if (!stored) {
-    return Promise.resolve({ status: 'no-identity' });
+    return { status: 'no-identity' };
   }
 
   wireGuestConnection(transport, code, callbacks);
 
-  return rejoinRoom(transport, registry, code, stored.reconnectToken).then((result) => {
+  for (let attempt = 1; ; attempt++) {
+    const result = await rejoinRoom(transport, registry, code, stored.reconnectToken);
+
     if (result.status === 'joined') {
       completeGuestConnection(transport, code, storage, result.playerId, result.reconnectToken, callbacks);
       return { status: 'joined', playerId: result.playerId };
     }
-    if (result.status === 'unknown-player') {
-      return { status: 'unknown-player' };
+    if (result.status !== 'unreachable' || attempt >= RECONNECT_RETRY_ATTEMPTS) {
+      return { status: result.status };
     }
-    return { status: result.status };
-  });
+    await wait(RECONNECT_RETRY_DELAY_MS);
+  }
 }

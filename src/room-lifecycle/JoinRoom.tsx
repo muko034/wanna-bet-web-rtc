@@ -29,7 +29,8 @@ type Status =
   | { kind: 'joining' }
   | { kind: 'joined'; playerId: string }
   | { kind: 'session-ended' }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; message: string }
+  | { kind: 'reconnect-failed' };
 
 const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = {
   'invalid-room': "This room link doesn't exist or has expired.",
@@ -49,6 +50,10 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
 export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
+  // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
+  // effect below from scratch (including its own automatic retry budget) rather than a
+  // single bare attempt.
+  const [retryKey, setRetryKey] = useState(0);
 
   // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
   // callback per render must not re-run them, since each run opens a new Peer.
@@ -85,6 +90,9 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       } else if (result.status === 'unknown-player') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'form' });
+      } else if (result.status === 'unreachable') {
+        callbacksRef.current.onPlaceBetReady(null);
+        setStatus({ kind: 'reconnect-failed' });
       } else if (result.status !== 'no-identity') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
@@ -99,7 +107,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
         transport.close();
       }
     };
-  }, [code]);
+  }, [code, retryKey]);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -151,6 +159,20 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   if (status.kind === 'rejoining') {
     return <ReconnectingScreen roomCode={code} />;
+  }
+
+  if (status.kind === 'reconnect-failed') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={code}>
+        <div class="vb-giant-title" style="font-size:24px">
+          Can't reach the Host
+        </div>
+        <div class="vb-giant-sub">{ERROR_MESSAGES.unreachable}</div>
+        <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
+          Retry
+        </button>
+      </PhoneShell>
+    );
   }
 
   return (

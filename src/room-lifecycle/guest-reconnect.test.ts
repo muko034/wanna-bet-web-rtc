@@ -102,6 +102,59 @@ describe('attemptReconnect', () => {
     expect(result).toEqual({ status: 'invalid-room' });
   });
 
+  it('retries a "no response" rejoin attempt with a short delay, succeeding once the Host becomes reachable again', async () => {
+    const registry = new RoomRegistry();
+    const { code } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const transport = new FakeTransport();
+    const realConnect = transport.connect.bind(transport);
+    const connectSpy = vi
+      .spyOn(transport, 'connect')
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockImplementation(realConnect);
+    const waits: number[] = [];
+
+    const result = await attemptReconnect(transport, registry, storage, code, noopCallbacks(), async (ms) => void waits.push(ms));
+
+    expect(result).toEqual({ status: 'joined', playerId: joined.playerId });
+    expect(connectSpy).toHaveBeenCalledTimes(3);
+    expect(waits.length).toBe(2);
+    expect(waits.every((ms) => ms > 0)).toBe(true);
+  });
+
+  it('gives up with "unreachable" after exhausting its retry budget, when the Host never responds', async () => {
+    const registry = new RoomRegistry();
+    const storage = new FakeStorage();
+    saveIdentity(storage, 'ABCDEF', { playerId: 'p1', reconnectToken: 'a-token' });
+    const transport = new FakeTransport();
+    vi.spyOn(transport, 'connect').mockRejectedValue(new Error('network error'));
+    const waits: number[] = [];
+
+    const result = await attemptReconnect(transport, registry, storage, 'ABCDEF', noopCallbacks(), async (ms) => void waits.push(ms));
+
+    expect(result).toEqual({ status: 'unreachable' });
+    expect(waits.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('never retries an explicit "unknown-player" rejection from the Host', async () => {
+    const registry = new RoomRegistry();
+    const { code } = await hostRoom(registry);
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: 'p1', reconnectToken: 'a-stale-or-foreign-token' });
+    const transport = new FakeTransport();
+    const connectSpy = vi.spyOn(transport, 'connect');
+    const wait = vi.fn(async () => {});
+
+    const result = await attemptReconnect(transport, registry, storage, code, noopCallbacks(), wait);
+
+    expect(result).toEqual({ status: 'unknown-player' });
+    expect(connectSpy).toHaveBeenCalledTimes(1);
+    expect(wait).not.toHaveBeenCalled();
+  });
+
   it("notifies onGameStarted once reconnected, when the Guest is rejoining a game that's already active", async () => {
     const registry = new RoomRegistry();
     const { code, manager } = await hostRoom(registry);
