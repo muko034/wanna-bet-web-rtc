@@ -46,6 +46,17 @@ describe('joinRoom', () => {
     expect(result.status).toBe('unreachable');
   });
 
+  it('resolves with a clear error when the Host never responds at all (the connect attempt hangs)', async () => {
+    const registry = new RoomRegistry();
+    const code = registry.generate();
+    const transport = new FakeTransport();
+    vi.spyOn(transport, 'connect').mockReturnValue(new Promise(() => {})); // never settles
+
+    const result = await joinRoom(transport, registry, code, 'Alex', async () => 'timed-out');
+
+    expect(result).toEqual({ status: 'unreachable' });
+  });
+
   it('resolves with a "Room is full" error and does not connect, when the Room is already at capacity', async () => {
     const registry = new RoomRegistry();
     const fullRoomPlayers = Array.from({ length: 19 }, (_, i) => ({
@@ -97,6 +108,17 @@ describe('rejoinRoom', () => {
     const result = await rejoinRoom(new FakeTransport(), registry, 'NOPE12', 'some-token');
 
     expect(result).toEqual({ status: 'invalid-room' });
+  });
+
+  it('resolves with a clear error when the Host never responds at all (the connect attempt hangs)', async () => {
+    const registry = new RoomRegistry();
+    const code = registry.generate();
+    const transport = new FakeTransport();
+    vi.spyOn(transport, 'connect').mockReturnValue(new Promise(() => {})); // never settles
+
+    const result = await rejoinRoom(transport, registry, code, 'a-token', async () => 'timed-out');
+
+    expect(result).toEqual({ status: 'unreachable' });
   });
 });
 
