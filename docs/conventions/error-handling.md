@@ -11,3 +11,22 @@ if (rejection) {
   return { state, payouts: [], rejection };
 }
 ```
+
+## Retry only a transient failure; never retry a definitive answer
+
+When a call can fail either because the other side hasn't responded at all (a network blip, a slow peer — transient)
+or because it gave a definite answer (an explicit rejection, a definite error), loop retrying only the transient
+case, with a bounded budget (an attempt count or an elapsed-time cap) and a short wait between attempts. Any other
+outcome, including a definite rejection, returns or throws immediately without consuming the wait: retrying an answer
+the other side already gave can't change it.
+
+```ts
+for (let attempt = 1; ; attempt++) {
+  const result = await rejoinRoom(transport, registry, code, token);
+  if (result.status === 'joined') return result;
+  if (result.status !== 'unreachable' || attempt >= RECONNECT_RETRY_ATTEMPTS) {
+    return result;
+  }
+  await wait(RECONNECT_RETRY_DELAY_MS);
+}
+```
