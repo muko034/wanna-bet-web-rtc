@@ -1,7 +1,7 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import type { Transport } from '../transport/transport';
-import { rejoinRoom, watchForGameStart, watchForSessionEnd, watchGameState } from './join-room';
+import { rejoinRoom, watchForConnectionDrop, watchForGameStart, watchGameState } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
 
@@ -16,7 +16,13 @@ export type ReconnectCallbacks = {
   onGameState: (state: GameState) => void;
   /** This Guest's own live connection observed the Host's game-started broadcast for `code`. */
   onGameStarted: (code: string) => void;
-  onSessionEnded: () => void;
+  /**
+   * This Guest's live connection to the Host was lost. There is no way to tell a brief drop
+   * apart from the Host being gone for good at this moment, so both are reported the same
+   * way — the caller's job is to drive the shared reconnect implementation automatically in
+   * response, not to treat this as a terminal state.
+   */
+  onConnectionDropped: () => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
@@ -39,7 +45,7 @@ function delay(ms: number): Promise<void> {
  */
 export function wireGuestConnection(transport: Transport, code: string, callbacks: ReconnectCallbacks): void {
   watchGameState(transport, callbacks.onGameState);
-  watchForSessionEnd(transport, callbacks.onSessionEnded);
+  watchForConnectionDrop(transport, callbacks.onConnectionDropped);
   watchForGameStart(transport, () => callbacks.onGameStarted(code));
 }
 
@@ -63,10 +69,11 @@ export function completeGuestConnection(
 
 /**
  * The one Guest-side reconnect sequence shared by every call site that resumes an existing
- * player (the Lobby's join screen and `/room/<code>/play` on a reload, and — once a
- * connection-drop detector exists — a dropped connection on either route): load this
- * device's stored identity for `code`, and if one exists, present its `reconnectToken` to
- * the Host and wire the resulting live connection up via `wireGuestConnection`. A Guest with
+ * player (the Lobby's join screen and `/room/<code>/play`, both on a reload and when either
+ * route's own connection-drop detector fires — see `wireGuestConnection`'s
+ * `onConnectionDropped`): load this device's stored identity for `code`, and if one exists,
+ * present its `reconnectToken` to the Host and wire the resulting live connection up via
+ * `wireGuestConnection`. A Guest with
  * no stored identity resolves immediately as `no-identity`, without ever touching
  * `transport`, so a caller can fall back to the ordinary join form without an unnecessary
  * connection attempt.

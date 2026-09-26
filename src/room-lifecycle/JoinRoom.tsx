@@ -21,6 +21,14 @@ type Props = {
   /** This Guest's own live `GameState` — a Lobby snapshot pre-game — used only for the waiting screen's roster. */
   gameState: GameState | null;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  /**
+   * This Guest's live connection was lost — either while sitting on this screen, or on a
+   * connection this screen itself established that's since moved on (e.g. after the game
+   * started and navigated to `/play`). Notifies the App-level state a Guest's connection
+   * relies on regardless of which route is currently mounted, so a drop is recovered from
+   * even after this screen has unmounted (see `app.tsx`).
+   */
+  onConnectionLost: () => void;
 };
 
 type Status =
@@ -28,7 +36,6 @@ type Status =
   | { kind: 'rejoining' }
   | { kind: 'joining' }
   | { kind: 'joined'; playerId: string }
-  | { kind: 'session-ended' }
   | { kind: 'error'; message: string }
   | { kind: 'reconnect-failed' };
 
@@ -47,7 +54,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onConnectionLost }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
@@ -57,8 +64,8 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
   // callback per render must not re-run them, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
   const makeCallbacks = (): ReconnectCallbacks => ({
@@ -67,9 +74,14 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       callbacksRef.current.onGameStarted(startedCode);
       route(withBase(`room/${startedCode}/play`));
     },
-    onSessionEnded: () => {
+    // A drop is never a dead end: notify the App-level state a Guest's connection relies on
+    // (in case this screen has since unmounted, e.g. after the game started) and re-run this
+    // screen's own reconnect effect (in case it's still the one mounted, e.g. a drop while
+    // still in the Lobby) — both drive the exact same shared reconnect implementation.
+    onConnectionDropped: () => {
       callbacksRef.current.onPlaceBetReady(null);
-      setStatus({ kind: 'session-ended' });
+      callbacksRef.current.onConnectionLost();
+      setRetryKey((key) => key + 1);
     },
     onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
   });
@@ -126,17 +138,6 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       }
     });
   };
-
-  if (status.kind === 'session-ended') {
-    return (
-      <PhoneShell background="vb-bg-wait" roomCode={code}>
-        <div class="vb-giant-title" style="font-size:24px">
-          Session ended
-        </div>
-        <div class="vb-giant-sub">The Host's connection was lost, so this Room has ended.</div>
-      </PhoneShell>
-    );
-  }
 
   if (status.kind === 'joined') {
     const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: status.playerId });
