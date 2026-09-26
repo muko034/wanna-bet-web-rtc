@@ -17,10 +17,24 @@ export type RejoinResult =
   | { status: 'unknown-player' };
 
 /**
+ * How long `connectAndSend` waits for `transport.connect()` to settle before treating the
+ * Host as unreachable. A real WebRTC connection attempt that gets no response at all (the
+ * Host is gone without cleanly deregistering, a network partition) never rejects on its
+ * own — there is no PeerJS error event for "nothing answered" — so without this timeout the
+ * returned promise would hang forever instead of resolving `unreachable`.
+ */
+const CONNECT_TIMEOUT_MS = 8_000;
+
+function afterTimeout(ms: number): Promise<'timed-out'> {
+  return new Promise((resolve) => setTimeout(() => resolve('timed-out'), ms));
+}
+
+/**
  * Shared Guest-side connect flow underlying `joinRoom`/`rejoinRoom`: derives `code`'s
  * Transport ID via `registry` (a pure, local computation — no shared lookup involved),
  * connects, sends via `send`, and awaits the Host's `welcome`/`rejected` reply — mapping a
- * `rejected` reply's reason via `onRejected`.
+ * `rejected` reply's reason via `onRejected`. Races the connect attempt against `timeout`,
+ * resolving `unreachable` if nothing (success or error) comes back within `CONNECT_TIMEOUT_MS`.
  */
 function connectAndSend<Result extends { status: string }>(
   transport: Transport,
@@ -28,10 +42,11 @@ function connectAndSend<Result extends { status: string }>(
   code: string,
   send: (protocol: GuestProtocol) => void,
   onRejected: (reason: string) => Result,
+  timeout: (ms: number) => Promise<'timed-out'> = afterTimeout,
 ): Promise<Result | { status: 'joined'; playerId: string; reconnectToken: string } | { status: 'invalid-room' } | { status: 'unreachable' }> {
   const transportId = registry.transportIdFor(code);
 
-  return new Promise((resolve) => {
+  const connectAttempt = new Promise<Result | { status: 'joined'; playerId: string; reconnectToken: string } | { status: 'invalid-room' } | { status: 'unreachable' }>((resolve) => {
     transport
       .connect(transportId)
       .then(() => {
@@ -46,6 +61,8 @@ function connectAndSend<Result extends { status: string }>(
       })
       .catch((error) => resolve({ status: error instanceof PeerUnavailableError ? 'invalid-room' : 'unreachable' }));
   });
+
+  return Promise.race([connectAttempt, timeout(CONNECT_TIMEOUT_MS).then((): { status: 'unreachable' } => ({ status: 'unreachable' }))]);
 }
 
 /**
@@ -54,7 +71,13 @@ function connectAndSend<Result extends { status: string }>(
  * Room Code (no Host reachable under its derived id), an unreachable Host, and a full
  * Room, rather than leaving the caller to interpret a raw connection failure.
  */
-export function joinRoom(transport: Transport, registry: RoomRegistry, code: string, name: string): Promise<JoinResult> {
+export function joinRoom(
+  transport: Transport,
+  registry: RoomRegistry,
+  code: string,
+  name: string,
+  timeout: (ms: number) => Promise<'timed-out'> = afterTimeout,
+): Promise<JoinResult> {
   return connectAndSend(
     transport,
     registry,
@@ -65,6 +88,7 @@ export function joinRoom(transport: Transport, registry: RoomRegistry, code: str
       reason === 'GAME_STARTED' ? { status: 'game-started' } :
       { status: 'invalid-room' }
     ),
+    timeout,
   );
 }
 
@@ -76,13 +100,20 @@ export function joinRoom(transport: Transport, registry: RoomRegistry, code: str
  * from an invalid Room Code, so the caller can fall back to a fresh `joinRoom` instead of
  * showing a "Room doesn't exist" message.
  */
-export function rejoinRoom(transport: Transport, registry: RoomRegistry, code: string, reconnectToken: string): Promise<RejoinResult> {
+export function rejoinRoom(
+  transport: Transport,
+  registry: RoomRegistry,
+  code: string,
+  reconnectToken: string,
+  timeout: (ms: number) => Promise<'timed-out'> = afterTimeout,
+): Promise<RejoinResult> {
   return connectAndSend(
     transport,
     registry,
     code,
     (protocol) => protocol.rejoin({ reconnectToken }),
     () => ({ status: 'unknown-player' }),
+    timeout,
   );
 }
 
