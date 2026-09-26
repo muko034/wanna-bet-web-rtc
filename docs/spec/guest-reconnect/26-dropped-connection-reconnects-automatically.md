@@ -1,5 +1,7 @@
 **Blocked by**: 25 (Reconnect retries with manual fallback)
 
+**Status**: Implemented
+
 ## What to build
 
 Wire connection-drop detection — on both the Lobby route and `/room/<code>/play` — to trigger the shared reconnect
@@ -14,11 +16,11 @@ This applies on either route: a drop while still in the Lobby recovers the same 
 
 ## Acceptance criteria
 
-- [ ] A dropped connection (on either the Lobby route or `/room/<code>/play`) automatically triggers the shared
+- [x] A dropped connection (on either the Lobby route or `/room/<code>/play`) automatically triggers the shared
       reconnect implementation, with no reload needed.
-- [ ] The automatic-attempts-then-manual-retry behavior from `25-reconnect-retries-with-manual-fallback.md` applies
+- [x] The automatic-attempts-then-manual-retry behavior from `25-reconnect-retries-with-manual-fallback.md` applies
       identically to a detected drop as it does to a reload.
-- [ ] The old immediate "session ended" screen no longer appears for a Guest-side dropped connection — reaching a
+- [x] The old immediate "session ended" screen no longer appears for a Guest-side dropped connection — reaching a
       terminal, give-up state always happens through the retry-then-manual-retry flow.
-- [ ] A Guest never sees a stale game/lobby screen while a drop is being automatically recovered from — the
+- [x] A Guest never sees a stale game/lobby screen while a drop is being automatically recovered from — the
       "Reconnecting…" state is shown instead.
