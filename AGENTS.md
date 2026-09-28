@@ -11,7 +11,7 @@ Turn-based social betting game. The Host owns authoritative game state; Guests c
 ## Reference
 
 - **Domain language:** `docs/domain-glossary.md`
-- **Requirements:** `docs/spec/`
+- **Issue tracker:** `docs/agents/issue-tracker.md`
 - **Architecture decisions:** `docs/adr/`
 - **Wire protocol:** `docs/message-protocol.md`
 - **Game rules:** `docs/game-rules.md`
