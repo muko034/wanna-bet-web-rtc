@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { joinRoom, rejoinRoom, watchForGameStart, watchForSessionEnd } from './join-room';
+import { joinRoom, rejoinRoom, watchForConnectionDrop, watchForGameStart } from './join-room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -122,8 +122,8 @@ describe('rejoinRoom', () => {
   });
 });
 
-describe('watchForSessionEnd', () => {
-  it('notifies the caller when the connection to the Host is lost, since there is no Host migration and the Room just ends', async () => {
+describe('watchForConnectionDrop', () => {
+  it('notifies the caller when the connection to the Host is lost', async () => {
     const registry = new RoomRegistry();
     const hostTransport = new FakeTransport();
     const code = registry.generate();
@@ -131,11 +131,11 @@ describe('watchForSessionEnd', () => {
     const guestTransport = new FakeTransport();
     await guestTransport.connect(registry.transportIdFor(code));
 
-    const onSessionEnded = vi.fn();
-    watchForSessionEnd(guestTransport, onSessionEnded);
+    const onConnectionDropped = vi.fn();
+    watchForConnectionDrop(guestTransport, onConnectionDropped);
     hostTransport.disconnect();
 
-    expect(onSessionEnded).toHaveBeenCalledOnce();
+    expect(onConnectionDropped).toHaveBeenCalledOnce();
   });
 
   it('does not notify the caller while the connection to the Host is still up', async () => {
@@ -146,10 +146,10 @@ describe('watchForSessionEnd', () => {
     const guestTransport = new FakeTransport();
     await guestTransport.connect(registry.transportIdFor(code));
 
-    const onSessionEnded = vi.fn();
-    watchForSessionEnd(guestTransport, onSessionEnded);
+    const onConnectionDropped = vi.fn();
+    watchForConnectionDrop(guestTransport, onConnectionDropped);
 
-    expect(onSessionEnded).not.toHaveBeenCalled();
+    expect(onConnectionDropped).not.toHaveBeenCalled();
   });
 });
 

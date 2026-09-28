@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
+import { PeerUnavailableError } from '../transport/transport';
 import { FakeStorage } from '../fake-storage';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
@@ -17,7 +18,7 @@ async function hostRoom(registry: RoomRegistry, room: Room = roomWith([])) {
   const code = registry.generate();
   await hostTransport.connect(undefined, registry.transportIdFor(code));
   const manager = new ConnectionManager(hostTransport, room, () => {});
-  return { code, manager };
+  return { code, manager, hostTransport };
 }
 
 /** Joins a fresh Guest into `code`'s Room for real, so its `reconnectToken` is one the Host actually recognizes. */
@@ -31,7 +32,7 @@ function noopCallbacks(): ReconnectCallbacks {
   return {
     onGameState: vi.fn(),
     onGameStarted: vi.fn(),
-    onSessionEnded: vi.fn(),
+    onConnectionDropped: vi.fn(),
     onPlaceBetReady: vi.fn(),
   };
 }
@@ -92,14 +93,37 @@ describe('attemptReconnect', () => {
     expect(callbacks.onPlaceBetReady).not.toHaveBeenCalled();
   });
 
-  it('passes through "invalid-room" and "unreachable" results from the underlying rejoin attempt', async () => {
+  it('retries while no Host is registered under the Room Code, succeeding once the Host comes back', async () => {
+    const registry = new RoomRegistry();
+    const { code } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const transport = new FakeTransport();
+    const realConnect = transport.connect.bind(transport);
+    vi.spyOn(transport, 'connect')
+      .mockRejectedValueOnce(new PeerUnavailableError('no peer'))
+      .mockRejectedValueOnce(new PeerUnavailableError('no peer'))
+      .mockImplementation(realConnect);
+    const wait = vi.fn(async () => {});
+
+    const result = await attemptReconnect(transport, registry, storage, code, noopCallbacks(), wait);
+
+    expect(result).toEqual({ status: 'joined', playerId: joined.playerId });
+    expect(wait).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up with "unreachable", not "invalid-room", when no Host ever registers under the Room Code', async () => {
     const registry = new RoomRegistry();
     const storage = new FakeStorage();
     saveIdentity(storage, 'NOPE12', { playerId: 'p1', reconnectToken: 'some-token' });
+    const waits: number[] = [];
 
-    const result = await attemptReconnect(new FakeTransport(), registry, storage, 'NOPE12', noopCallbacks());
+    const result = await attemptReconnect(new FakeTransport(), registry, storage, 'NOPE12', noopCallbacks(), async (ms) => void waits.push(ms));
 
-    expect(result).toEqual({ status: 'invalid-room' });
+    expect(result).toEqual({ status: 'unreachable' });
+    expect(waits.length).toBe(9);
+    expect(waits.reduce((total, ms) => total + ms, 0)).toBe(18_000);
   });
 
   it('retries a "no response" rejoin attempt with a short delay, succeeding once the Host becomes reachable again', async () => {
@@ -165,6 +189,39 @@ describe('attemptReconnect', () => {
     saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
     const callbacks = noopCallbacks();
 
+    await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
+
+    expect(callbacks.onGameStarted).toHaveBeenCalledWith(code);
+  });
+
+  it("notifies onConnectionDropped when the live connection this attempt just joined is lost, so a caller can drive another reconnect attempt automatically", async () => {
+    const registry = new RoomRegistry();
+    const { code, hostTransport } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const transport = new FakeTransport();
+    const callbacks = noopCallbacks();
+
+    const result = await attemptReconnect(transport, registry, storage, code, callbacks);
+    if (result.status !== 'joined') throw new Error('setup failed: expected to reconnect');
+    hostTransport.disconnect();
+
+    expect(callbacks.onConnectionDropped).toHaveBeenCalledOnce();
+  });
+
+  it("re-notifies onGameStarted on a rejoin that follows a drop, since the Host resends the in-progress GameState on every rejoin", async () => {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const callbacks = noopCallbacks();
+
+    // Simulates a Guest reconnecting a second time on a fresh Transport, as a caller's
+    // `onConnectionDropped` handler would do after the first connection dropped.
     await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
 
     expect(callbacks.onGameStarted).toHaveBeenCalledWith(code);

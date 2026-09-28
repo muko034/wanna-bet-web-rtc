@@ -138,16 +138,17 @@ export function watchGameState(transport: Transport, onGameState: (state: GameSt
 }
 
 /**
- * Watches a Guest's own `transport` for its connection to the Host being lost. A dropped
- * data channel is terminal here — this app never attempts an automatic reconnect — so a
- * single `connected: false` notification is enough to call the Room over. There is no Host
- * migration; `onSessionEnded` is the caller's cue to show a clear "session ended" state
- * instead of leaving the Guest stuck on a stale screen.
+ * Watches a Guest's own `transport` for its connection to the Host being lost. A single
+ * `connected: false` notification is enough to call it — there is no way to tell a brief
+ * network blip apart from the Host being gone for good at the moment it happens, so both
+ * are reported identically here. `onConnectionDropped` is the caller's cue to drive the
+ * shared reconnect implementation (`guest-reconnect.ts`'s `attemptReconnect`) automatically,
+ * the same way a page reload does, rather than treating the drop as an immediate dead end.
  */
-export function watchForSessionEnd(transport: Transport, onSessionEnded: () => void): void {
+export function watchForConnectionDrop(transport: Transport, onConnectionDropped: () => void): void {
   transport.onConnectionChange((_peerId, connected) => {
     if (!connected) {
-      onSessionEnded();
+      onConnectionDropped();
     }
   });
 }
