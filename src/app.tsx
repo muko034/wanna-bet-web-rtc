@@ -66,6 +66,7 @@ export function App() {
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
+  const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   // Decided before the first render, so the Room's link never mounts the Guest join form meanwhile.
   const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
 
@@ -92,16 +93,29 @@ export function App() {
   const reopen = (target: Reopening) => {
     setReopening({ ...target, failed: false });
     const transport = new PeerJsTransport();
+    reopeningTransportRef.current = transport;
+    const isCurrent = () => reopeningTransportRef.current === transport;
     reopenRoom(transport, roomRegistry, target.session.room)
       .then(() => {
+        if (!isCurrent()) return;
+        reopeningTransportRef.current = null;
         hostRoom(transport, target.session.room).resume(target.session);
         setReopening(null);
         route(withBase(target.landingPath), true);
       })
       .catch(() => {
         transport.close();
+        if (!isCurrent()) return;
         setReopening({ ...target, failed: true });
       });
+  };
+
+  /** Home during a reopen: drop the half-built Peer so it can't finish later and pull the user back into the Room. */
+  const cancelReopen = () => {
+    reopeningTransportRef.current?.close();
+    reopeningTransportRef.current = null;
+    route(withBase('/'), true);
+    setReopening(null);
   };
 
   useEffect(() => {
@@ -139,7 +153,7 @@ export function App() {
 
   if (reopening) {
     return (
-      <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} />
+      <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} onHome={cancelReopen} />
     );
   }
 

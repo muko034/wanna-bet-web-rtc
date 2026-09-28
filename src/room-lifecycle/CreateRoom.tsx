@@ -1,7 +1,6 @@
 import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
-import { withBase } from '../base-path';
 import { PeerJsTransport } from '../transport/peerjs-transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
@@ -25,14 +24,7 @@ export function CreateRoom({ onRoomCreated }: Props) {
   };
 
   return (
-    <PhoneShell
-      background="vb-bg-form"
-      topLeft={
-        <a class="vb-back-fab" href={withBase('/')}>
-          &larr;
-        </a>
-      }
-    >
+    <PhoneShell background="vb-bg-form">
       <div class="vb-giant-title" style="font-size:24px">
         Create a game
       </div>
