@@ -152,7 +152,11 @@ export class PeerJsTransport implements Transport {
       };
       const onError = () => {
         cleanup();
-        this.rebuildHostPeer().then(resolve);
+        if (peer.destroyed) {
+          this.rebuildHostPeer().then(resolve);
+        } else {
+          resolve(false);
+        }
       };
       const cleanup = () => {
         peer.off('open', onOpen);
