@@ -3,7 +3,7 @@ import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { withBase } from '../base-path';
-import { PeerJsTransport } from '../transport/peerjs-transport';
+import type { PeerJsTransport } from '../transport/peerjs-transport';
 import { joinRoom, type JoinResult } from './join-room';
 import { attemptReconnect, completeGuestConnection, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
 import { loadIdentity } from './player-identity';
@@ -29,6 +29,11 @@ type Props = {
    * even after this screen has unmounted (see `app.tsx`).
    */
   onConnectionLost: () => void;
+  /**
+   * Opens a fresh Guest transport, closing whichever one the App handed out before — including
+   * one a different route established (see `app.tsx`).
+   */
+  createGuestTransport: () => PeerJsTransport;
 };
 
 type Status =
@@ -54,7 +59,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onConnectionLost }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onConnectionLost, createGuestTransport }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
@@ -66,17 +71,6 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   // callback per render must not re-run them, since each run opens a new Peer.
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
-
-  // The Guest's most recent transport. A joined one outlives its effect (see below), so a
-  // reconnect after a drop closes it explicitly — otherwise its watchers stay attached to a
-  // dead connection and can start a second reconnect loop.
-  const transportRef = useRef<PeerJsTransport | null>(null);
-  const replaceTransport = (): PeerJsTransport => {
-    transportRef.current?.close();
-    const transport = new PeerJsTransport();
-    transportRef.current = transport;
-    return transport;
-  };
 
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
   const makeCallbacks = (): ReconnectCallbacks => ({
@@ -103,7 +97,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     if (!stored) return;
 
     setStatus({ kind: 'rejoining' });
-    const transport = replaceTransport();
+    const transport = createGuestTransport();
     let pending = true;
     attemptReconnect(transport, roomRegistry, localStorage, code, makeCallbacks()).then((result) => {
       if (!pending) return;
@@ -133,7 +127,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     event.preventDefault();
     if (!code) return;
     setStatus({ kind: 'joining' });
-    const transport = replaceTransport();
+    const transport = createGuestTransport();
     const callbacks = makeCallbacks();
     wireGuestConnection(transport, code, callbacks);
     joinRoom(transport, roomRegistry, code, name).then((result) => {

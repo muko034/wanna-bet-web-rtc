@@ -4,7 +4,7 @@ import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import { PeerJsTransport } from '../transport/peerjs-transport';
+import type { PeerJsTransport } from '../transport/peerjs-transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
@@ -43,6 +43,8 @@ type Props = {
    * Lobby's join screen before the game started.
    */
   onConnectionLost: () => void;
+  /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
+  createGuestTransport: () => PeerJsTransport;
 };
 
 /**
@@ -67,6 +69,7 @@ export function StartedGame({
   onGameState,
   onPlaceBetReady,
   onConnectionLost,
+  createGuestTransport,
 }: Props) {
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
@@ -81,17 +84,11 @@ export function StartedGame({
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
-  // This route's most recent transport. A joined one outlives its effect, so the next
-  // reconnect closes it explicitly rather than leaving its watchers on a dead connection.
-  const transportRef = useRef<PeerJsTransport | null>(null);
-
   useEffect(() => {
     if (!code || !isGuestUnresolved || !hasStoredIdentity) return;
 
     setReconnectPhase('pending');
-    transportRef.current?.close();
-    const transport = new PeerJsTransport();
-    transportRef.current = transport;
+    const transport = createGuestTransport();
     let pending = true;
     const callbacks: ReconnectCallbacks = {
       onGameState: (state) => callbacksRef.current.onGameState(state),
@@ -169,6 +166,7 @@ export function StartedGame({
         gameState={gameState}
         onPlaceBetReady={onPlaceBetReady}
         onConnectionLost={onConnectionLost}
+        createGuestTransport={createGuestTransport}
       />
     );
   }
