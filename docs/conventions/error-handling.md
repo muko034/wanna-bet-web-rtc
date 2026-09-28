@@ -21,12 +21,15 @@ outcome, including a definite rejection, returns or throws immediately without c
 the other side already gave can't change it.
 
 ```ts
-for (let attempt = 1; ; attempt++) {
+let waitedMs = 0;
+let delayMs = RECONNECT_INITIAL_DELAY_MS;
+for (;;) {
   const result = await rejoinRoom(transport, registry, code, token);
   if (result.status === 'joined') return result;
-  if (result.status !== 'unreachable' || attempt >= RECONNECT_RETRY_ATTEMPTS) {
-    return result;
-  }
-  await wait(RECONNECT_RETRY_DELAY_MS);
+  if (result.status === 'unknown-player') return result;
+  if (waitedMs >= RECONNECT_MAX_DURATION_MS) return result;
+  await wait(delayMs);
+  waitedMs += delayMs;
+  delayMs = Math.min(delayMs * 2, RECONNECT_MAX_DELAY_MS);
 }
 ```
