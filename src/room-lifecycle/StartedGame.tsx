@@ -18,8 +18,7 @@ import { resolveStartedGameView, type ReconnectPhase } from './started-game-view
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
-const RECONNECT_ERROR_MESSAGES: Record<'invalid-room' | 'unreachable', string> = {
-  'invalid-room': "This room link doesn't exist or has expired.",
+const RECONNECT_ERROR_MESSAGES: Record<'unreachable', string> = {
   unreachable: "Couldn't reach the Host — check the link and try again.",
 };
 
@@ -82,11 +81,17 @@ export function StartedGame({
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
+  // This route's most recent transport. A joined one outlives its effect, so the next
+  // reconnect closes it explicitly rather than leaving its watchers on a dead connection.
+  const transportRef = useRef<PeerJsTransport | null>(null);
+
   useEffect(() => {
     if (!code || !isGuestUnresolved || !hasStoredIdentity) return;
 
     setReconnectPhase('pending');
+    transportRef.current?.close();
     const transport = new PeerJsTransport();
+    transportRef.current = transport;
     let pending = true;
     const callbacks: ReconnectCallbacks = {
       onGameState: (state) => callbacksRef.current.onGameState(state),

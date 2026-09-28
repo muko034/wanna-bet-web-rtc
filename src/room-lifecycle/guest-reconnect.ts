@@ -9,7 +9,6 @@ export type ReconnectResult =
   | { status: 'no-identity' }
   | { status: 'joined'; playerId: string }
   | { status: 'unknown-player' }
-  | { status: 'invalid-room' }
   | { status: 'unreachable' };
 
 export type ReconnectCallbacks = {
@@ -27,9 +26,13 @@ export type ReconnectCallbacks = {
 };
 
 /** Total `rejoin` attempts (the first try plus these retries) before giving up as `unreachable`. */
-const RECONNECT_RETRY_ATTEMPTS = 3;
-/** Delay between automatic retry attempts — short enough that a brief blip resolves without the Guest noticing. */
-const RECONNECT_RETRY_DELAY_MS = 1_000;
+const RECONNECT_RETRY_ATTEMPTS = 10;
+/**
+ * Delay between automatic retry attempts. Together with `RECONNECT_RETRY_ATTEMPTS` this gives a
+ * Host that navigated away and came back about 20 seconds to re-register before the Guest
+ * has to retry manually.
+ */
+const RECONNECT_RETRY_DELAY_MS = 2_000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,13 +81,15 @@ export function completeGuestConnection(
  * `transport`, so a caller can fall back to the ordinary join form without an unnecessary
  * connection attempt.
  *
- * Retries a `rejoin` attempt that gets no response at all from the Host (`unreachable` —
- * the Host is briefly unreachable, a slow network) automatically, up to
- * `RECONNECT_RETRY_ATTEMPTS` tries total with `RECONNECT_RETRY_DELAY_MS` between them,
- * before resolving `unreachable` for the caller to show a manual-Retry state. An explicit
- * rejection from the Host (`unknown-player`, or a definite `invalid-room` answer) is never
- * retried — retrying an answer the Host already gave can't change the outcome. `wait` is
- * injectable so tests can assert the retry delay without real timers (see `reopenRoom` in
+ * Retries a `rejoin` attempt that finds no Host — no response at all, or no Host registered
+ * under the Room Code (`unreachable` / `invalid-room` from `rejoinRoom`) — automatically, up to
+ * `RECONNECT_RETRY_ATTEMPTS` tries total with `RECONNECT_RETRY_DELAY_MS` between them, before
+ * resolving `unreachable` for the caller to show a manual-Retry state. A stored identity proves
+ * the Room existed, so a missing Host is treated as the Host being briefly away (e.g. it
+ * navigated off and is about to come back), never as a Room that doesn't exist. Only an explicit
+ * `unknown-player` rejection from the Host is never retried — retrying an answer the Host
+ * already gave can't change the outcome. `wait` is injectable so tests can assert the retry
+ * delay without real timers (see `reopenRoom` in
  * `room.ts` for the same pattern).
  */
 export async function attemptReconnect(
@@ -109,8 +114,11 @@ export async function attemptReconnect(
       completeGuestConnection(transport, code, storage, result.playerId, result.reconnectToken, callbacks);
       return { status: 'joined', playerId: result.playerId };
     }
-    if (result.status !== 'unreachable' || attempt >= RECONNECT_RETRY_ATTEMPTS) {
-      return { status: result.status };
+    if (result.status === 'unknown-player') {
+      return { status: 'unknown-player' };
+    }
+    if (attempt >= RECONNECT_RETRY_ATTEMPTS) {
+      return { status: 'unreachable' };
     }
     await wait(RECONNECT_RETRY_DELAY_MS);
   }

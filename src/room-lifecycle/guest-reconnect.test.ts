@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
+import { PeerUnavailableError } from '../transport/transport';
 import { FakeStorage } from '../fake-storage';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
@@ -92,14 +93,37 @@ describe('attemptReconnect', () => {
     expect(callbacks.onPlaceBetReady).not.toHaveBeenCalled();
   });
 
-  it('passes through "invalid-room" and "unreachable" results from the underlying rejoin attempt', async () => {
+  it('retries while no Host is registered under the Room Code, succeeding once the Host comes back', async () => {
+    const registry = new RoomRegistry();
+    const { code } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const transport = new FakeTransport();
+    const realConnect = transport.connect.bind(transport);
+    vi.spyOn(transport, 'connect')
+      .mockRejectedValueOnce(new PeerUnavailableError('no peer'))
+      .mockRejectedValueOnce(new PeerUnavailableError('no peer'))
+      .mockImplementation(realConnect);
+    const wait = vi.fn(async () => {});
+
+    const result = await attemptReconnect(transport, registry, storage, code, noopCallbacks(), wait);
+
+    expect(result).toEqual({ status: 'joined', playerId: joined.playerId });
+    expect(wait).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up with "unreachable", not "invalid-room", when no Host ever registers under the Room Code', async () => {
     const registry = new RoomRegistry();
     const storage = new FakeStorage();
     saveIdentity(storage, 'NOPE12', { playerId: 'p1', reconnectToken: 'some-token' });
+    const waits: number[] = [];
 
-    const result = await attemptReconnect(new FakeTransport(), registry, storage, 'NOPE12', noopCallbacks());
+    const result = await attemptReconnect(new FakeTransport(), registry, storage, 'NOPE12', noopCallbacks(), async (ms) => void waits.push(ms));
 
-    expect(result).toEqual({ status: 'invalid-room' });
+    expect(result).toEqual({ status: 'unreachable' });
+    expect(waits.length).toBe(9);
+    expect(waits.reduce((total, ms) => total + ms, 0)).toBe(18_000);
   });
 
   it('retries a "no response" rejoin attempt with a short delay, succeeding once the Host becomes reachable again', async () => {

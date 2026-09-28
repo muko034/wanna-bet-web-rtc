@@ -67,6 +67,17 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
+  // The Guest's most recent transport. A joined one outlives its effect (see below), so a
+  // reconnect after a drop closes it explicitly — otherwise its watchers stay attached to a
+  // dead connection and can start a second reconnect loop.
+  const transportRef = useRef<PeerJsTransport | null>(null);
+  const replaceTransport = (): PeerJsTransport => {
+    transportRef.current?.close();
+    const transport = new PeerJsTransport();
+    transportRef.current = transport;
+    return transport;
+  };
+
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
   const makeCallbacks = (): ReconnectCallbacks => ({
     onGameState: (state) => callbacksRef.current.onGameState(state),
@@ -92,7 +103,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     if (!stored) return;
 
     setStatus({ kind: 'rejoining' });
-    const transport = new PeerJsTransport();
+    const transport = replaceTransport();
     let pending = true;
     attemptReconnect(transport, roomRegistry, localStorage, code, makeCallbacks()).then((result) => {
       if (!pending) return;
@@ -105,9 +116,6 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       } else if (result.status === 'unreachable') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'reconnect-failed' });
-      } else if (result.status !== 'no-identity') {
-        callbacksRef.current.onPlaceBetReady(null);
-        setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
 
@@ -125,7 +133,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     event.preventDefault();
     if (!code) return;
     setStatus({ kind: 'joining' });
-    const transport = new PeerJsTransport();
+    const transport = replaceTransport();
     const callbacks = makeCallbacks();
     wireGuestConnection(transport, code, callbacks);
     joinRoom(transport, roomRegistry, code, name).then((result) => {
