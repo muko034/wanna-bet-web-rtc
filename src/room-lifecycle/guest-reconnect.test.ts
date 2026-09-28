@@ -113,7 +113,7 @@ describe('attemptReconnect', () => {
     expect(wait).toHaveBeenCalledTimes(2);
   });
 
-  it('gives up with "unreachable", not "invalid-room", when no Host ever registers under the Room Code', async () => {
+  it('gives up with "unreachable", not "invalid-room", when no Host ever registers under the Room Code — retrying for up to ~5 minutes with a backoff capped at 20s', async () => {
     const registry = new RoomRegistry();
     const storage = new FakeStorage();
     saveIdentity(storage, 'NOPE12', { playerId: 'p1', reconnectToken: 'some-token' });
@@ -122,8 +122,10 @@ describe('attemptReconnect', () => {
     const result = await attemptReconnect(new FakeTransport(), registry, storage, 'NOPE12', noopCallbacks(), async (ms) => void waits.push(ms));
 
     expect(result).toEqual({ status: 'unreachable' });
-    expect(waits.length).toBe(9);
-    expect(waits.reduce((total, ms) => total + ms, 0)).toBe(18_000);
+    // Doubles from 2s up to the 20s cap, then holds there until the ~5 minute budget is spent.
+    expect(waits).toEqual([2_000, 4_000, 8_000, 16_000, ...Array(14).fill(20_000)]);
+    expect(waits.every((ms) => ms <= 20_000)).toBe(true);
+    expect(waits.reduce((total, ms) => total + ms, 0)).toBeGreaterThanOrEqual(5 * 60_000);
   });
 
   it('retries a "no response" rejoin attempt with a short delay, succeeding once the Host becomes reachable again', async () => {

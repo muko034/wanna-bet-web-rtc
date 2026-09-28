@@ -15,6 +15,7 @@ import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
+import { useForegroundRetry } from './use-foreground-retry';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
@@ -83,6 +84,12 @@ export function StartedGame({
   // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
+
+  // While a reconnect attempt is in flight (including waiting out its own backoff), coming
+  // back to the foreground re-runs the effect below from scratch — an immediate retry instead
+  // of waiting out whatever delay it was backed off to — rather than duplicating it with a
+  // second connection attempt.
+  useForegroundRetry(reconnectPhase === 'pending', () => setRetryKey((key) => key + 1));
 
   useEffect(() => {
     if (!code || !isGuestUnresolved || !hasStoredIdentity) return;

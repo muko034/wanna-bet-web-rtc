@@ -4,11 +4,10 @@ import { PhoneShell } from '../PhoneShell';
 import { PeerJsTransport } from '../transport/peerjs-transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
-import type { Transport } from '../transport/transport';
 
 type Props = {
   path?: string;
-  onRoomCreated: (room: Room, transport: Transport) => void;
+  onRoomCreated: (room: Room, transport: PeerJsTransport) => void;
 };
 
 /** `/room`: form to enter the Host's display name and create the Room. */

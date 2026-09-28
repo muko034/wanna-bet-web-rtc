@@ -21,12 +21,23 @@ export class PeerJsTransport implements Transport {
   private connectionChangeHandlers: Array<(peerId: string, connected: boolean) => void> = [];
   private peer: Peer | undefined;
   private readonly serverOptions: PeerJsServerOptions | undefined;
+  /**
+   * The `requestedId` this transport last opened as a Host under (`connect(undefined, requestedId)`)
+   * — a Room Code's derived Transport ID never changes across a reload/recovery, so `recover()`
+   * reuses it verbatim when it has to rebuild the underlying `Peer` from scratch. `undefined` for
+   * a Guest transport (which always supplies `remoteId` instead) — `recover()` is a Host-only
+   * operation and is a no-op without it.
+   */
+  private lastRequestedId: string | undefined;
 
   constructor(serverOptions?: PeerJsServerOptions) {
     this.serverOptions = serverOptions;
   }
 
   connect(remoteId?: string, requestedId?: string): Promise<string> {
+    if (remoteId === undefined) {
+      this.lastRequestedId = requestedId;
+    }
     return new Promise((resolve, reject) => {
       const options = this.serverOptions;
       const peer = requestedId
@@ -91,6 +102,81 @@ export class PeerJsTransport implements Transport {
   close(): void {
     this.peer?.destroy();
     this.connections.clear();
+  }
+
+  /**
+   * Exposes the underlying `Peer` for the smoke-test suite only, which needs to simulate a
+   * stale signaling connection (`peer.disconnect()`) or a destroyed one (`peer.destroy()`)
+   * directly — neither is reachable through the `Transport` interface. Not part of it, same as
+   * `close()`.
+   */
+  peerForTesting(): Peer {
+    if (!this.peer) {
+      throw new Error('peerForTesting() called before connect()');
+    }
+    return this.peer;
+  }
+
+  /**
+   * Recovers this Host's own signaling connection after it's gone stale — e.g. the browser
+   * suspended the WebSocket to PeerServer while the tab was backgrounded (app-switch, screen
+   * lock). Tries `peer.reconnect()` first: PeerJS keeps every already-open `DataConnection`
+   * intact across that call, so a Guest whose own connection never actually dropped stays
+   * connected. Only when the underlying `Peer` was destroyed — normally only after an explicit
+   * `close()`, so this is rare in practice — does `reconnect()` throw synchronously, and only
+   * then does this fall back to opening a brand new `Peer` under the same room-derived id
+   * (`lastRequestedId`). That fallback does lose any still-open Guest `DataConnection`s; a
+   * Guest who notices reconnects on its own via `guest-reconnect.ts`.
+   *
+   * Resolves `true` once the connection is confirmed live again (a fresh `open` event, or the
+   * connection was never actually stale), `false` if neither `reconnect()` nor the fallback
+   * manage to bring it back — the caller's cue to show a persistent error instead of retrying
+   * silently forever. A no-op (`false`) if this transport was never opened as a Host.
+   */
+  recover(): Promise<boolean> {
+    const peer = this.peer;
+    if (!peer || this.lastRequestedId === undefined) {
+      return Promise.resolve(false);
+    }
+    if (peer.open && !peer.disconnected) {
+      return Promise.resolve(true);
+    }
+    if (peer.destroyed) {
+      return this.rebuildHostPeer();
+    }
+
+    return new Promise((resolve) => {
+      const onOpen = () => {
+        cleanup();
+        resolve(true);
+      };
+      const onError = () => {
+        cleanup();
+        this.rebuildHostPeer().then(resolve);
+      };
+      const cleanup = () => {
+        peer.off('open', onOpen);
+        peer.off('error', onError);
+      };
+      peer.on('open', onOpen);
+      peer.on('error', onError);
+      try {
+        peer.reconnect();
+      } catch {
+        cleanup();
+        this.rebuildHostPeer().then(resolve);
+      }
+    });
+  }
+
+  /** Opens a brand new `Peer` under `lastRequestedId`, replacing a destroyed one — see `recover()`. */
+  private rebuildHostPeer(): Promise<boolean> {
+    if (this.lastRequestedId === undefined) {
+      return Promise.resolve(false);
+    }
+    return this.connect(undefined, this.lastRequestedId)
+      .then(() => true)
+      .catch(() => false);
   }
 
   private bindConnection(connection: DataConnection): void {

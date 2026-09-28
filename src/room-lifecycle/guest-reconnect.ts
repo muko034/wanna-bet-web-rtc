@@ -25,14 +25,16 @@ export type ReconnectCallbacks = {
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
 };
 
-/** Total `rejoin` attempts (the first try plus these retries) before giving up as `unreachable`. */
-const RECONNECT_RETRY_ATTEMPTS = 10;
+/** Delay before the first automatic retry attempt. */
+const RECONNECT_INITIAL_DELAY_MS = 2_000;
+/** Per-attempt delay cap — `RECONNECT_INITIAL_DELAY_MS` doubles on every retry up to this ceiling. */
+const RECONNECT_MAX_DELAY_MS = 20_000;
 /**
- * Delay between automatic retry attempts. Together with `RECONNECT_RETRY_ATTEMPTS` this gives a
- * Host that navigated away and came back about 20 seconds to re-register before the Guest
- * has to retry manually.
+ * Total time this device keeps retrying before giving up as `unreachable`. Sized for a
+ * realistic Host background/foreground gap (an app-switch or a locked screen can last
+ * several minutes), not just a brief network blip.
  */
-const RECONNECT_RETRY_DELAY_MS = 2_000;
+const RECONNECT_MAX_DURATION_MS = 5 * 60_000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,9 +84,10 @@ export function completeGuestConnection(
  * connection attempt.
  *
  * Retries a `rejoin` attempt that finds no Host — no response at all, or no Host registered
- * under the Room Code (`unreachable` / `invalid-room` from `rejoinRoom`) — automatically, up to
- * `RECONNECT_RETRY_ATTEMPTS` tries total with `RECONNECT_RETRY_DELAY_MS` between them, before
- * resolving `unreachable` for the caller to show a manual-Retry state. A stored identity proves
+ * under the Room Code (`unreachable` / `invalid-room` from `rejoinRoom`) — automatically for up
+ * to `RECONNECT_MAX_DURATION_MS`, waiting `RECONNECT_INITIAL_DELAY_MS` before the first retry and
+ * doubling that delay after each further failure up to `RECONNECT_MAX_DELAY_MS`, before resolving
+ * `unreachable` for the caller to show a manual-Retry state. A stored identity proves
  * the Room existed, so a missing Host is treated as the Host being briefly away (e.g. it
  * navigated off and is about to come back), never as a Room that doesn't exist. Only an explicit
  * `unknown-player` rejection from the Host is never retried — retrying an answer the Host
@@ -107,7 +110,9 @@ export async function attemptReconnect(
 
   wireGuestConnection(transport, code, callbacks);
 
-  for (let attempt = 1; ; attempt++) {
+  let waitedMs = 0;
+  let delayMs = RECONNECT_INITIAL_DELAY_MS;
+  for (;;) {
     const result = await rejoinRoom(transport, registry, code, stored.reconnectToken);
 
     if (result.status === 'joined') {
@@ -117,9 +122,11 @@ export async function attemptReconnect(
     if (result.status === 'unknown-player') {
       return { status: 'unknown-player' };
     }
-    if (attempt >= RECONNECT_RETRY_ATTEMPTS) {
+    if (waitedMs >= RECONNECT_MAX_DURATION_MS) {
       return { status: 'unreachable' };
     }
-    await wait(RECONNECT_RETRY_DELAY_MS);
+    await wait(delayMs);
+    waitedMs += delayMs;
+    delayMs = Math.min(delayMs * 2, RECONNECT_MAX_DELAY_MS);
   }
 }

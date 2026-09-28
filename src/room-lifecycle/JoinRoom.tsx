@@ -9,6 +9,7 @@ import { attemptReconnect, completeGuestConnection, wireGuestConnection, type Re
 import { loadIdentity } from './player-identity';
 import { resolveLobbyRoster } from './lobby-roster';
 import { ReconnectingScreen } from './ReconnectingScreen';
+import { useForegroundRetry } from './use-foreground-retry';
 import { roomRegistry } from './room-registry-instance';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
@@ -71,6 +72,12 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   // callback per render must not re-run them, since each run opens a new Peer.
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
+
+  // While a rejoin attempt is in flight (including waiting out its own backoff), coming back
+  // to the foreground re-runs the reconnect effect below from scratch — an immediate retry
+  // instead of waiting out whatever delay it was backed off to — rather than duplicating it
+  // with a second connection attempt.
+  useForegroundRetry(status.kind === 'rejoining', () => setRetryKey((key) => key + 1));
 
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
   const makeCallbacks = (): ReconnectCallbacks => ({
