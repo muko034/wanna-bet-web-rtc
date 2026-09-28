@@ -18,14 +18,7 @@ export function JoinCode(_props: Props) {
   };
 
   return (
-    <PhoneShell
-      background="vb-bg-form"
-      topLeft={
-        <a class="vb-back-fab" href={withBase('/')}>
-          &larr;
-        </a>
-      }
-    >
+    <PhoneShell background="vb-bg-form">
       <div class="vb-giant-title" style="font-size:24px">
         Join a game
       </div>

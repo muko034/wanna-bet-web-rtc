@@ -76,14 +76,13 @@ input {
   font-weight: 700;
   opacity: 0.75;
 }
-.vb-back-fab {
+.vb-home-fab {
   width: 34px;
   height: 34px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-size: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
