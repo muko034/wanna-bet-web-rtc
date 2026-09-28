@@ -2,16 +2,16 @@ You are orchestrating implementation of the issue. Track your progress.
 
 ## 1. Gather and validate context
 
-Check the issue is not blocked by any other issue (`**Blocked by**`). If it is stop.
+Check the issue is not blocked by any other issue. If it is stop.
 
-Check the issue is not already implemented (status `Implemented`/`Done`). If it is stop.
+Check the issue is not already resolved / closed. If it is stop.
 
-Resolve an optional specification - `SPEC.md` file in the same directory as the issue.
+Resolve an optional specification - parent issue with `spec` label.
 
 ## 2. Prepare workspace
 
-Check if you are on dedicated branch for the issue. If not, create a new branch named after the issue title (e.g.
-`round-engine/05-single-round-happy-path`) and switch to it.
+Check if you are on dedicated branch for the issue. If not, create a new branch named after the issue title (e.g. 
+`25-end-game-clears-the-snapshot`) and switch to it.
 
 ## 2. Implement with TDD
 
