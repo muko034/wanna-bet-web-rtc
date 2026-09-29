@@ -9,6 +9,7 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
+import { roundKeyOf } from './bet-delivery';
 import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
@@ -30,12 +31,18 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
-  onPlaceBet: (payload: PlaceBetPayload) => void;
+  /** `context` identifies the Round and local player, so a Guest's Bet can be confirmed against later `state` broadcasts. */
+  onPlaceBet: (payload: PlaceBetPayload, context: { roundKey: string; playerId: string }) => void;
+  /** Round key of a Bet that never reached the Host — the Bettor may lock in again. */
+  betFailedRoundKey: string | null;
+  /** The reconnect fallback ("Can't reach the Host") triggered, so any pending Bet has failed. */
+  onReconnectGaveUp: () => void;
   onResolveRound: (outcome: Prediction) => void;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  onBetRejected: (reason: string) => void;
   /**
    * This Guest's live connection was lost. Notifies App-level state (see `app.tsx`) so a
    * drop is recovered from the same way regardless of which route happened to establish the
@@ -65,10 +72,13 @@ export function StartedGame({
   guestGameStartedCode,
   gameState,
   onPlaceBet,
+  betFailedRoundKey,
+  onReconnectGaveUp,
   onResolveRound,
   onGameStarted,
   onGameState,
   onPlaceBetReady,
+  onBetRejected,
   onConnectionLost,
   createGuestTransport,
 }: Props) {
@@ -82,8 +92,8 @@ export function StartedGame({
 
   // Read through a ref so the reconnect effect below depends on `code` alone: a caller
   // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost };
 
   // Foregrounding mid-attempt restarts the reconnect effect, skipping the current backoff.
   useForegroundRetry(reconnectPhase === 'pending', () => setRetryKey((key) => key + 1));
@@ -107,6 +117,7 @@ export function StartedGame({
         callbacksRef.current.onConnectionLost();
       },
       onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
+      onBetRejected: (reason) => callbacksRef.current.onBetRejected(reason),
     };
     attemptReconnect(transport, roomRegistry, localStorage, code, callbacks).then((result) => {
       if (!pending) return;
@@ -116,6 +127,7 @@ export function StartedGame({
       } else if (result.status === 'unknown-player') {
         setReconnectPhase('unknown-player');
       } else {
+        callbacksRef.current.onReconnectGaveUp();
         setReconnectPhase({ kind: 'error', message: RECONNECT_ERROR_MESSAGES[result.status] });
       }
     });
@@ -169,6 +181,7 @@ export function StartedGame({
         onGameState={onGameState}
         gameState={gameState}
         onPlaceBetReady={onPlaceBetReady}
+        onBetRejected={onBetRejected}
         onConnectionLost={onConnectionLost}
         createGuestTransport={createGuestTransport}
       />
@@ -196,7 +209,7 @@ export function StartedGame({
   const localPlayerId = room?.code === code
     ? room?.hostPlayerId
     : (code ? loadIdentity(localStorage, code)?.playerId : null);
-  const roundKey = gameState?.round ? `${gameState.round.activePlayerId}:${gameState.round.challengeId}` : null;
+  const roundKey = gameState ? roundKeyOf(gameState) : null;
   const localBet = submittedBet?.roundKey === roundKey ? submittedBet.bet : null;
 
   useEffect(() => {
@@ -205,9 +218,16 @@ export function StartedGame({
     setPrediction(null);
   }, [roundKey]);
 
+  // The Bet never reached the Host: unlock the form so the Bettor can lock in again.
+  useEffect(() => {
+    if (betFailedRoundKey !== null && betFailedRoundKey === roundKey) {
+      setSubmittedBet(null);
+    }
+  }, [betFailedRoundKey, roundKey]);
+
   const bettingPanel = useMemo(
-    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet }),
-    [gameState, localBet, localPlayerId],
+    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet, betFailed: betFailedRoundKey === roundKey }),
+    [gameState, localBet, localPlayerId, betFailedRoundKey, roundKey],
   );
   const challengeCard = localPlayerId
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
@@ -216,10 +236,10 @@ export function StartedGame({
   const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
 
   const handleLockIn = () => {
-    if (!roundKey || prediction === null) {
+    if (!roundKey || prediction === null || !localPlayerId) {
       return;
     }
-    onPlaceBet({ amount, prediction });
+    onPlaceBet({ amount, prediction }, { roundKey, playerId: localPlayerId });
     setSubmittedBet({ roundKey, bet: { amount, prediction } });
   };
 
@@ -313,6 +333,7 @@ export function StartedGame({
               <div class="vb-giant-sub vb-slider-caption">
                 Max {bettingPanel.maxBet} &middot; you have {bettingPanel.points} pts
               </div>
+              {bettingPanel.failureMessage && <div class="vb-giant-sub" role="alert">{bettingPanel.failureMessage}</div>}
               <button class="vb-cta" type="button" disabled={prediction === null} onClick={handleLockIn}>
                 Lock in bet
               </button>

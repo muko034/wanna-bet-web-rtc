@@ -27,6 +27,8 @@ export type BettingPanel =
       bettors: BettorStatus[];
       points: number;
       maxBet: number;
+      /** Shown when the last Bet locked in failed to reach the Host, so the Bettor can lock in again. */
+      failureMessage: string | null;
     };
 
 type Params = {
@@ -35,12 +37,16 @@ type Params = {
   localPlayerId: string | null;
   /** The Bet this device sent for the current Round, which the Host's public broadcast never echoes back. */
   localBet?: PlaceBetPayload | null;
+  /** The Bet this device last locked in for the current Round never reached the Host. */
+  betFailed?: boolean;
 };
 
 /** Whether `playerId` has already placed a Bet in `round`, per the public broadcast state. */
 export function hasPlacedBet(round: GameState['round'], playerId: string): boolean {
   return !!round?.bets.some((bet) => bet.playerId === playerId);
 }
+
+const BET_FAILED_MESSAGE = "Your Bet didn't go through — try again.";
 
 function waitingLabel(waitingOnCount: number): string {
   if (waitingOnCount === 0) {
@@ -53,6 +59,7 @@ export function resolveBettingPanel({
   gameState,
   localPlayerId,
   localBet = null,
+  betFailed = false,
 }: Params): BettingPanel {
   const round = gameState?.round;
   if (!round || localPlayerId === null) {
@@ -92,5 +99,6 @@ export function resolveBettingPanel({
     bettors,
     points: localPlayer.points,
     maxBet: maxBetAmount(localPlayer.points),
+    failureMessage: betFailed ? BET_FAILED_MESSAGE : null,
   };
 }

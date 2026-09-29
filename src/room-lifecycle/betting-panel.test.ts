@@ -198,4 +198,12 @@ describe('resolveBettingPanel', () => {
       { playerId: 'guest-2', name: 'Sam', hasBet: true, isLocalPlayer: true },
     ]);
   });
+
+  it("shows the failure message on the Bet form only when the local Bet didn't go through", () => {
+    const failed = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2', betFailed: true });
+    const fresh = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2' });
+
+    expect(failed).toMatchObject({ kind: 'form', failureMessage: "Your Bet didn't go through — try again." });
+    expect(fresh).toMatchObject({ kind: 'form', failureMessage: null });
+  });
 });

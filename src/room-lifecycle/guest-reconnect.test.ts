@@ -34,6 +34,7 @@ function noopCallbacks(): ReconnectCallbacks {
     onGameStarted: vi.fn(),
     onConnectionDropped: vi.fn(),
     onPlaceBetReady: vi.fn(),
+    onBetRejected: vi.fn(),
   };
 }
 
@@ -227,5 +228,26 @@ describe('attemptReconnect', () => {
     await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
 
     expect(callbacks.onGameStarted).toHaveBeenCalledWith(code);
+  });
+
+  it("reports the Host's rejection of a placed Bet through onBetRejected", async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, () => 'host-1');
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const callbacks = noopCallbacks();
+    await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
+    const placeBet = vi.mocked(callbacks.onPlaceBetReady).mock.calls[0][0]!;
+
+    placeBet({ amount: 9999, prediction: 'YES' });
+
+    expect(callbacks.onBetRejected).toHaveBeenCalledExactlyOnceWith('INVALID_BET_AMOUNT');
   });
 });

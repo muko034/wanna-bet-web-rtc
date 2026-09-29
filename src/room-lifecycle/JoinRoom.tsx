@@ -22,6 +22,8 @@ type Props = {
   /** This Guest's own live `GameState` — a Lobby snapshot pre-game — used only for the waiting screen's roster. */
   gameState: GameState | null;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  /** The Host explicitly refused this Guest's Bet. */
+  onBetRejected: (reason: string) => void;
   /**
    * This Guest's live connection was lost — either while sitting on this screen, or on a
    * connection this screen itself established that's since moved on (e.g. after the game
@@ -60,7 +62,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onConnectionLost, createGuestTransport }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport }: Props) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'form' });
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
@@ -70,8 +72,8 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
   // callback per render must not re-run them, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost };
 
   // Foregrounding mid-attempt restarts the reconnect effect, skipping the current backoff.
   useForegroundRetry(status.kind === 'rejoining', () => setRetryKey((key) => key + 1));
@@ -93,6 +95,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       setRetryKey((key) => key + 1);
     },
     onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
+    onBetRejected: (reason) => callbacksRef.current.onBetRejected(reason),
   });
 
   useEffect(() => {

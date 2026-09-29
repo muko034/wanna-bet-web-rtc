@@ -18,6 +18,7 @@ import type { RecoverableTransport } from './transport/transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBanner';
 import type { GameState, PlaceBetPayload } from './protocol/messages';
+import { BetDelivery } from './room-lifecycle/bet-delivery';
 
 type RoomRouteProps = {
   path?: string;
@@ -29,12 +30,13 @@ type RoomRouteProps = {
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  onBetRejected: (reason: string) => void;
   onConnectionLost: () => void;
   createGuestTransport: () => PeerJsTransport;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onConnectionLost, createGuestTransport }: RoomRouteProps) {
+function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport }: RoomRouteProps) {
   if (room && room.code === code) {
     return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} />;
   }
@@ -45,6 +47,7 @@ function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameS
       onGameState={onGameState}
       gameState={guestGameState}
       onPlaceBetReady={onPlaceBetReady}
+      onBetRejected={onBetRejected}
       onConnectionLost={onConnectionLost}
       createGuestTransport={createGuestTransport}
     />
@@ -70,7 +73,9 @@ export function App() {
   const [hostGameState, setHostGameState] = useState<GameState | null>(null);
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
-  const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
+  /** Round key of the Guest Bet that never reached the Host, until the Bettor locks in again. */
+  const [betFailedRoundKey, setBetFailedRoundKey] = useState<string | null>(null);
+  const [betDelivery] = useState(() => new BetDelivery(setBetFailedRoundKey));
   const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
   /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
@@ -159,20 +164,29 @@ export function App() {
     route(withBase(`room/${started.code}/play`));
   };
 
-  const handlePlaceBet = useCallback((payload: PlaceBetPayload) => {
+  const handlePlaceBet = useCallback((payload: PlaceBetPayload, context: { roundKey: string; playerId: string }) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
       connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
       return;
     }
 
-    guestPlaceBetRef.current?.(payload);
-  }, [room]);
+    setBetFailedRoundKey(null);
+    betDelivery.place({ ...context, payload });
+  }, [room, betDelivery]);
+
+  const handleGuestGameState = useCallback((state: GameState) => {
+    betDelivery.onState(state);
+    setGuestGameState(state);
+  }, [betDelivery]);
+
+  const handleBetRejected = useCallback((reason: string) => betDelivery.onRejected(reason), [betDelivery]);
+  const handleReconnectGaveUp = useCallback(() => betDelivery.failPending(), [betDelivery]);
 
   // Must stay referentially stable: `JoinRoom`'s rejoin effect depends on it, and a new
   // identity per render would re-run that effect (opening a fresh Peer) on every `state`.
   const handlePlaceBetReady = useCallback((placeBet: ((payload: PlaceBetPayload) => void) | null) => {
-    guestPlaceBetRef.current = placeBet;
-  }, []);
+    betDelivery.setSender(placeBet);
+  }, [betDelivery]);
 
   /**
    * A Guest's live connection was lost, on whichever route wired the connection that
@@ -222,8 +236,9 @@ export function App() {
           guestGameState={guestGameState}
           onStart={handleStart}
           onGameStarted={setGuestGameStartedCode}
-          onGameState={setGuestGameState}
+          onGameState={handleGuestGameState}
           onPlaceBetReady={handlePlaceBetReady}
+          onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
           createGuestTransport={createGuestTransport}
         />
@@ -233,12 +248,15 @@ export function App() {
           guestGameStartedCode={guestGameStartedCode}
           gameState={hostGameState ?? guestGameState}
           onPlaceBet={handlePlaceBet}
+          betFailedRoundKey={betFailedRoundKey}
+          onReconnectGaveUp={handleReconnectGaveUp}
           onResolveRound={(outcome) => {
             connectionManagerRef.current?.resolveRound(outcome);
           }}
           onGameStarted={setGuestGameStartedCode}
-          onGameState={setGuestGameState}
+          onGameState={handleGuestGameState}
           onPlaceBetReady={handlePlaceBetReady}
+          onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
           createGuestTransport={createGuestTransport}
         />

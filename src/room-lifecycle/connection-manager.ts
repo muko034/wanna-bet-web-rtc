@@ -1,7 +1,7 @@
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { GameState, LeaveMessage, PlaceBetPayload } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
-import { roundEngineReducer, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
+import { roundEngineReducer, type BetRejection, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
 import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
@@ -173,11 +173,17 @@ export class ConnectionManager {
   }
 
   placeBet(playerId: string, amount: number, prediction: Prediction): GameState {
+    this.applyBet(playerId, amount, prediction);
+    return this.gameState!;
+  }
+
+  /** Applies a Bet and broadcasts the resulting state; returns why it was refused, if it was. */
+  private applyBet(playerId: string, amount: number, prediction: Prediction): BetRejection | undefined {
     if (this.gameState === null || this.roundEngineState === null) {
       throw new Error('Cannot place a Bet before the game has started');
     }
 
-    const { state: nextRoundEngineState } = roundEngineReducer(this.roundEngineState, {
+    const { state: nextRoundEngineState, rejection } = roundEngineReducer(this.roundEngineState, {
       type: 'PLACE_BET',
       playerId,
       amount,
@@ -187,7 +193,7 @@ export class ConnectionManager {
     this.roundEngineState = nextRoundEngineState;
     this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, this.gameState.resolution);
     this.emitGameState(this.gameState);
-    return this.gameState;
+    return rejection;
   }
 
   resolveRound(outcome: Prediction): GameState {
@@ -323,10 +329,14 @@ export class ConnectionManager {
   private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
+      this.protocol.rejected(peerId, { reason: 'UNKNOWN_PLAYER', action: 'placeBet' });
       return;
     }
 
-    this.placeBet(playerId, payload.amount, payload.prediction);
+    const rejection = this.applyBet(playerId, payload.amount, payload.prediction);
+    if (rejection) {
+      this.protocol.rejected(peerId, { reason: rejection, action: 'placeBet' });
+    }
   }
 
   private handleConnectionChange(peerId: string, connected: boolean): void {

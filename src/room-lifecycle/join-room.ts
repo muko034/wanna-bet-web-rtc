@@ -152,3 +152,13 @@ export function watchForConnectionDrop(transport: Transport, onConnectionDropped
     }
   });
 }
+
+/** Watches a Guest's own `transport` for the Host refusing a `placeBet`, reporting the rejection's reason. */
+export function watchForBetRejection(transport: Transport, onBetRejected: (reason: string) => void): void {
+  const protocol = new GuestProtocol(transport);
+  protocol.on('rejected', (payload) => {
+    if (payload.action === 'placeBet') {
+      onBetRejected(payload.reason);
+    }
+  });
+}
