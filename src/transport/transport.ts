@@ -40,3 +40,16 @@ export class RequestedIdTakenError extends Error {}
 /** A Guest `connect(remoteId)` call found no peer reachable under that id. */
 export class PeerUnavailableError extends Error {}
 
+
+/**
+ * A Host-side `Transport` that can restore its own signaling connection after it goes stale
+ * (e.g. the browser suspended it while the tab was in the background). Guest transports don't
+ * implement this.
+ */
+export interface RecoverableTransport extends Transport {
+  /**
+   * Resolves `true` once the connection is confirmed live again, `false` if it could not be
+   * restored — the caller's cue to show a persistent error instead of retrying silently.
+   */
+  recover(): Promise<boolean>;
+}

@@ -1,5 +1,5 @@
 import Peer, { PeerError, type DataConnection, type PeerJSOption } from 'peerjs';
-import { PeerUnavailableError, RequestedIdTakenError, type Transport } from './transport';
+import { PeerUnavailableError, RequestedIdTakenError, type RecoverableTransport } from './transport';
 
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
@@ -15,7 +15,7 @@ function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): v
  * fake-transport unit suite — a distinct smoke-test suite against a live/local `peerjs-server`
  * validates it instead.
  */
-export class PeerJsTransport implements Transport {
+export class PeerJsTransport implements RecoverableTransport {
   private connections = new Map<string, DataConnection>();
   private messageHandlers: Array<(message: unknown, peerId: string) => void> = [];
   private connectionChangeHandlers: Array<(peerId: string, connected: boolean) => void> = [];

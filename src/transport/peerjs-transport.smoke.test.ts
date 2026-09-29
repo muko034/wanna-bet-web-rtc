@@ -175,7 +175,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() restores a Host whose signaling socket dropped, preserving its still-open Guest connection', async () => {
     const host = createTransport();
-    const hostId = await host.connect();
+    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
     const guest = createTransport();
     await guest.connect(hostId);
 
@@ -196,7 +196,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() rebuilds a destroyed Host Peer under the same id', async () => {
     const host = createTransport();
-    const hostId = await host.connect();
+    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
 
     host.peerForTesting().destroy();
 

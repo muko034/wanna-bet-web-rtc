@@ -14,6 +14,7 @@ import { saveHostSession, type HostSession } from './host-persistence/host-sessi
 import { resolveAutoResume, type AutoResume } from './host-persistence/auto-resume';
 import { ReopeningRoom } from './host-persistence/ReopeningRoom';
 import { PeerJsTransport } from './transport/peerjs-transport';
+import type { RecoverableTransport } from './transport/transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBanner';
 import type { GameState, PlaceBetPayload } from './protocol/messages';
@@ -73,13 +74,13 @@ export function App() {
   const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
   /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
-  const hostTransportRef = useRef<PeerJsTransport | null>(null);
+  const hostTransportRef = useRef<RecoverableTransport | null>(null);
   /** Set once `hostTransportRef`'s `recover()` has exhausted both its own reconnect and the fresh-Peer fallback — see the foreground-recovery effect below. */
   const [hostConnectionLost, setHostConnectionLost] = useState(false);
   // Decided before the first render, so the Room's link never mounts the Guest join form meanwhile.
   const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
 
-  const hostRoom = (transport: PeerJsTransport, initialRoom: Room): ConnectionManager => {
+  const hostRoom = (transport: RecoverableTransport, initialRoom: Room): ConnectionManager => {
     const manager = new ConnectionManager(
       transport,
       initialRoom,
@@ -94,7 +95,7 @@ export function App() {
     return manager;
   };
 
-  const handleRoomCreated = (createdRoom: Room, transport: PeerJsTransport) => {
+  const handleRoomCreated = (createdRoom: Room, transport: RecoverableTransport) => {
     hostRoom(transport, createdRoom);
     setRoom(createdRoom);
     route(withBase(`room/${createdRoom.code}`));
