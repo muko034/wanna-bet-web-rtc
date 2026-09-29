@@ -15,12 +15,12 @@ const payoutSchema = z.object({
 export type Payout = z.infer<typeof payoutSchema>;
 ```
 
-## Expose each inbound message as a `watch*` helper that hands the UI a plain callback
+## Wrap ongoing Host messages in `watch*` helpers
 
-To react to a Host message, add a small exported `watch*` function beside the other Guest join helpers. It takes a `Transport` and a plain callback, subscribes through `GuestProtocol`, filters to the messages it cares about (for example a `rejected` with a given `action`), and passes the callback only the data it needs. Wire it in `wireGuestConnection` with a matching field on `ReconnectCallbacks`, so every connection path (join, rejoin, reconnect) gets the same subscription and components never touch the protocol object.
+A Guest reacts to an ongoing Host message (state, game start, Bet rejection, connection drop) through an exported `watch*` function beside the other Guest join helpers. It takes a `Transport` and a plain callback, subscribes via `GuestProtocol`, and passes the callback only the data it needs. Wire it in `wireGuestConnection` with a matching field on `ReconnectCallbacks`, so join, rejoin and reconnect all get it. Components never touch the protocol object. Handle one-shot replies to a Guest's own request (such as `welcome`) where the request is sent, not in a `watch*`.
 
 ```ts
-export function watchForBetRejection(transport: Transport, onBetRejected: (reason: string) => void): void {
+export function watchForBetRejection(transport: Transport, onBetRejected: (reason: BetRejection) => void): void {
   const protocol = new GuestProtocol(transport);
   protocol.on('rejected', (payload) => {
     if (payload.action === 'placeBet') onBetRejected(payload.reason);
