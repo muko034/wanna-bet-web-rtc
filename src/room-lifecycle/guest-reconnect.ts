@@ -29,11 +29,7 @@ export type ReconnectCallbacks = {
 const RECONNECT_INITIAL_DELAY_MS = 2_000;
 /** Per-attempt delay cap — `RECONNECT_INITIAL_DELAY_MS` doubles on every retry up to this ceiling. */
 const RECONNECT_MAX_DELAY_MS = 20_000;
-/**
- * Total time this device keeps retrying before giving up as `unreachable`. Sized for a
- * realistic Host background/foreground gap (an app-switch or a locked screen can last
- * several minutes), not just a brief network blip.
- */
+/** Total retry time before giving up as `unreachable`; sized for a Host app-switch or locked screen, not just a network blip. */
 const RECONNECT_MAX_DURATION_MS = 5 * 60_000;
 
 function delay(ms: number): Promise<void> {

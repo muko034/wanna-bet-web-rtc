@@ -179,8 +179,7 @@ describe('PeerJsTransport smoke tests', () => {
     const guest = createTransport();
     await guest.connect(hostId);
 
-    // Simulate what backgrounding the tab does to a real Peer: the socket to PeerServer goes
-    // away (`disconnected`), while the already-open Guest DataConnection is left untouched.
+    // Backgrounding drops the Host's PeerServer socket but leaves the Guest DataConnection open.
     host.peerForTesting().disconnect();
 
     const recovered = await withTimeout(host.recover(), 'recover() after a signaling disconnect');

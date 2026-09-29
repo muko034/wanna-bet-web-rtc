@@ -41,15 +41,8 @@ export class RequestedIdTakenError extends Error {}
 export class PeerUnavailableError extends Error {}
 
 
-/**
- * A Host-side `Transport` that can restore its own signaling connection after it goes stale
- * (e.g. the browser suspended it while the tab was in the background). Guest transports don't
- * implement this.
- */
+/** A Host-side `Transport` that can restore its own stale signaling connection. */
 export interface RecoverableTransport extends Transport {
-  /**
-   * Resolves `true` once the connection is confirmed live again, `false` if it could not be
-   * restored — the caller's cue to show a persistent error instead of retrying silently.
-   */
+  /** Resolves `true` once the connection is live again, `false` if it could not be restored. */
   recover(): Promise<boolean>;
 }

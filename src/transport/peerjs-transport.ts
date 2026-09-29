@@ -21,13 +21,7 @@ export class PeerJsTransport implements RecoverableTransport {
   private connectionChangeHandlers: Array<(peerId: string, connected: boolean) => void> = [];
   private peer: Peer | undefined;
   private readonly serverOptions: PeerJsServerOptions | undefined;
-  /**
-   * The `requestedId` this transport last opened as a Host under (`connect(undefined, requestedId)`)
-   * — a Room Code's derived Transport ID never changes across a reload/recovery, so `recover()`
-   * reuses it verbatim when it has to rebuild the underlying `Peer` from scratch. `undefined` for
-   * a Guest transport (which always supplies `remoteId` instead) — `recover()` is a Host-only
-   * operation and is a no-op without it.
-   */
+  /** The Transport ID this Host opened under, reused by `recover()` to rebuild a destroyed `Peer`. `undefined` on a Guest. */
   private lastRequestedId: string | undefined;
 
   constructor(serverOptions?: PeerJsServerOptions) {
@@ -104,12 +98,7 @@ export class PeerJsTransport implements RecoverableTransport {
     this.connections.clear();
   }
 
-  /**
-   * Exposes the underlying `Peer` for the smoke-test suite only, which needs to simulate a
-   * stale signaling connection (`peer.disconnect()`) or a destroyed one (`peer.destroy()`)
-   * directly — neither is reachable through the `Transport` interface. Not part of it, same as
-   * `close()`.
-   */
+  /** Exposes the underlying `Peer` to the smoke tests only, to simulate stale or destroyed connections. */
   peerForTesting(): Peer {
     if (!this.peer) {
       throw new Error('peerForTesting() called before connect()');
@@ -118,20 +107,9 @@ export class PeerJsTransport implements RecoverableTransport {
   }
 
   /**
-   * Recovers this Host's own signaling connection after it's gone stale — e.g. the browser
-   * suspended the WebSocket to PeerServer while the tab was backgrounded (app-switch, screen
-   * lock). Tries `peer.reconnect()` first: PeerJS keeps every already-open `DataConnection`
-   * intact across that call, so a Guest whose own connection never actually dropped stays
-   * connected. Only when the underlying `Peer` was destroyed — normally only after an explicit
-   * `close()`, so this is rare in practice — does `reconnect()` throw synchronously, and only
-   * then does this fall back to opening a brand new `Peer` under the same room-derived id
-   * (`lastRequestedId`). That fallback does lose any still-open Guest `DataConnection`s; a
-   * Guest who notices reconnects on its own via `guest-reconnect.ts`.
-   *
-   * Resolves `true` once the connection is confirmed live again (a fresh `open` event, or the
-   * connection was never actually stale), `false` if neither `reconnect()` nor the fallback
-   * manage to bring it back — the caller's cue to show a persistent error instead of retrying
-   * silently forever. A no-op (`false`) if this transport was never opened as a Host.
+   * Restores this Host's stale signaling connection (e.g. after the tab was backgrounded).
+   * `peer.reconnect()` keeps open Guest `DataConnection`s; a destroyed `Peer` is rebuilt under
+   * `lastRequestedId`, which drops them. Resolves `false` if the connection could not be restored.
    */
   recover(): Promise<boolean> {
     const peer = this.peer;

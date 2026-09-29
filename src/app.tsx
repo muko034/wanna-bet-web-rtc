@@ -75,7 +75,7 @@ export function App() {
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
   /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
   const hostTransportRef = useRef<RecoverableTransport | null>(null);
-  /** Set once `hostTransportRef`'s `recover()` has exhausted both its own reconnect and the fresh-Peer fallback — see the foreground-recovery effect below. */
+  /** Set when `hostTransportRef`'s `recover()` fails. */
   const [hostConnectionLost, setHostConnectionLost] = useState(false);
   // Decided before the first render, so the Room's link never mounts the Guest join form meanwhile.
   const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
@@ -135,18 +135,7 @@ export function App() {
     }
   }, []);
 
-  /**
-   * Recovers the Host's own signaling connection as soon as its tab is foregrounded again —
-   * the counterpart to a Guest's own foreground-triggered retry (`use-foreground-retry.ts`).
-   * A backgrounded tab (app-switch, screen lock) can leave the underlying `Peer`'s WebSocket to
-   * PeerServer stale without the Host ever seeing a `disconnected` event fire while it wasn't
-   * looking, so this proactively calls `recover()` on every foreground transition rather than
-   * waiting for one. Reaches all the way through `PeerJsTransport.recover()` (`peer.reconnect()`,
-   * falling back to a fresh `Peer` under the same id only if that throws) — see its own comment
-   * for why. Only surfaces a persistent error if recovery fails outright; a successful recovery
-   * clears any earlier one, since a subsequent background/foreground cycle can succeed after a
-   * previous one didn't.
-   */
+  /** Recovers the Host's signaling connection whenever its tab returns to the foreground; a backgrounded tab can go stale without a `disconnected` event. */
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return;

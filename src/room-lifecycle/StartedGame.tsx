@@ -85,10 +85,7 @@ export function StartedGame({
   const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onConnectionLost });
   callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onConnectionLost };
 
-  // While a reconnect attempt is in flight (including waiting out its own backoff), coming
-  // back to the foreground re-runs the effect below from scratch — an immediate retry instead
-  // of waiting out whatever delay it was backed off to — rather than duplicating it with a
-  // second connection attempt.
+  // Foregrounding mid-attempt restarts the reconnect effect, skipping the current backoff.
   useForegroundRetry(reconnectPhase === 'pending', () => setRetryKey((key) => key + 1));
 
   useEffect(() => {
