@@ -89,6 +89,21 @@ describe('BetDelivery', () => {
     expect(newSend).toHaveBeenCalledTimes(2);
   });
 
+  it('gives the last send its full wait when the connection returns after the final attempt', () => {
+    const { send, onFailed, delivery, place } = setup();
+    place();
+    vi.advanceTimersByTime(8_000);
+    expect(send).toHaveBeenCalledTimes(3);
+
+    const newSend = vi.fn();
+    delivery.setSender(newSend);
+    expect(newSend).not.toHaveBeenCalled();
+    expect(onFailed).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(4_000);
+    expect(onFailed).toHaveBeenCalledExactlyOnceWith(ROUND);
+  });
+
   it('holds a Bet locked in while disconnected until the connection is back', () => {
     const { send, delivery } = setup();
     delivery.setSender(null);

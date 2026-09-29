@@ -1,4 +1,5 @@
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
+import { hasPlacedBet } from './betting-panel';
 
 /** How long to wait for a confirming `state` before resending the Bet. */
 const RETRY_INTERVAL_MS = 4_000;
@@ -38,7 +39,7 @@ export class BetDelivery {
     this.sender = sender;
     this.clearTimer();
     if (sender) {
-      this.attempt();
+      this.resume();
     }
   }
 
@@ -52,8 +53,8 @@ export class BetDelivery {
   onState(state: GameState): void {
     if (!this.pending) return;
     const key = roundKeyOf(state);
-    const applied = key === this.pending.roundKey && state.round!.bets.some((bet) => bet.playerId === this.pending!.playerId);
-    if (applied || key !== this.pending.roundKey) {
+    const { roundKey, playerId } = this.pending;
+    if (key !== roundKey || hasPlacedBet(state.round, playerId)) {
       this.settle();
     }
   }
@@ -72,6 +73,15 @@ export class BetDelivery {
     const { roundKey } = this.pending;
     this.settle();
     this.onFailed(roundKey);
+  }
+
+  /** Resends at once, unless every attempt is spent: then the last send still gets its full wait. */
+  private resume(): void {
+    if (this.pending && this.pending.attempts >= MAX_ATTEMPTS) {
+      this.timer = setTimeout(() => this.attempt(), RETRY_INTERVAL_MS);
+      return;
+    }
+    this.attempt();
   }
 
   private attempt(): void {
