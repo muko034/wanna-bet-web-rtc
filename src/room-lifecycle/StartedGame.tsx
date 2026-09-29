@@ -9,7 +9,8 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
-import { roundKeyOf } from './bet-delivery';
+import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
+import type { BetRejection } from '../round-engine/round-engine';
 import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
@@ -32,7 +33,7 @@ type Props = {
   guestGameStartedCode: string | null;
   gameState: GameState | null;
   /** `context` identifies the Round and local player, so a Guest's Bet can be confirmed against later `state` broadcasts. */
-  onPlaceBet: (payload: PlaceBetPayload, context: { roundKey: string; playerId: string }) => void;
+  onPlaceBet: (payload: PlaceBetPayload, context: PlaceBetContext) => void;
   /** Round key of a Bet that never reached the Host — the Bettor may lock in again. */
   betFailedRoundKey: string | null;
   /** The reconnect fallback ("Can't reach the Host") triggered, so any pending Bet has failed. */
@@ -42,7 +43,7 @@ type Props = {
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
-  onBetRejected: (reason: string) => void;
+  onBetRejected: (reason: BetRejection) => void;
   /**
    * This Guest's live connection was lost. Notifies App-level state (see `app.tsx`) so a
    * drop is recovered from the same way regardless of which route happened to establish the
@@ -217,13 +218,6 @@ export function StartedGame({
     setAmount(1);
     setPrediction(null);
   }, [roundKey]);
-
-  // The Bet never reached the Host: unlock the form so the Bettor can lock in again.
-  useEffect(() => {
-    if (betFailedRoundKey !== null && betFailedRoundKey === roundKey) {
-      setSubmittedBet(null);
-    }
-  }, [betFailedRoundKey, roundKey]);
 
   const bettingPanel = useMemo(
     () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet, betFailed: betFailedRoundKey === roundKey }),

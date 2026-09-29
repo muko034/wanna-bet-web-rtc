@@ -11,6 +11,7 @@ import { resolveLobbyRoster } from './lobby-roster';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { useForegroundRetry } from './use-foreground-retry';
 import { roomRegistry } from './room-registry-instance';
+import type { BetRejection } from '../round-engine/round-engine';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
 type Props = {
@@ -23,7 +24,7 @@ type Props = {
   gameState: GameState | null;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
   /** The Host explicitly refused this Guest's Bet. */
-  onBetRejected: (reason: string) => void;
+  onBetRejected: (reason: BetRejection) => void;
   /**
    * This Guest's live connection was lost — either while sitting on this screen, or on a
    * connection this screen itself established that's since moved on (e.g. after the game

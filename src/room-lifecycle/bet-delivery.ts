@@ -1,13 +1,15 @@
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
+import type { BetRejection } from '../round-engine/round-engine';
 import { hasPlacedBet } from './betting-panel';
 
 /** How long to wait for a confirming `state` before resending the Bet. */
 const RETRY_INTERVAL_MS = 4_000;
 const MAX_ATTEMPTS = 3;
 
-type PendingBet = {
-  roundKey: string;
-  playerId: string;
+/** Identifies whose Bet this is and in which Round, so later `state` broadcasts can confirm it. */
+export type PlaceBetContext = { roundKey: string; playerId: string };
+
+type PendingBet = PlaceBetContext & {
   payload: PlaceBetPayload;
   attempts: number;
 };
@@ -43,7 +45,7 @@ export class BetDelivery {
     }
   }
 
-  place(bet: { roundKey: string; playerId: string; payload: PlaceBetPayload }): void {
+  place(bet: PlaceBetContext & { payload: PlaceBetPayload }): void {
     this.pending = { ...bet, attempts: 0 };
     this.clearTimer();
     this.attempt();
@@ -63,7 +65,7 @@ export class BetDelivery {
    * The Host refused the Bet. A `DUPLICATE_BET` means an earlier send of this same Bet was
    * already applied, so its confirming `state` is what to keep waiting for.
    */
-  onRejected(reason: string): void {
+  onRejected(reason: BetRejection): void {
     if (reason === 'DUPLICATE_BET') return;
     this.failPending();
   }

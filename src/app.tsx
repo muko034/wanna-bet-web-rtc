@@ -18,7 +18,8 @@ import type { RecoverableTransport } from './transport/transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBanner';
 import type { GameState, PlaceBetPayload } from './protocol/messages';
-import { BetDelivery } from './room-lifecycle/bet-delivery';
+import { BetDelivery, type PlaceBetContext } from './room-lifecycle/bet-delivery';
+import type { BetRejection } from './round-engine/round-engine';
 
 type RoomRouteProps = {
   path?: string;
@@ -30,7 +31,7 @@ type RoomRouteProps = {
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
-  onBetRejected: (reason: string) => void;
+  onBetRejected: (reason: BetRejection) => void;
   onConnectionLost: () => void;
   createGuestTransport: () => PeerJsTransport;
 };
@@ -164,7 +165,7 @@ export function App() {
     route(withBase(`room/${started.code}/play`));
   };
 
-  const handlePlaceBet = useCallback((payload: PlaceBetPayload, context: { roundKey: string; playerId: string }) => {
+  const handlePlaceBet = useCallback((payload: PlaceBetPayload, context: PlaceBetContext) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
       connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
       return;
@@ -179,7 +180,7 @@ export function App() {
     setGuestGameState(state);
   }, [betDelivery]);
 
-  const handleBetRejected = useCallback((reason: string) => betDelivery.onRejected(reason), [betDelivery]);
+  const handleBetRejected = useCallback((reason: BetRejection) => betDelivery.onRejected(reason), [betDelivery]);
   const handleReconnectGaveUp = useCallback(() => betDelivery.failPending(), [betDelivery]);
 
   // Must stay referentially stable: `JoinRoom`'s rejoin effect depends on it, and a new

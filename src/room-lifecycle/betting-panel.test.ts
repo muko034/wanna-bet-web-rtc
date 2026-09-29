@@ -206,4 +206,12 @@ describe('resolveBettingPanel', () => {
     expect(failed).toMatchObject({ kind: 'form', failureMessage: "Your Bet didn't go through — try again." });
     expect(fresh).toMatchObject({ kind: 'form', failureMessage: null });
   });
+
+  it('gives the Bettor the form back, and clears their own "has bet" mark, when the locked-in Bet failed', () => {
+    const localBet = { amount: 10, prediction: 'YES' as const };
+    const panel = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2', localBet, betFailed: true });
+
+    expect(panel).toMatchObject({ kind: 'form', failureMessage: "Your Bet didn't go through — try again." });
+    expect(panel.bettors.find((bettor) => bettor.isLocalPlayer)?.hasBet).toBe(false);
+  });
 });

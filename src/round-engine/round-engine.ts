@@ -57,11 +57,19 @@ export type RoundEngineAction = StartRoundAction | PlaceBetAction | ResolveRound
 
 export type Payout = { playerId: string; amount: number };
 
-export type BetRejection =
-  | 'UNKNOWN_PLAYER'
-  | 'ACTIVE_PLAYER_CANNOT_BET'
-  | 'DUPLICATE_BET'
-  | 'INVALID_BET_AMOUNT';
+export const BET_REJECTIONS = [
+  'UNKNOWN_PLAYER',
+  'ACTIVE_PLAYER_CANNOT_BET',
+  'DUPLICATE_BET',
+  'INVALID_BET_AMOUNT',
+] as const;
+
+export type BetRejection = (typeof BET_REJECTIONS)[number];
+
+/** Narrows a wire `reason` string, which the protocol leaves untyped, to a Bet rejection. */
+export function isBetRejection(reason: string): reason is BetRejection {
+  return (BET_REJECTIONS as readonly string[]).includes(reason);
+}
 
 export type RoundEngineResult = {
   state: RoundEngineState;

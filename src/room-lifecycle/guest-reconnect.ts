@@ -4,6 +4,7 @@ import type { Transport } from '../transport/transport';
 import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameStart, watchGameState } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
+import type { BetRejection } from '../round-engine/round-engine';
 
 export type ReconnectResult =
   | { status: 'no-identity' }
@@ -24,7 +25,7 @@ export type ReconnectCallbacks = {
   onConnectionDropped: () => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
   /** The Host explicitly refused this Guest's Bet, for the given reason code. */
-  onBetRejected: (reason: string) => void;
+  onBetRejected: (reason: BetRejection) => void;
 };
 
 /** Delay before the first automatic retry attempt. */

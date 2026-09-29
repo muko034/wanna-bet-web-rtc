@@ -37,7 +37,7 @@ type Params = {
   localPlayerId: string | null;
   /** The Bet this device sent for the current Round, which the Host's public broadcast never echoes back. */
   localBet?: PlaceBetPayload | null;
-  /** The Bet this device last locked in for the current Round never reached the Host. */
+  /** The Bet this device last locked in for the current Round never reached the Host, so `localBet` no longer counts. */
   betFailed?: boolean;
 };
 
@@ -66,6 +66,9 @@ export function resolveBettingPanel({
     return { kind: 'hidden', background: 'vb-bg-wait', bettors: [] };
   }
 
+  // A Bet that never reached the Host is forgotten, so the Bettor gets the form back.
+  const ownBet = betFailed ? null : localBet;
+
   const bettors = gameState.players
     .filter((player) => player.playerId !== round.activePlayerId)
     .map((player) => {
@@ -73,7 +76,7 @@ export function resolveBettingPanel({
       return {
         playerId: player.playerId,
         name: player.name,
-        hasBet: hasPlacedBet(round, player.playerId) || (isLocalPlayer && localBet !== null),
+        hasBet: hasPlacedBet(round, player.playerId) || (isLocalPlayer && ownBet !== null),
         isLocalPlayer,
       };
     });
@@ -83,12 +86,12 @@ export function resolveBettingPanel({
     return { kind: 'status', background: 'vb-bg-wait', bettors };
   }
 
-  if (localBet !== null || hasPlacedBet(round, localPlayerId)) {
+  if (ownBet !== null || hasPlacedBet(round, localPlayerId)) {
     return {
       kind: 'locked',
       background: 'vb-bg-wait',
       bettors,
-      ownBet: localBet,
+      ownBet,
       waitingLabel: waitingLabel(bettors.filter((bettor) => !bettor.hasBet).length),
     };
   }
