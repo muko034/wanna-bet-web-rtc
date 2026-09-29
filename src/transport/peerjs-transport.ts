@@ -1,5 +1,5 @@
 import Peer, { PeerError, type DataConnection, type PeerJSOption } from 'peerjs';
-import { PeerUnavailableError, RequestedIdTakenError, type Transport } from './transport';
+import { PeerUnavailableError, RequestedIdTakenError, type RecoverableTransport } from './transport';
 
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
@@ -15,18 +15,23 @@ function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): v
  * fake-transport unit suite — a distinct smoke-test suite against a live/local `peerjs-server`
  * validates it instead.
  */
-export class PeerJsTransport implements Transport {
+export class PeerJsTransport implements RecoverableTransport {
   private connections = new Map<string, DataConnection>();
   private messageHandlers: Array<(message: unknown, peerId: string) => void> = [];
   private connectionChangeHandlers: Array<(peerId: string, connected: boolean) => void> = [];
   private peer: Peer | undefined;
   private readonly serverOptions: PeerJsServerOptions | undefined;
+  /** The Transport ID this Host opened under, reused by `recover()` to rebuild a destroyed `Peer`. `undefined` on a Guest. */
+  private lastRequestedId: string | undefined;
 
   constructor(serverOptions?: PeerJsServerOptions) {
     this.serverOptions = serverOptions;
   }
 
   connect(remoteId?: string, requestedId?: string): Promise<string> {
+    if (remoteId === undefined) {
+      this.lastRequestedId = requestedId;
+    }
     return new Promise((resolve, reject) => {
       const options = this.serverOptions;
       const peer = requestedId
@@ -91,6 +96,69 @@ export class PeerJsTransport implements Transport {
   close(): void {
     this.peer?.destroy();
     this.connections.clear();
+  }
+
+  /** Exposes the underlying `Peer` to the smoke tests only, to simulate stale or destroyed connections. */
+  peerForTesting(): Peer {
+    if (!this.peer) {
+      throw new Error('peerForTesting() called before connect()');
+    }
+    return this.peer;
+  }
+
+  /**
+   * Restores this Host's stale signaling connection (e.g. after the tab was backgrounded).
+   * `peer.reconnect()` keeps open Guest `DataConnection`s; a destroyed `Peer` is rebuilt under
+   * `lastRequestedId`, which drops them. Resolves `false` if the connection could not be restored.
+   */
+  recover(): Promise<boolean> {
+    const peer = this.peer;
+    if (!peer || this.lastRequestedId === undefined) {
+      return Promise.resolve(false);
+    }
+    if (peer.open && !peer.disconnected) {
+      return Promise.resolve(true);
+    }
+    if (peer.destroyed) {
+      return this.rebuildHostPeer();
+    }
+
+    return new Promise((resolve) => {
+      const onOpen = () => {
+        cleanup();
+        resolve(true);
+      };
+      const onError = () => {
+        cleanup();
+        if (peer.destroyed) {
+          this.rebuildHostPeer().then(resolve);
+        } else {
+          resolve(false);
+        }
+      };
+      const cleanup = () => {
+        peer.off('open', onOpen);
+        peer.off('error', onError);
+      };
+      peer.on('open', onOpen);
+      peer.on('error', onError);
+      try {
+        peer.reconnect();
+      } catch {
+        cleanup();
+        this.rebuildHostPeer().then(resolve);
+      }
+    });
+  }
+
+  /** Opens a brand new `Peer` under `lastRequestedId`, replacing a destroyed one — see `recover()`. */
+  private rebuildHostPeer(): Promise<boolean> {
+    if (this.lastRequestedId === undefined) {
+      return Promise.resolve(false);
+    }
+    return this.connect(undefined, this.lastRequestedId)
+      .then(() => true)
+      .catch(() => false);
   }
 
   private bindConnection(connection: DataConnection): void {

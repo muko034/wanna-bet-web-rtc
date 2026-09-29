@@ -172,4 +172,36 @@ describe('PeerJsTransport smoke tests', () => {
 
     await expect(withTimeout(guest.connect(), 'connect() against an unreachable server')).rejects.toThrow();
   });
+
+  it('recover() restores a Host whose signaling socket dropped, preserving its still-open Guest connection', async () => {
+    const host = createTransport();
+    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+    const guest = createTransport();
+    await guest.connect(hostId);
+
+    // Backgrounding drops the Host's PeerServer socket but leaves the Guest DataConnection open.
+    host.peerForTesting().disconnect();
+
+    const recovered = await withTimeout(host.recover(), 'recover() after a signaling disconnect');
+    expect(recovered).toBe(true);
+    expect(host.peerForTesting().disconnected).toBe(false);
+
+    // The Guest's own connection never actually dropped, so a fresh Host-to-Guest message
+    // still gets through with no rejoin needed.
+    const guestReceived = onceMessage(guest);
+    host.send({ type: 'state', payload: { seq: 1 } });
+    await expect(guestReceived).resolves.toMatchObject({ message: { type: 'state', payload: { seq: 1 } } });
+  });
+
+  it('recover() rebuilds a destroyed Host Peer under the same id', async () => {
+    const host = createTransport();
+    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+
+    host.peerForTesting().destroy();
+
+    const recovered = await withTimeout(host.recover(), 'recover() after the Peer was destroyed');
+    expect(recovered).toBe(true);
+    expect(host.peerForTesting().id).toBe(hostId);
+    expect(host.peerForTesting().destroyed).toBe(false);
+  });
 });

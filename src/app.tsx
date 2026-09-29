@@ -14,8 +14,9 @@ import { saveHostSession, type HostSession } from './host-persistence/host-sessi
 import { resolveAutoResume, type AutoResume } from './host-persistence/auto-resume';
 import { ReopeningRoom } from './host-persistence/ReopeningRoom';
 import { PeerJsTransport } from './transport/peerjs-transport';
+import type { RecoverableTransport } from './transport/transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
-import type { Transport } from './transport/transport';
+import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBanner';
 import type { GameState, PlaceBetPayload } from './protocol/messages';
 
 type RoomRouteProps = {
@@ -72,10 +73,14 @@ export function App() {
   const guestPlaceBetRef = useRef<((payload: PlaceBetPayload) => void) | null>(null);
   const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
+  /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
+  const hostTransportRef = useRef<RecoverableTransport | null>(null);
+  /** Set when `hostTransportRef`'s `recover()` fails. */
+  const [hostConnectionLost, setHostConnectionLost] = useState(false);
   // Decided before the first render, so the Room's link never mounts the Guest join form meanwhile.
   const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
 
-  const hostRoom = (transport: Transport, initialRoom: Room): ConnectionManager => {
+  const hostRoom = (transport: RecoverableTransport, initialRoom: Room): ConnectionManager => {
     const manager = new ConnectionManager(
       transport,
       initialRoom,
@@ -86,10 +91,11 @@ export function App() {
       autosave,
     );
     connectionManagerRef.current = manager;
+    hostTransportRef.current = transport;
     return manager;
   };
 
-  const handleRoomCreated = (createdRoom: Room, transport: Transport) => {
+  const handleRoomCreated = (createdRoom: Room, transport: RecoverableTransport) => {
     hostRoom(transport, createdRoom);
     setRoom(createdRoom);
     route(withBase(`room/${createdRoom.code}`));
@@ -127,6 +133,18 @@ export function App() {
     if (reopening) {
       reopen(reopening);
     }
+  }, []);
+
+  /** Recovers the Host's signaling connection whenever its tab returns to the foreground; a backgrounded tab can go stale without a `disconnected` event. */
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      const transport = hostTransportRef.current;
+      if (!transport) return;
+      transport.recover().then((recovered) => setHostConnectionLost(!recovered));
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const handleStart = () => {
@@ -191,38 +209,41 @@ export function App() {
   }
 
   return (
-    <Router>
-      <Home path={withBase('/')} />
-      <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
-      <JoinCode path={withBase('join')} />
-      <RoomRoute
-        path={withBase('room/:code')}
-        room={room}
-        hostGameState={hostGameState}
-        guestGameState={guestGameState}
-        onStart={handleStart}
-        onGameStarted={setGuestGameStartedCode}
-        onGameState={setGuestGameState}
-        onPlaceBetReady={handlePlaceBetReady}
-        onConnectionLost={handleGuestConnectionLost}
-        createGuestTransport={createGuestTransport}
-      />
-      <StartedGame
-        path={withBase('room/:code/play')}
-        room={room}
-        guestGameStartedCode={guestGameStartedCode}
-        gameState={hostGameState ?? guestGameState}
-        onPlaceBet={handlePlaceBet}
-        onResolveRound={(outcome) => {
-          connectionManagerRef.current?.resolveRound(outcome);
-        }}
-        onGameStarted={setGuestGameStartedCode}
-        onGameState={setGuestGameState}
-        onPlaceBetReady={handlePlaceBetReady}
-        onConnectionLost={handleGuestConnectionLost}
-        createGuestTransport={createGuestTransport}
-      />
-      <NotFound default />
-    </Router>
+    <>
+      {hostConnectionLost && <HostConnectionLostBanner onDismiss={() => setHostConnectionLost(false)} />}
+      <Router>
+        <Home path={withBase('/')} />
+        <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
+        <JoinCode path={withBase('join')} />
+        <RoomRoute
+          path={withBase('room/:code')}
+          room={room}
+          hostGameState={hostGameState}
+          guestGameState={guestGameState}
+          onStart={handleStart}
+          onGameStarted={setGuestGameStartedCode}
+          onGameState={setGuestGameState}
+          onPlaceBetReady={handlePlaceBetReady}
+          onConnectionLost={handleGuestConnectionLost}
+          createGuestTransport={createGuestTransport}
+        />
+        <StartedGame
+          path={withBase('room/:code/play')}
+          room={room}
+          guestGameStartedCode={guestGameStartedCode}
+          gameState={hostGameState ?? guestGameState}
+          onPlaceBet={handlePlaceBet}
+          onResolveRound={(outcome) => {
+            connectionManagerRef.current?.resolveRound(outcome);
+          }}
+          onGameStarted={setGuestGameStartedCode}
+          onGameState={setGuestGameState}
+          onPlaceBetReady={handlePlaceBetReady}
+          onConnectionLost={handleGuestConnectionLost}
+          createGuestTransport={createGuestTransport}
+        />
+        <NotFound default />
+      </Router>
+    </>
   );
 }

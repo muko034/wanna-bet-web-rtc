@@ -2,13 +2,13 @@ import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { PeerJsTransport } from '../transport/peerjs-transport';
+import type { RecoverableTransport } from '../transport/transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
-import type { Transport } from '../transport/transport';
 
 type Props = {
   path?: string;
-  onRoomCreated: (room: Room, transport: Transport) => void;
+  onRoomCreated: (room: Room, transport: RecoverableTransport) => void;
 };
 
 /** `/room`: form to enter the Host's display name and create the Room. */
