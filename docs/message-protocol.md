@@ -46,7 +46,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 |------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`.                                 |
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
-| `placeBet` | `{ amount, prediction }` | Actor derived from the connection binding.                                                                                            |
+| `placeBet` | `{ amount, prediction }` | Actor derived from the connection binding. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`). |
 | `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. |
 
 ### Host → one Guest

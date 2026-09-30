@@ -1,6 +1,7 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState } from '../protocol/messages';
 import { PeerUnavailableError, type Transport } from '../transport/transport';
+import { isBetRejection, type BetRejection } from '../round-engine/round-engine';
 import type { RoomRegistry } from './room-registry';
 
 export type JoinResult =
@@ -149,6 +150,16 @@ export function watchForConnectionDrop(transport: Transport, onConnectionDropped
   transport.onConnectionChange((_peerId, connected) => {
     if (!connected) {
       onConnectionDropped();
+    }
+  });
+}
+
+/** Watches a Guest's own `transport` for the Host refusing a `placeBet`, reporting the rejection's reason. A reason this build doesn't know is ignored. */
+export function watchForBetRejection(transport: Transport, onBetRejected: (reason: BetRejection) => void): void {
+  const protocol = new GuestProtocol(transport);
+  protocol.on('rejected', (payload) => {
+    if (payload.action === 'placeBet' && isBetRejection(payload.reason)) {
+      onBetRejected(payload.reason);
     }
   });
 }

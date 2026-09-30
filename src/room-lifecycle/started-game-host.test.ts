@@ -138,6 +138,63 @@ describe('starting a round from the Host', () => {
     );
   });
 
+  it.each([
+    { label: 'an invalid amount', bettor: 'sam', bet: { amount: 9999, prediction: 'NO' as const }, reason: 'INVALID_BET_AMOUNT' },
+    { label: 'an Active Player betting', bettor: 'alex', bet: { amount: 5, prediction: 'NO' as const }, reason: 'ACTIVE_PLAYER_CANNOT_BET' },
+  ])('replies to only the Bettor with a rejected placeBet for $label', async ({ bettor, bet, reason }) => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let activePlayerId: string | undefined;
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      () => activePlayerId ?? 'host-1',
+    );
+    const alex = await joinGuest(hostId, 'Alex');
+    const sam = await joinGuest(hostId, 'Sam');
+    activePlayerId = alex.playerId;
+    const guests = { alex, sam };
+    const rejections: Record<string, unknown[]> = { alex: [], sam: [] };
+    new GuestProtocol(alex.guestTransport).on('rejected', (payload) => rejections.alex.push(payload));
+    new GuestProtocol(sam.guestTransport).on('rejected', (payload) => rejections.sam.push(payload));
+
+    manager.startGame();
+    manager.startRound();
+    new GuestProtocol(guests[bettor as 'alex' | 'sam'].guestTransport).placeBet(bet);
+
+    expect(rejections[bettor]).toEqual([{ reason, action: 'placeBet' }]);
+    expect(rejections[bettor === 'sam' ? 'alex' : 'sam']).toEqual([]);
+  });
+
+  it('rejects a duplicate placeBet with DUPLICATE_BET while keeping the first Bet', async () => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let activePlayerId: string | undefined;
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      () => activePlayerId ?? 'host-1',
+    );
+    const alex = await joinGuest(hostId, 'Alex');
+    const sam = await joinGuest(hostId, 'Sam');
+    activePlayerId = alex.playerId;
+    const rejections: unknown[] = [];
+    const samProtocol = new GuestProtocol(sam.guestTransport);
+    samProtocol.on('rejected', (payload) => rejections.push(payload));
+
+    manager.startGame();
+    manager.startRound();
+    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
+    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
+
+    expect(rejections).toEqual([{ reason: 'DUPLICATE_BET', action: 'placeBet' }]);
+    expect(manager.gameState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+  });
+
   it("notifies the Host's own onGameStateChange callback when a Guest's placeBet arrives, so the Host's own screen reflects it — not just the broadcast to other Guests", async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();

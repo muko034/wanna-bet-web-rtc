@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { joinRoom, rejoinRoom, watchForConnectionDrop, watchForGameStart } from './join-room';
+import { joinRoom, rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameStart } from './join-room';
 import type { Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -204,5 +204,40 @@ describe('watchForGameStart', () => {
     manager.startGame();
 
     expect(onGameStarted).toHaveBeenCalledOnce();
+  });
+});
+
+describe('watchForBetRejection', () => {
+  async function connectedPair() {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(registry.transportIdFor(code));
+    return { hostTransport, guestTransport };
+  }
+
+  const rejected = (reason: string, action: string) => ({ type: 'rejected' as const, seq: 1, payload: { reason, action } });
+
+  it('reports the reason when the Host refuses a placeBet', async () => {
+    const { hostTransport, guestTransport } = await connectedPair();
+    const onBetRejected = vi.fn();
+    watchForBetRejection(guestTransport, onBetRejected);
+
+    hostTransport.send(rejected('INVALID_BET_AMOUNT', 'placeBet'));
+
+    expect(onBetRejected).toHaveBeenCalledExactlyOnceWith('INVALID_BET_AMOUNT');
+  });
+
+  it('ignores rejections of other actions and reasons this build does not know', async () => {
+    const { hostTransport, guestTransport } = await connectedPair();
+    const onBetRejected = vi.fn();
+    watchForBetRejection(guestTransport, onBetRejected);
+
+    hostTransport.send(rejected('ROOM_FULL', 'join'));
+    hostTransport.send(rejected('SOMETHING_NEW', 'placeBet'));
+
+    expect(onBetRejected).not.toHaveBeenCalled();
   });
 });

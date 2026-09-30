@@ -1,9 +1,10 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import type { Transport } from '../transport/transport';
-import { rejoinRoom, watchForConnectionDrop, watchForGameStart, watchGameState } from './join-room';
+import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameStart, watchGameState } from './join-room';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
+import type { BetRejection } from '../round-engine/round-engine';
 
 export type ReconnectResult =
   | { status: 'no-identity' }
@@ -23,6 +24,8 @@ export type ReconnectCallbacks = {
    */
   onConnectionDropped: () => void;
   onPlaceBetReady: (placeBet: ((payload: PlaceBetPayload) => void) | null) => void;
+  /** The Host explicitly refused this Guest's Bet, for the given reason code. */
+  onBetRejected: (reason: BetRejection) => void;
 };
 
 /** Delay before the first automatic retry attempt. */
@@ -37,7 +40,7 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Subscribes `callbacks` to `transport`'s game-state, session-end, and game-started signals.
+ * Subscribes `callbacks` to `transport`'s game-state, session-end, game-started and Bet-rejection signals.
  * Safe to call before the Host has confirmed this connection (even before `transport.connect`)
  * — attaching these watchers as early as possible, ahead of sending `join`/`rejoin`, matters
  * because the Host may broadcast a state resend (`resendInProgressState`) synchronously
@@ -48,6 +51,7 @@ export function wireGuestConnection(transport: Transport, code: string, callback
   watchGameState(transport, callbacks.onGameState);
   watchForConnectionDrop(transport, callbacks.onConnectionDropped);
   watchForGameStart(transport, () => callbacks.onGameStarted(code));
+  watchForBetRejection(transport, callbacks.onBetRejected);
 }
 
 /**

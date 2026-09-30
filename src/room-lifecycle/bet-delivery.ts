@@ -1,0 +1,111 @@
+import type { GameState, PlaceBetPayload } from '../protocol/messages';
+import type { BetRejection } from '../round-engine/round-engine';
+import { hasPlacedBet } from './betting-panel';
+
+/** How long to wait for a confirming `state` before resending the Bet. */
+const RETRY_INTERVAL_MS = 4_000;
+const MAX_ATTEMPTS = 3;
+
+/** Identifies whose Bet this is and in which Round, so later `state` broadcasts can confirm it. */
+export type PlaceBetContext = { roundKey: string; playerId: string };
+
+type PendingBet = PlaceBetContext & {
+  payload: PlaceBetPayload;
+  attempts: number;
+};
+
+/** Identifies a Round on the Guest side; `null` when no Round is open. */
+export function roundKeyOf(state: GameState): string | null {
+  return state.round ? `${state.round.activePlayerId}:${state.round.challengeId}` : null;
+}
+
+/**
+ * Keeps a Guest's locked-in Bet queued and resends it until the Host's `state` broadcast shows
+ * it applied. Deliberately unaware of transports: the caller hands over the current send
+ * function via `setSender` (`null` while disconnected), so it survives reconnects, which
+ * replace the transport.
+ */
+export class BetDelivery {
+  private sender: ((payload: PlaceBetPayload) => void) | null = null;
+  private pending: PendingBet | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private readonly onFailed: (roundKey: string) => void;
+
+  /** `onFailed` receives the failed Bet's round key, once retries are exhausted or the Host refused it. */
+  constructor(onFailed: (roundKey: string) => void) {
+    this.onFailed = onFailed;
+  }
+
+  /** Supplies the live send function, or `null` while disconnected. Reconnecting resends a pending Bet at once. */
+  setSender(sender: ((payload: PlaceBetPayload) => void) | null): void {
+    this.sender = sender;
+    this.clearTimer();
+    if (sender) {
+      this.resume();
+    }
+  }
+
+  place(bet: PlaceBetContext & { payload: PlaceBetPayload }): void {
+    this.pending = { ...bet, attempts: 0 };
+    this.clearTimer();
+    this.attempt();
+  }
+
+  /** Confirms the pending Bet, or forgets it when its Round is over. */
+  onState(state: GameState): void {
+    if (!this.pending) return;
+    const key = roundKeyOf(state);
+    const { roundKey, playerId } = this.pending;
+    if (key !== roundKey || hasPlacedBet(state.round, playerId)) {
+      this.settle();
+    }
+  }
+
+  /**
+   * The Host refused the Bet. A `DUPLICATE_BET` means an earlier send of this same Bet was
+   * already applied, so its confirming `state` is what to keep waiting for.
+   */
+  onRejected(reason: BetRejection): void {
+    if (reason === 'DUPLICATE_BET') return;
+    this.failPending();
+  }
+
+  failPending(): void {
+    if (!this.pending) return;
+    const { roundKey } = this.pending;
+    this.settle();
+    this.onFailed(roundKey);
+  }
+
+  /** Resends at once, unless every attempt is spent: then the last send still gets its full wait. */
+  private resume(): void {
+    if (this.pending && this.pending.attempts >= MAX_ATTEMPTS) {
+      this.timer = setTimeout(() => this.attempt(), RETRY_INTERVAL_MS);
+      return;
+    }
+    this.attempt();
+  }
+
+  private attempt(): void {
+    if (!this.pending || !this.sender) return;
+    if (this.pending.attempts >= MAX_ATTEMPTS) {
+      this.failPending();
+      return;
+    }
+    this.pending.attempts++;
+    this.sender(this.pending.payload);
+    this.timer = setTimeout(() => this.attempt(), RETRY_INTERVAL_MS);
+  }
+
+  private settle(): void {
+    this.pending = null;
+    this.clearTimer();
+  }
+
+  private clearTimer(): void {
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+}
