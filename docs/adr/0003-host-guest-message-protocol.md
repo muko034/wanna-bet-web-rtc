@@ -1,7 +1,8 @@
 # Full-snapshot, single-message Host↔Guest protocol with split public/private identity
 
 We chose a Host↔Guest message protocol built on **one unified `state` snapshot** (not per-concern broadcasts, not
-deltas/patches) sent identically to every Guest after any change, plus a **small, fixed set of action messages**
+deltas/patches), wrapped as `{ epoch, version, snapshot }`, sent identically to every Guest after any change and re-sent
+periodically as a heartbeat, plus a **small, fixed set of action messages**
 (`join`, `rejoin`, `placeBet`, `leave`) — Host-only actions (start round, submit outcome, Pause/Remove) are never wire
 messages, since their effects simply appear in the next snapshot. Full details live in `docs/message-protocol.md`.
 
@@ -10,6 +11,14 @@ players this reintroduces exactly the coordination bug full-snapshot broadcastin
 that can disagree with each other (e.g. `adminState` says a player was removed while a stale `roundState`
 still shows them as an active Bettor). One snapshot, one `seq` (Host-owned, monotonic — safe by construction since the
 Host is the sole writer), matches ADR 0001's "single authoritative Game State" and needs no reconciliation logic.
+
+A backgrounded Host (e.g. an iPhone tab) can die silently: no `close` fires on either side, so a Guest never learns its
+link is dead. The Host therefore re-sends the current `state` periodically from Room creation. Guests treat any `state`
+as a sign of life. Too long a silence, or too long without a confirming `state` after a Bet, starts the reconnect loop.
+
+So that Guests can skip the re-render for an unchanged heartbeat, the payload carries `epoch` (random per Host boot) and
+`version` (rises only when the snapshot changes). A fresh `epoch` makes a restarted Host visible to Guests. `seq` stays
+Host-owned and monotonic, and Guests still do no stale-message dropping.
 
 We also identified and closed an impersonation gap: a single `playerId` cannot double as both the public identifier
 shown in every broadcast (needed for rotation/scoreboard/Bet-attribution) and the private credential used to reclaim a
@@ -28,18 +37,5 @@ per ADR 0002's grouping of the message protocol and the state-snapshot schema as
   "only an explicit Host action" wording to include the player's own Leave.
 - No protocol version field and no room-join PIN were deliberately left out of scope — both are cheap to add later if
   this project's trust model (small, trusted friend group, per ADR 0001) ever changes.
-
-## Amendment: heartbeat and wrapped `state` payload
-
-A backgrounded Host (e.g. an iPhone tab) can die silently: no `close` fires on either side, so a Guest never learns its
-link is dead. The Host therefore re-sends the current `state` every 3 s from Room creation, and Guests treat any `state`
-as a sign of life (9 s of silence, or 4 s without a confirming `state` after a Bet, starts the existing reconnect loop).
-
-To let Guests skip the re-render for an unchanged heartbeat, the `state` payload is now wrapped as
-`{ epoch, version, snapshot }`: `epoch` is random per Host boot and `version` rises only when the snapshot changes.
-Neither is persisted — a persisted `version` could be reused after a reload because autosave runs only on snapshot
-change, whereas a fresh `epoch` makes a restarted Host visible with no schema change. `seq` is unchanged and Guests
-still do no stale-message dropping.
-
-Consequence: this is a **breaking wire change** — Guests on an older build cannot parse the wrapped payload. Accepted,
-since the developer is the only user today.
+- The wrapped `state` payload is a breaking wire change: Guests on an older build cannot parse it. Accepted, since the
+  developer is the only user today.
