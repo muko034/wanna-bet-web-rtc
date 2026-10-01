@@ -5,9 +5,6 @@ import { PeerUnavailableError, RequestedIdTakenError, type RecoverableTransport 
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
 
-const PROBE_ID_PREFIX = 'link-probe-';
-const PROBE_TIMEOUT_MS = 5_000;
-
 function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): void {
   if (import.meta.env.DEV || isDebugMode()) {
     console.debug(`[${direction}]`, peerId, message);
@@ -59,7 +56,7 @@ export class PeerJsTransport implements RecoverableTransport {
         if (remoteId === undefined) {
           peer.on('connection', (connection) => {
             connection.on('open', () => {
-              if (!connection.peer.startsWith(PROBE_ID_PREFIX)) this.bindConnection(connection);
+              this.bindConnection(connection);
             });
           });
           resolve(id);
@@ -114,25 +111,27 @@ export class PeerJsTransport implements RecoverableTransport {
 
   /**
    * Restores this Host's stale signaling connection (e.g. after the tab was backgrounded).
-   * `peer.reconnect()` keeps open Guest `DataConnection`s; a destroyed `Peer` is rebuilt under
-   * `lastRequestedId`, which drops them. Resolves `false` if the connection could not be restored.
+   * A peer that still reports `open` can hold a dead socket, so it is re-registered on purpose:
+   * `peer.disconnect()` then `peer.reconnect()`. Both keep open Guest `DataConnection`s; a
+   * destroyed `Peer` is rebuilt under `lastRequestedId`, which drops them. Resolves `false` if
+   * the connection could not be restored.
    */
   recover(): Promise<boolean> {
     const peer = this.peer;
     if (!peer || this.lastRequestedId === undefined) {
       return Promise.resolve(false);
     }
-    if (peer.open && !peer.disconnected) {
-      return this.probeLink(this.lastRequestedId).then((alive) => {
-        if (alive) return true;
-        peer.destroy();
-        return this.rebuildHostPeer();
-      });
-    }
     if (peer.destroyed) {
       return this.rebuildHostPeer();
     }
+    if (!peer.disconnected) {
+      peer.disconnect();
+    }
+    return this.reconnectPeer(peer);
+  }
 
+  /** Re-registers a disconnected `peer` with the signaling server; rebuilds it if it ends up destroyed. */
+  private reconnectPeer(peer: Peer): Promise<boolean> {
     return new Promise((resolve) => {
       const onOpen = () => {
         cleanup();
@@ -158,29 +157,6 @@ export class PeerJsTransport implements RecoverableTransport {
         cleanup();
         this.rebuildHostPeer().then(resolve);
       }
-    });
-  }
-
-  /**
-   * Really tests the signaling link: a throwaway Peer tries to reach this Host's id. The peer's own
-   * `open`/`disconnected` flags can stay healthy after the server forgot the id, but the server can
-   * only route the probe if the Host is registered. Resolves `false` on error or timeout.
-   */
-  private probeLink(hostId: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const options = this.serverOptions;
-      const probeId = `${PROBE_ID_PREFIX}${crypto.randomUUID()}`;
-      const probe = options ? new Peer(probeId, options) : new Peer(probeId);
-      const finish = (alive: boolean) => {
-        clearTimeout(timer);
-        probe.destroy();
-        resolve(alive);
-      };
-      const timer = setTimeout(() => finish(false), PROBE_TIMEOUT_MS);
-      probe.on('error', () => finish(false));
-      probe.on('open', () => {
-        probe.connect(hostId).on('open', () => finish(true));
-      });
     });
   }
 

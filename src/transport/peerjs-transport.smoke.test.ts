@@ -205,7 +205,7 @@ describe('PeerJsTransport smoke tests', () => {
     expect(host.peerForTesting().destroyed).toBe(false);
   });
 
-  it('recover() detects a stale Host Peer that still reports open and rebuilds it under the same id', async () => {
+  it('recover() re-registers a stale-but-open Host Peer under the same id', async () => {
     const host = createTransport();
     const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
     const stalePeer = host.peerForTesting();
@@ -219,14 +219,16 @@ describe('PeerJsTransport smoke tests', () => {
 
     const recovered = await withTimeout(host.recover(), 'recover() on a stale-but-open Peer');
     expect(recovered).toBe(true);
-    expect(host.peerForTesting()).not.toBe(stalePeer);
-    expect(host.peerForTesting().id).toBe(hostId);
+    expect(host.peerForTesting()).toBe(stalePeer);
+    expect(stalePeer.id).toBe(hostId);
+    expect(stalePeer.open).toBe(true);
+    expect(stalePeer.disconnected).toBe(false);
 
     const guest = createTransport();
-    await withTimeout(guest.connect(hostId), 'Guest reconnecting to the rebuilt Host');
+    await withTimeout(guest.connect(hostId), 'Guest connecting to the re-registered Host');
   });
 
-  it('recover() leaves a healthy Host Peer and its Guest connection alone', async () => {
+  it('recover() re-registers a healthy Host Peer and keeps its Guest connection', async () => {
     const host = createTransport();
     const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
     const guest = createTransport();
