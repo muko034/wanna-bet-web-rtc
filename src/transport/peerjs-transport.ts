@@ -169,9 +169,8 @@ export class PeerJsTransport implements RecoverableTransport {
   private probeLink(hostId: string): Promise<boolean> {
     return new Promise((resolve) => {
       const options = this.serverOptions;
-      const probe = options
-        ? new Peer(`${PROBE_ID_PREFIX}${crypto.randomUUID()}`, options)
-        : new Peer(`${PROBE_ID_PREFIX}${crypto.randomUUID()}`);
+      const probeId = `${PROBE_ID_PREFIX}${crypto.randomUUID()}`;
+      const probe = options ? new Peer(probeId, options) : new Peer(probeId);
       const finish = (alive: boolean) => {
         clearTimeout(timer);
         probe.destroy();
