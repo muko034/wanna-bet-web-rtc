@@ -76,7 +76,8 @@ export function App() {
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   /** Round key of the Guest Bet that never reached the Host, until the Bettor locks in again. */
   const [betFailedRoundKey, setBetFailedRoundKey] = useState<string | null>(null);
-  const [betDelivery] = useState(() => new BetDelivery(setBetFailedRoundKey));
+  const guestConnectionLostRef = useRef<() => void>(() => {});
+  const [betDelivery] = useState(() => new BetDelivery(setBetFailedRoundKey, () => guestConnectionLostRef.current()));
   const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
   /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
@@ -87,6 +88,7 @@ export function App() {
   const [reopening, setReopening] = useState<Reopening | null>(openedReopening);
 
   const hostRoom = (transport: RecoverableTransport, initialRoom: Room): ConnectionManager => {
+    connectionManagerRef.current?.close();
     const manager = new ConnectionManager(
       transport,
       initialRoom,
@@ -203,6 +205,8 @@ export function App() {
     setGuestGameStartedCode(null);
     handlePlaceBetReady(null);
   }, [handlePlaceBetReady]);
+
+  guestConnectionLostRef.current = handleGuestConnectionLost;
 
   /**
    * The Guest's one live transport, held here so it outlives whichever route established it:

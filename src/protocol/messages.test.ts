@@ -95,13 +95,17 @@ describe('parseHostToGuestMessage', () => {
   });
 
   it('accepts a valid state message', () => {
-    const message = { type: 'state', seq: 3, payload: gameState };
+    const message = { type: 'state', seq: 3, payload: { epoch: 'e1', version: 0, snapshot: gameState } };
     expect(parseHostToGuestMessage(message)).toEqual(message);
+  });
+
+  it('rejects a state message whose payload is a bare game snapshot without epoch and version', () => {
+    expect(parseHostToGuestMessage({ type: 'state', seq: 3, payload: gameState })).toBeUndefined();
   });
 
   it('rejects a state message with a malformed payload', () => {
     expect(
-      parseHostToGuestMessage({ type: 'state', seq: 3, payload: { ...gameState, status: 'bogus' } }),
+      parseHostToGuestMessage({ type: 'state', seq: 3, payload: { epoch: 'e1', version: 0, snapshot: { ...gameState, status: 'bogus' } } }),
     ).toBeUndefined();
   });
 
@@ -109,7 +113,7 @@ describe('parseHostToGuestMessage', () => {
     const message = {
       type: 'state',
       seq: 5,
-      payload: { ...gameState, status: 'lobby', round: null, activePlayerId: null },
+      payload: { epoch: 'e1', version: 0, snapshot: { ...gameState, status: 'lobby', round: null, activePlayerId: null } },
     } as const;
 
     expect(parseHostToGuestMessage(message)).toEqual(message);
@@ -120,17 +124,21 @@ describe('parseHostToGuestMessage', () => {
       type: 'state',
       seq: 4,
       payload: {
-        ...gameState,
-        activePlayerId: 'p2',
-        round: null,
-        resolution: {
-          activePlayerId: 'p1',
-          outcome: 'YES',
-          payouts: [
-            { playerId: 'p1', amount: 15 },
-            { playerId: 'p2', amount: 20 },
-            { playerId: 'p3', amount: -15 },
-          ],
+        epoch: 'e1',
+        version: 4,
+        snapshot: {
+          ...gameState,
+          activePlayerId: 'p2',
+          round: null,
+          resolution: {
+            activePlayerId: 'p1',
+            outcome: 'YES',
+            payouts: [
+              { playerId: 'p1', amount: 15 },
+              { playerId: 'p2', amount: 20 },
+              { playerId: 'p3', amount: -15 },
+            ],
+          },
         },
       },
     } as const;

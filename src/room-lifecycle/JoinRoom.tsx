@@ -137,10 +137,10 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     setStatus({ kind: 'joining' });
     const transport = createGuestTransport();
     const callbacks = makeCallbacks();
-    wireGuestConnection(transport, code, callbacks);
+    const armHostSilence = wireGuestConnection(transport, code, callbacks);
     joinRoom(transport, roomRegistry, code, name).then((result) => {
       if (result.status === 'joined') {
-        completeGuestConnection(transport, code, localStorage, result.playerId, result.reconnectToken, callbacks);
+        completeGuestConnection(transport, code, localStorage, result.playerId, result.reconnectToken, callbacks, armHostSilence);
         setStatus({ kind: 'joined', playerId: result.playerId });
       } else {
         callbacksRef.current.onPlaceBetReady(null);

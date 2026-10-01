@@ -58,13 +58,31 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 
 ### Host → all Guests
 
-| type    | payload                 | notes                                                                                                    |
-|---------|-------------------------|----------------------------------------------------------------------------------------------------------|
-| `state` | `GameState` (see below) | Full snapshot, identical for every recipient, sent after every state-changing action. No deltas/patches. |
+| type    | payload                                        | notes                                                                                                                                                |
+|---------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `state` | `{ epoch, version, snapshot }` (see Heartbeat) | `snapshot` is the full `GameState` (see below), identical for every recipient, sent after every state-changing action and as a heartbeat. No deltas/patches. |
+
+### Heartbeat and `state` payload
+
+The `state` payload wraps the snapshot: `{ epoch: string, version: number, snapshot: GameState }`.
+
+- `epoch`: a random ID created once per Host boot (a reload or resume gets a new one). It makes a Host restart visible
+  to Guests. Never persisted.
+- `version`: starts at 0 on every Host boot and rises by one only when the snapshot differs from the previous broadcast.
+  Never persisted. (`seq` is unchanged: it still rises on every Host message.)
+- **Heartbeat:** from Room creation (Lobby and Game) the Host re-sends the current `state` every 3 s
+  (`HEARTBEAT_INTERVAL_MS`). It sends nothing while no Guest is connected, stops when the Room closes, and changes
+  neither the Host's game state nor the saved session.
+- **Guest handling:** every `state` is a sign of life. The Guest skips its re-render and Bet-confirmation work when
+  `epoch` and `version` both equal the last pair it saw; it never drops a message for a lower `version`. 9 s without
+  any `state` (`HOST_SILENCE_TIMEOUT_MS`) means the link is lost and the Guest starts its reconnect loop. A sent Bet
+  with no confirming `state` after 4 s (`BET_CONFIRMATION_TIMEOUT_MS`) is treated the same way.
+
+This is a breaking change for Guests running an older build: they cannot parse the wrapped payload.
 
 ## `GameState` shape
 
-One canonical shape, shared by the `state` message payload and the persisted `localStorage` snapshot (the latter wraps
+One canonical shape, shared by the `state` message's `snapshot` and the persisted `localStorage` snapshot (the latter wraps
 it as `{ schemaVersion, savedAt, state }` — see host-persistence spec and ADR 0003). `GameState` carries only data a
 Guest needs to render — it is not a dumping ground for Host-internal bookkeeping (see `challengeHistory` below).
 

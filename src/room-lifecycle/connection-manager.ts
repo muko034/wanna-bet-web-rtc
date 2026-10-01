@@ -7,6 +7,9 @@ import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineSt
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 import type { HostSession } from '../host-persistence/host-session-store';
 
+/** How often the Host re-sends the current `state` so Guests can tell a quiet game from a dead link. */
+export const HEARTBEAT_INTERVAL_MS = 3_000;
+
 function randomId(): string {
   return Math.random().toString(36).slice(2);
 }
@@ -59,6 +62,7 @@ export class ConnectionManager {
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
   private firstRoundStarted = false;
+  private readonly heartbeatTimer: ReturnType<typeof setInterval>;
 
   constructor(
     transport: Transport,
@@ -83,6 +87,19 @@ export class ConnectionManager {
     this.protocol.on('leave', (payload, peerId) => this.handleLeave(payload, peerId));
     this.transport.onConnectionChange((peerId, connected) => this.handleConnectionChange(peerId, connected));
     this.refreshLobby();
+    this.heartbeatTimer = setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL_MS);
+  }
+
+  /** Stops the heartbeat; call when the Room closes. */
+  close(): void {
+    clearInterval(this.heartbeatTimer);
+  }
+
+  /** Re-sends the current snapshot to Guests, only while at least one is connected; touches neither the Host UI nor the saved session. */
+  private sendHeartbeat(): void {
+    if (this.gameState !== null && this.room.players.some((player) => player.connected)) {
+      this.protocol.broadcastState(this.gameState);
+    }
   }
 
   /**

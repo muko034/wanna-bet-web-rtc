@@ -131,10 +131,12 @@ describe('resuming a saved Host session', () => {
         type: 'state',
         seq: expect.any(Number),
         payload: expect.objectContaining({
-          status: 'active',
-          players: expect.arrayContaining([
-            expect.objectContaining({ playerId: alex.playerId, points: 90, status: 'active', connected: true }),
-          ]),
+          snapshot: expect.objectContaining({
+            status: 'active',
+            players: expect.arrayContaining([
+              expect.objectContaining({ playerId: alex.playerId, points: 90, status: 'active', connected: true }),
+            ]),
+          }),
         }),
       },
     ]);

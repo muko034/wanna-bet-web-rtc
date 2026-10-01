@@ -130,7 +130,7 @@ describe('HostProtocol', () => {
     await guestA.connect(hostId);
     const guestB = new FakeTransport();
     await guestB.connect(hostId);
-    const protocol = new HostProtocol(hostTransport);
+    const protocol = new HostProtocol(hostTransport, 'epoch-1');
     const aReceived: unknown[] = [];
     const bReceived: unknown[] = [];
     guestA.onMessage((message) => aReceived.push(message));
@@ -138,8 +138,35 @@ describe('HostProtocol', () => {
 
     protocol.broadcastState(gameState);
 
-    expect(aReceived).toEqual([{ type: 'state', seq: 0, payload: gameState }]);
-    expect(bReceived).toEqual([{ type: 'state', seq: 0, payload: gameState }]);
+    const expected = { type: 'state', seq: 0, payload: { epoch: 'epoch-1', version: 0, snapshot: gameState } };
+    expect(aReceived).toEqual([expected]);
+    expect(bReceived).toEqual([expected]);
+  });
+
+  it('raises the state version only when the broadcast snapshot differs from the previous one', async () => {
+    const { hostTransport, guestTransport } = await connectedPair();
+    const protocol = new HostProtocol(hostTransport, 'epoch-1');
+    const received: Array<{ seq: number; payload: { epoch: string; version: number } }> = [];
+    guestTransport.onMessage((message) => received.push(message as (typeof received)[number]));
+
+    protocol.broadcastState(gameState);
+    protocol.broadcastState({ ...gameState, players: [] });
+    protocol.broadcastState({ ...gameState, status: 'ended' });
+    protocol.broadcastState({ ...gameState, status: 'ended' });
+
+    expect(received.map((m) => m.payload.version)).toEqual([0, 0, 1, 1]);
+    expect(received.map((m) => m.seq)).toEqual([0, 1, 2, 3]);
+  });
+
+  it('gives each Host boot its own random epoch', async () => {
+    const { hostTransport, guestTransport } = await connectedPair();
+    const received: Array<{ payload: { epoch: string } }> = [];
+    guestTransport.onMessage((message) => received.push(message as (typeof received)[number]));
+
+    new HostProtocol(hostTransport).broadcastState(gameState);
+    new HostProtocol(hostTransport).broadcastState(gameState);
+
+    expect(received[0].payload.epoch).not.toBe(received[1].payload.epoch);
   });
 
   it('stamps a monotonically increasing seq across every send helper call, targeted or broadcast', async () => {

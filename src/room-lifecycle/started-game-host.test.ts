@@ -53,8 +53,8 @@ describe('starting a round from the Host', () => {
 
     const alexStates: GameState[] = [];
     const samStates: GameState[] = [];
-    new GuestProtocol(alex.guestTransport).on('state', (payload) => alexStates.push(payload));
-    new GuestProtocol(sam.guestTransport).on('state', (payload) => samStates.push(payload));
+    new GuestProtocol(alex.guestTransport).on('state', (payload) => alexStates.push(payload.snapshot));
+    new GuestProtocol(sam.guestTransport).on('state', (payload) => samStates.push(payload.snapshot));
 
     manager.startGame();
     const hostState = manager.startRound();
@@ -120,8 +120,8 @@ describe('starting a round from the Host', () => {
     const samStates: GameState[] = [];
     const alexProtocol = new GuestProtocol(alex.guestTransport);
     const samProtocol = new GuestProtocol(sam.guestTransport);
-    alexProtocol.on('state', (payload) => alexStates.push(payload));
-    samProtocol.on('state', (payload) => samStates.push(payload));
+    alexProtocol.on('state', (payload) => alexStates.push(payload.snapshot));
+    samProtocol.on('state', (payload) => samStates.push(payload.snapshot));
 
     manager.startGame();
     manager.startRound();
@@ -258,8 +258,8 @@ describe('starting a round from the Host', () => {
       const samStates: GameState[] = [];
       const alexProtocol = new GuestProtocol(alex.guestTransport);
       const samProtocol = new GuestProtocol(sam.guestTransport);
-      alexProtocol.on('state', (payload) => alexStates.push(payload));
-      samProtocol.on('state', (payload) => samStates.push(payload));
+      alexProtocol.on('state', (payload) => alexStates.push(payload.snapshot));
+      samProtocol.on('state', (payload) => samStates.push(payload.snapshot));
 
       manager.startGame();
       manager.startRound();

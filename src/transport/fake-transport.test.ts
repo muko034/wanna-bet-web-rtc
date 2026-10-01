@@ -126,4 +126,43 @@ describe('FakeTransport', () => {
 
     await expect(guest.connect('nobody-here')).rejects.toBeInstanceOf(PeerUnavailableError);
   });
+
+  describe('black-hole mode', () => {
+    async function pair() {
+      const host = new FakeTransport();
+      const hostId = await host.connect();
+      const guest = new FakeTransport();
+      await guest.connect(hostId);
+      const hostReceived: unknown[] = [];
+      const guestReceived: unknown[] = [];
+      host.onMessage((message) => hostReceived.push(message));
+      guest.onMessage((message) => guestReceived.push(message));
+      return { host, guest, hostReceived, guestReceived };
+    }
+
+    it('drops messages in both directions without any connection-change notification', async () => {
+      const { host, guest, hostReceived, guestReceived } = await pair();
+      const guestChanges: boolean[] = [];
+      guest.onConnectionChange((_peerId, connected) => guestChanges.push(connected));
+      host.setBlackHole(true);
+
+      host.send({ type: 'state' });
+      guest.send({ type: 'join' });
+
+      expect(guestReceived).toEqual([]);
+      expect(hostReceived).toEqual([]);
+      expect(guestChanges).toEqual([]);
+    });
+
+    it('delivers messages again once switched off', async () => {
+      const { host, guestReceived } = await pair();
+      host.setBlackHole(true);
+      host.send({ type: 'lost' });
+
+      host.setBlackHole(false);
+      host.send({ type: 'delivered' });
+
+      expect(guestReceived).toEqual([{ type: 'delivered' }]);
+    });
+  });
 });

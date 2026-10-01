@@ -38,9 +38,10 @@ describe('GuestProtocol', () => {
     const received: unknown[] = [];
     protocol.on('state', (payload, seq) => received.push({ payload, seq }));
 
-    hostTransport.send({ type: 'state', seq: 7, payload: gameState });
+    const payload = { epoch: 'e1', version: 2, snapshot: gameState };
+    hostTransport.send({ type: 'state', seq: 7, payload });
 
-    expect(received).toEqual([{ payload: gameState, seq: 7 }]);
+    expect(received).toEqual([{ payload, seq: 7 }]);
   });
 
   it('drops an unrecognized message type: logs a warning and invokes no handler', async () => {

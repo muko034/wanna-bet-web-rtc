@@ -18,6 +18,7 @@ import { ReconnectingScreen } from './ReconnectingScreen';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
 import { useForegroundRetry } from './use-foreground-retry';
+import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
@@ -143,7 +144,8 @@ export function StartedGame({
     };
   }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase });
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null });
+  const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
@@ -220,8 +222,8 @@ export function StartedGame({
   }, [roundKey]);
 
   const bettingPanel = useMemo(
-    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet, betFailed: betFailedRoundKey === roundKey }),
-    [gameState, localBet, localPlayerId, betFailedRoundKey, roundKey],
+    () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet, betFailed: betFailedRoundKey === roundKey, linkLostForMs }),
+    [gameState, localBet, localPlayerId, betFailedRoundKey, roundKey, linkLostForMs],
   );
   const challengeCard = localPlayerId
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
@@ -341,6 +343,7 @@ export function StartedGame({
                 </div>
               )}
               <div class="vb-giant-sub">{bettingPanel.waitingLabel}</div>
+              {bettingPanel.reconnectingNotice && <div class="vb-giant-sub" role="status">{bettingPanel.reconnectingNotice}</div>}
             </>
           ) : null}
         </>
