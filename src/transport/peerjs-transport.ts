@@ -113,6 +113,12 @@ export class PeerJsTransport implements RecoverableTransport {
    */
   recover(): Promise<boolean> {
     const peer = this.peer;
+    console.info('[host-foreground] recover() peer flags:', {
+      hasPeer: !!peer,
+      open: peer?.open,
+      disconnected: peer?.disconnected,
+      destroyed: peer?.destroyed,
+    });
     if (!peer || this.lastRequestedId === undefined) {
       return Promise.resolve(false);
     }
