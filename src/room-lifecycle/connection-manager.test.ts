@@ -69,11 +69,13 @@ describe('Lobby snapshots', () => {
         type: 'state',
         seq: expect.any(Number),
         payload: expect.objectContaining({
-          status: 'lobby',
-          players: [
-            expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
-            expect.objectContaining({ name: 'Alex' }),
-          ],
+          snapshot: expect.objectContaining({
+            status: 'lobby',
+            players: [
+              expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
+              expect.objectContaining({ name: 'Alex' }),
+            ],
+          }),
         }),
       },
     ]);
@@ -93,7 +95,7 @@ describe('Lobby snapshots', () => {
 
     const lobbySnapshots = received.filter((m) => (m as { type?: unknown }).type === 'state');
     expect(lobbySnapshots).toHaveLength(1);
-    expect((lobbySnapshots[0] as { payload: { status: string } }).payload.status).toBe('lobby');
+    expect((lobbySnapshots[0] as { payload: { snapshot: { status: string } } }).payload.snapshot.status).toBe('lobby');
   });
 
   it('re-broadcasts the in-progress GameState, not a Lobby snapshot, on a rejoin once the Game has started', async () => {
@@ -111,7 +113,7 @@ describe('Lobby snapshots', () => {
 
     expect(received).toEqual([
       { type: 'welcome', seq: expect.any(Number), payload: expect.anything() },
-      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ status: 'active' }) },
+      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ snapshot: expect.objectContaining({ status: 'active' }) }) },
     ]);
   });
 
@@ -217,7 +219,7 @@ describe('ConnectionManager', () => {
       {
         type: 'state',
         seq: expect.any(Number),
-        payload: expect.objectContaining({ status: 'lobby' }),
+        payload: expect.objectContaining({ snapshot: expect.objectContaining({ status: 'lobby' }) }),
       },
     ]);
   });
@@ -300,7 +302,7 @@ describe('ConnectionManager', () => {
 
     expect(received).toEqual([
       { type: 'welcome', seq: expect.any(Number), payload: { playerId, reconnectToken } },
-      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ status: 'lobby' }) },
+      { type: 'state', seq: expect.any(Number), payload: expect.objectContaining({ snapshot: expect.objectContaining({ status: 'lobby' }) }) },
     ]);
     expect(manager.room.players).toEqual([expect.objectContaining({ playerId, name: 'Alex', connected: true })]);
     expect(rooms.at(-1)).toEqual(manager.room);
@@ -330,15 +332,19 @@ describe('ConnectionManager', () => {
         type: 'state',
         seq: expect.any(Number),
         payload: {
-          roomId: 'ABCDEF',
-          status: 'active',
-          activePlayerId: null,
-          resolution: null,
-          round: null,
-          players: [
-            expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
-            expect.objectContaining({ playerId, name: 'Alex' }),
-          ],
+          epoch: expect.any(String),
+          version: expect.any(Number),
+          snapshot: {
+            roomId: 'ABCDEF',
+            status: 'active',
+            activePlayerId: null,
+            resolution: null,
+            round: null,
+            players: [
+              expect.objectContaining({ playerId: 'host-1', name: 'Host' }),
+              expect.objectContaining({ playerId, name: 'Alex' }),
+            ],
+          },
         },
       },
     ]);

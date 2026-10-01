@@ -1,6 +1,7 @@
 import type { Transport } from '../transport/transport';
 import {
   parseGuestToHostMessage,
+  type GameState,
   type GuestToHostMessage,
   type RejectedMessage,
   type StateMessage,
@@ -9,6 +10,10 @@ import {
 
 type GuestToHostType = GuestToHostMessage['type'];
 type PayloadOf<T extends GuestToHostType> = Extract<GuestToHostMessage, { type: T }>['payload'];
+function randomEpoch(): string {
+  return Math.random().toString(36).slice(2);
+}
+
 type Handler<T extends GuestToHostType> = (payload: PayloadOf<T>, peerId: string) => void;
 
 /**
@@ -19,14 +24,20 @@ type Handler<T extends GuestToHostType> = (payload: PayloadOf<T>, peerId: string
  *
  * Owns `seq` stamping for every outgoing message: a single monotonically increasing
  * counter, incremented on every send regardless of whether it was targeted or broadcast.
+ * Also stamps each `state` broadcast with this boot's `epoch` and a `version` that rises only
+ * when the snapshot differs from the previous broadcast.
  */
 export class HostProtocol {
   private readonly transport: Transport;
   private readonly handlers = new Map<GuestToHostType, Handler<GuestToHostType>>();
   private seq = 0;
+  private readonly epoch: string;
+  private version = 0;
+  private lastSnapshotJson: string | null = null;
 
-  constructor(transport: Transport) {
+  constructor(transport: Transport, epoch: string = randomEpoch()) {
     this.transport = transport;
+    this.epoch = epoch;
     this.transport.onMessage((message, peerId) => this.handleMessage(message, peerId));
   }
 
@@ -46,7 +57,13 @@ export class HostProtocol {
   }
 
   /** Broadcasts a `state` message to every connected Guest. */
-  broadcastState(payload: StateMessage['payload']): void {
+  broadcastState(snapshot: GameState): void {
+    const snapshotJson = JSON.stringify(snapshot);
+    if (this.lastSnapshotJson !== null && snapshotJson !== this.lastSnapshotJson) {
+      this.version++;
+    }
+    this.lastSnapshotJson = snapshotJson;
+    const payload: StateMessage['payload'] = { epoch: this.epoch, version: this.version, snapshot };
     this.transport.send({ type: 'state', seq: this.nextSeq(), payload });
   }
 

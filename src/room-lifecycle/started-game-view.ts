@@ -32,6 +32,8 @@ type Params = {
   /** Whether this device holds a stored identity (`playerId`/`reconnectToken`) for `code`. */
   hasStoredIdentity: boolean;
   reconnectPhase: ReconnectPhase;
+  /** This Guest already has a game state to show, so a dropped link keeps that screen up instead of a full-screen reconnect. */
+  hasGameState?: boolean;
 };
 
 /**
@@ -41,7 +43,7 @@ type Params = {
  * signal yet — who drives the shared reconnect implementation in place, rather than bouncing
  * through the Lobby route or a "Page not found" dead end.
  */
-export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase }: Params): StartedGameView {
+export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState = false }: Params): StartedGameView {
   if (code === undefined) {
     return { view: 'not-found' };
   }
@@ -56,6 +58,10 @@ export function resolveStartedGameView({ code, room, guestGameStartedCode, hasSt
 
   if (!hasStoredIdentity || reconnectPhase === 'unknown-player') {
     return { view: 'join-form' };
+  }
+
+  if (hasGameState && (reconnectPhase === null || reconnectPhase === 'pending')) {
+    return { view: 'started', roomCode: code };
   }
 
   if (reconnectPhase !== null && typeof reconnectPhase === 'object') {

@@ -98,4 +98,33 @@ describe('resolveStartedGameView', () => {
       message: "Couldn't reach the Host — check the link and try again.",
     });
   });
+
+  it.each([
+    ['right after the drop, before the reconnect effect has started', null],
+    ['while the reconnect is in progress', 'pending' as const],
+  ])('keeps the game screen for a Guest who already has a game state %s', (_label, reconnectPhase) => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF',
+      room: null,
+      guestGameStartedCode: null,
+      hasStoredIdentity: true,
+      reconnectPhase,
+      hasGameState: true,
+    });
+
+    expect(result).toEqual({ view: 'started', roomCode: 'ABCDEF' });
+  });
+
+  it('shows the reconnect-failed view once the reconnect gives up, even for a Guest who has a game state', () => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF',
+      room: null,
+      guestGameStartedCode: null,
+      hasStoredIdentity: true,
+      reconnectPhase: { kind: 'error', message: 'gave up' },
+      hasGameState: true,
+    });
+
+    expect(result).toEqual({ view: 'reconnect-failed', roomCode: 'ABCDEF', message: 'gave up' });
+  });
 });

@@ -19,6 +19,7 @@ export class FakeTransport implements Transport {
   private peers = new Map<string, FakeTransport>();
   private messageHandlers: MessageHandler[] = [];
   private connectionChangeHandlers: ConnectionChangeHandler[] = [];
+  private blackHole = false;
 
   async connect(remoteId?: string, requestedId?: string): Promise<string> {
     const id = requestedId ?? `fake-peer-${nextId++}`;
@@ -42,6 +43,9 @@ export class FakeTransport implements Transport {
   }
 
   send(message: unknown, peerId?: string): void {
+    if (this.blackHole) {
+      return;
+    }
     if (peerId !== undefined) {
       this.peers.get(peerId)?.receive(message, this.id!);
       return;
@@ -70,7 +74,15 @@ export class FakeTransport implements Transport {
     this.peers.set(peer.id!, peer);
   }
 
+  /** Test-only simulation of a silently dead link (e.g. a suspended tab): while on, this peer sends and receives nothing and no `close` is ever reported. */
+  setBlackHole(enabled: boolean): void {
+    this.blackHole = enabled;
+  }
+
   private receive(message: unknown, fromPeerId: string): void {
+    if (this.blackHole) {
+      return;
+    }
     for (const handler of this.messageHandlers) {
       handler(message, fromPeerId);
     }

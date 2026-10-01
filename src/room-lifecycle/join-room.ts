@@ -26,6 +26,9 @@ export type RejoinResult =
  */
 const CONNECT_TIMEOUT_MS = 8_000;
 
+/** How long a Guest tolerates hearing nothing from the Host (three missed heartbeats) before treating the link as lost. */
+export const HOST_SILENCE_TIMEOUT_MS = 9_000;
+
 function afterTimeout(ms: number): Promise<'timed-out'> {
   return new Promise((resolve) => setTimeout(() => resolve('timed-out'), ms));
 }
@@ -127,15 +130,57 @@ export function rejoinRoom(
 export function watchForGameStart(transport: Transport, onGameStarted: () => void): void {
   const protocol = new GuestProtocol(transport);
   protocol.on('state', (payload) => {
-    if (payload.status === 'active') {
+    if (payload.snapshot.status === 'active') {
       onGameStarted();
     }
   });
 }
 
+/**
+ * Watches a Guest's own `transport` for `state` messages, handing `onGameState` each snapshot
+ * unless its `epoch` and `version` both equal the last pair seen — the Host's periodic
+ * heartbeat repeats an unchanged snapshot, which must not re-render. A lower `version` is
+ * still applied, and a different `epoch` (a restarted Host) always is.
+ */
 export function watchGameState(transport: Transport, onGameState: (state: GameState) => void): void {
   const protocol = new GuestProtocol(transport);
-  protocol.on('state', (payload) => onGameState(payload));
+  let last: { epoch: string; version: number } | null = null;
+  protocol.on('state', ({ epoch, version, snapshot }) => {
+    if (last?.epoch === epoch && last.version === version) {
+      return;
+    }
+    last = { epoch, version };
+    onGameState(snapshot);
+  });
+}
+
+/**
+ * Watches a Guest's own `transport` for the Host going quiet: every `state` (heartbeat
+ * included) is a sign of life, and `HOST_SILENCE_TIMEOUT_MS` without one means the link is
+ * dead even though no `close` was ever reported. Fires once, and not at all after the
+ * connection was already reported dropped.
+ */
+export function watchForHostSilence(transport: Transport, onHostSilent: () => void): void {
+  const protocol = new GuestProtocol(transport);
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const stop = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  protocol.on('state', () => {
+    stop();
+    timer = setTimeout(() => {
+      timer = null;
+      onHostSilent();
+    }, HOST_SILENCE_TIMEOUT_MS);
+  });
+  transport.onConnectionChange((_peerId, connected) => {
+    if (!connected) {
+      stop();
+    }
+  });
 }
 
 /**

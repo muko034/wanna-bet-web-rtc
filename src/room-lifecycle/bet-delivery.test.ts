@@ -19,10 +19,11 @@ function stateWith(betPlayerIds: string[], activePlayerId = 'alex', challengeId 
 function setup() {
   const send = vi.fn();
   const onFailed = vi.fn();
-  const delivery = new BetDelivery(onFailed);
+  const onLinkLost = vi.fn();
+  const delivery = new BetDelivery(onFailed, onLinkLost);
   delivery.setSender(send);
   const place = () => delivery.place({ roundKey: ROUND, playerId: 'sam', payload });
-  return { send, onFailed, delivery, place };
+  return { send, onFailed, onLinkLost, delivery, place };
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -47,69 +48,64 @@ describe('BetDelivery', () => {
   });
 
   it('does not treat a state without the Bettor\'s Bet as confirmation', () => {
-    const { send, delivery, place } = setup();
+    const { onLinkLost, delivery, place } = setup();
     place();
     delivery.onState(stateWith(['jo']));
     vi.advanceTimersByTime(4_000);
-    expect(send).toHaveBeenCalledTimes(2);
+    expect(onLinkLost).toHaveBeenCalledOnce();
   });
 
-  it('resends the same Bet every 4s up to 3 attempts, then reports failure', () => {
-    const { send, onFailed, place } = setup();
+  it('reports the link lost after 4 s without a confirming state, without resending into the dead link or failing', () => {
+    const { send, onFailed, onLinkLost, place } = setup();
     place();
 
     vi.advanceTimersByTime(3_999);
-    expect(send).toHaveBeenCalledTimes(1);
+    expect(onLinkLost).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
-    expect(send).toHaveBeenCalledTimes(2);
-    vi.advanceTimersByTime(4_000);
-    expect(send).toHaveBeenCalledTimes(3);
-    expect(onFailed).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(4_000);
-    expect(send).toHaveBeenCalledTimes(3);
-    expect(send).toHaveBeenLastCalledWith(payload);
-    expect(onFailed).toHaveBeenCalledExactlyOnceWith(ROUND);
+    expect(onLinkLost).toHaveBeenCalledOnce();
+    vi.advanceTimersByTime(60_000);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(onFailed).not.toHaveBeenCalled();
   });
 
-  it('holds retries while disconnected without counting them, and resends immediately on reconnect', () => {
+  it('holds the Bet while disconnected, however long, and sends it once when the connection is back', () => {
     const { send, onFailed, delivery, place } = setup();
     place();
     delivery.setSender(null);
 
     vi.advanceTimersByTime(120_000);
-    expect(send).toHaveBeenCalledTimes(1);
     expect(onFailed).not.toHaveBeenCalled();
 
     const newSend = vi.fn();
     delivery.setSender(newSend);
     expect(newSend).toHaveBeenCalledExactlyOnceWith(payload);
-
-    vi.advanceTimersByTime(4_000);
-    expect(newSend).toHaveBeenCalledTimes(2);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('gives the last send its full wait when the connection returns after the final attempt', () => {
-    const { send, onFailed, delivery, place } = setup();
+  it('does not count attempts: each reconnect resends once and an unconfirmed send reports the link lost again', () => {
+    const { onFailed, onLinkLost, delivery, place } = setup();
     place();
-    vi.advanceTimersByTime(8_000);
-    expect(send).toHaveBeenCalledTimes(3);
 
-    const newSend = vi.fn();
-    delivery.setSender(newSend);
-    expect(newSend).not.toHaveBeenCalled();
+    for (let i = 1; i <= 5; i++) {
+      vi.advanceTimersByTime(4_000);
+      expect(onLinkLost).toHaveBeenCalledTimes(i);
+      delivery.setSender(null);
+      const newSend = vi.fn();
+      delivery.setSender(newSend);
+      expect(newSend).toHaveBeenCalledExactlyOnceWith(payload);
+    }
+
     expect(onFailed).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(4_000);
-    expect(onFailed).toHaveBeenCalledExactlyOnceWith(ROUND);
   });
 
   it('holds a Bet locked in while disconnected until the connection is back', () => {
-    const { send, delivery } = setup();
+    const { send, onLinkLost, delivery } = setup();
     delivery.setSender(null);
     delivery.place({ roundKey: ROUND, playerId: 'sam', payload });
     vi.advanceTimersByTime(10_000);
     expect(send).not.toHaveBeenCalled();
+    expect(onLinkLost).not.toHaveBeenCalled();
 
     delivery.setSender(send);
     expect(send).toHaveBeenCalledExactlyOnceWith(payload);

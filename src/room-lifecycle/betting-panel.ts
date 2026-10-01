@@ -20,6 +20,8 @@ export type BettingPanel =
       /** The local player's own Bet, or `null` when this device no longer remembers it. */
       ownBet: PlaceBetPayload | null;
       waitingLabel: string;
+      /** Shown under "Locked in" once the link to the Host has been down long enough to be worth mentioning. */
+      reconnectingNotice: string | null;
     }
   | {
       kind: 'form';
@@ -39,7 +41,12 @@ type Params = {
   localBet?: PlaceBetPayload | null;
   /** The Bet this device last locked in for the current Round never reached the Host, so `localBet` no longer counts. */
   betFailed?: boolean;
+  /** How long the link to the Host has been down, or `null` while it is up. */
+  linkLostForMs?: number | null;
 };
+
+/** How long the link must be down before the Bettor is told about it; shorter gaps stay invisible. */
+export const RECONNECT_NOTICE_DELAY_MS = 10_000;
 
 /** Whether `playerId` has already placed a Bet in `round`, per the public broadcast state. */
 export function hasPlacedBet(round: GameState['round'], playerId: string): boolean {
@@ -60,6 +67,7 @@ export function resolveBettingPanel({
   localPlayerId,
   localBet = null,
   betFailed = false,
+  linkLostForMs = null,
 }: Params): BettingPanel {
   const round = gameState?.round;
   if (!round || localPlayerId === null) {
@@ -93,6 +101,7 @@ export function resolveBettingPanel({
       bettors,
       ownBet,
       waitingLabel: waitingLabel(bettors.filter((bettor) => !bettor.hasBet).length),
+      reconnectingNotice: linkLostForMs !== null && linkLostForMs >= RECONNECT_NOTICE_DELAY_MS ? 'Reconnecting…' : null,
     };
   }
 

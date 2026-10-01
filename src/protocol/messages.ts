@@ -101,7 +101,13 @@ const rejectedMessageSchema = z.object({
 const stateMessageSchema = z.object({
   type: z.literal('state'),
   seq: z.number(),
-  payload: gameStateSchema,
+  payload: z.object({
+    /** Random per Host boot, so a restarted Host is distinguishable from a repeat of the same one. */
+    epoch: z.string(),
+    /** Rises only when the snapshot differs from the previous broadcast; restarts at 0 on every Host boot. */
+    version: z.number(),
+    snapshot: gameStateSchema,
+  }),
 });
 
 export type JoinMessage = z.infer<typeof joinMessageSchema>;

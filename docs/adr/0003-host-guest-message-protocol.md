@@ -29,3 +29,17 @@ per ADR 0002's grouping of the message protocol and the state-snapshot schema as
 - No protocol version field and no room-join PIN were deliberately left out of scope — both are cheap to add later if
   this project's trust model (small, trusted friend group, per ADR 0001) ever changes.
 
+## Amendment: heartbeat and wrapped `state` payload
+
+A backgrounded Host (e.g. an iPhone tab) can die silently: no `close` fires on either side, so a Guest never learns its
+link is dead. The Host therefore re-sends the current `state` every 3 s from Room creation, and Guests treat any `state`
+as a sign of life (9 s of silence, or 4 s without a confirming `state` after a Bet, starts the existing reconnect loop).
+
+To let Guests skip the re-render for an unchanged heartbeat, the `state` payload is now wrapped as
+`{ epoch, version, snapshot }`: `epoch` is random per Host boot and `version` rises only when the snapshot changes.
+Neither is persisted — a persisted `version` could be reused after a reload because autosave runs only on snapshot
+change, whereas a fresh `epoch` makes a restarted Host visible with no schema change. `seq` is unchanged and Guests
+still do no stale-message dropping.
+
+Consequence: this is a **breaking wire change** — Guests on an older build cannot parse the wrapped payload. Accepted,
+since the developer is the only user today.

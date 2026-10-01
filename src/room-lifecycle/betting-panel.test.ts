@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from '../protocol/messages';
-import { resolveBettingPanel } from './betting-panel';
+import { RECONNECT_NOTICE_DELAY_MS, resolveBettingPanel } from './betting-panel';
 
 function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
@@ -113,11 +113,29 @@ describe('resolveBettingPanel', () => {
       background: 'vb-bg-wait',
       ownBet: { amount: 7, prediction: 'NO' },
       waitingLabel: 'Waiting on 1 more player…',
+      reconnectingNotice: null,
       bettors: [
         { playerId: 'host-1', name: 'Host', hasBet: false, isLocalPlayer: false },
         { playerId: 'guest-2', name: 'Sam', hasBet: true, isLocalPlayer: true },
       ],
     });
+  });
+
+  it.each([
+    ['the link is up', null, null],
+    ['the link has been lost for under 10 s', RECONNECT_NOTICE_DELAY_MS - 1, null],
+    ['the link has been lost for 10 s', RECONNECT_NOTICE_DELAY_MS, 'Reconnecting…'],
+    ['the link has been lost for a minute', 60_000, 'Reconnecting…'],
+  ])('shows the reconnecting notice under "Locked in" only after 10 s of loss: %s', (_label, linkLostForMs, notice) => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith(),
+      localPlayerId: 'guest-2',
+      localBet: { amount: 7, prediction: 'NO' },
+      linkLostForMs,
+    });
+
+    expect(RECONNECT_NOTICE_DELAY_MS).toBe(10_000);
+    expect(panel).toMatchObject({ kind: 'locked', reconnectingNotice: notice });
   });
 
   it('counts how many Bettors have yet to bet once the Host has rebroadcast the local Bet', () => {
