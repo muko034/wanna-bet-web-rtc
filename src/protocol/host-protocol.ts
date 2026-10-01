@@ -4,17 +4,17 @@ import {
   type GameState,
   type GuestToHostMessage,
   type RejectedMessage,
-  type StateMessage,
+  type StatePayload,
   type WelcomeMessage,
 } from './messages';
 
 type GuestToHostType = GuestToHostMessage['type'];
 type PayloadOf<T extends GuestToHostType> = Extract<GuestToHostMessage, { type: T }>['payload'];
+type Handler<T extends GuestToHostType> = (payload: PayloadOf<T>, peerId: string) => void;
+
 function randomEpoch(): string {
   return Math.random().toString(36).slice(2);
 }
-
-type Handler<T extends GuestToHostType> = (payload: PayloadOf<T>, peerId: string) => void;
 
 /**
  * Host-side typed dispatch and send helpers over `Transport` for the Host↔Guest wire
@@ -63,7 +63,7 @@ export class HostProtocol {
       this.version++;
     }
     this.lastSnapshotJson = snapshotJson;
-    const payload: StateMessage['payload'] = { epoch: this.epoch, version: this.version, snapshot };
+    const payload: StatePayload = { epoch: this.epoch, version: this.version, snapshot };
     this.transport.send({ type: 'state', seq: this.nextSeq(), payload });
   }
 

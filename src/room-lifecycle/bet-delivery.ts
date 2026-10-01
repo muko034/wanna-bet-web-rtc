@@ -20,10 +20,10 @@ export function roundKeyOf(state: GameState): string | null {
 /**
  * Keeps a Guest's locked-in Bet queued until the Host's `state` broadcast shows it applied.
  * A Bet still unconfirmed after `BET_CONFIRMATION_TIMEOUT_MS` means the link is dead, so it is
- * reported through `onLinkLost` rather than resent; the Bet is sent once more on reconnect. It
- * fails only when the Host refuses it or the caller gives up (`failPending`). Deliberately unaware of transports: the caller hands over the current send
- * function via `setSender` (`null` while disconnected), so it survives reconnects, which
- * replace the transport.
+ * reported through `onLinkLost`; the Bet is sent again when the sender is replaced. It fails
+ * only when the Host refuses it or the caller gives up (`failPending`). Deliberately unaware of
+ * transports: the caller hands over the current send function via `setSender` (`null` while
+ * disconnected), so it survives reconnects, which replace the transport.
  */
 export class BetDelivery {
   private sender: ((payload: PlaceBetPayload) => void) | null = null;
@@ -41,7 +41,7 @@ export class BetDelivery {
     this.onLinkLost = onLinkLost;
   }
 
-  /** Supplies the live send function, or `null` while disconnected. Reconnecting sends a pending Bet once, at once. */
+  /** Supplies the live send function, or `null` while disconnected. A new sender sends the pending Bet immediately. */
   setSender(sender: ((payload: PlaceBetPayload) => void) | null): void {
     this.sender = sender;
     this.clearTimer();

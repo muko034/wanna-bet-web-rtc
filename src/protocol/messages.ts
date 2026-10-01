@@ -98,18 +98,21 @@ const rejectedMessageSchema = z.object({
   payload: z.object({ reason: z.string(), action: z.string() }),
 });
 
+const statePayloadSchema = z.object({
+  /** Random per Host boot, so a restarted Host is distinguishable from a repeat of the same one. */
+  epoch: z.string(),
+  /** Rises only when the snapshot differs from the previous broadcast; restarts at 0 on every Host boot. */
+  version: z.number(),
+  snapshot: gameStateSchema,
+});
+
 const stateMessageSchema = z.object({
   type: z.literal('state'),
   seq: z.number(),
-  payload: z.object({
-    /** Random per Host boot, so a restarted Host is distinguishable from a repeat of the same one. */
-    epoch: z.string(),
-    /** Rises only when the snapshot differs from the previous broadcast; restarts at 0 on every Host boot. */
-    version: z.number(),
-    snapshot: gameStateSchema,
-  }),
+  payload: statePayloadSchema,
 });
 
+export type StatePayload = z.infer<typeof statePayloadSchema>;
 export type JoinMessage = z.infer<typeof joinMessageSchema>;
 export type RejoinMessage = z.infer<typeof rejoinMessageSchema>;
 export type PlaceBetMessage = z.infer<typeof placeBetMessageSchema>;
