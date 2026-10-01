@@ -95,6 +95,13 @@ export class ConnectionManager {
     clearInterval(this.heartbeatTimer);
   }
 
+  /** Broadcasts the current snapshot to connected Guests at once, e.g. after the Host's link was confirmed or restored. */
+  rebroadcastState(): void {
+    if (this.gameState !== null) {
+      this.protocol.broadcastState(this.gameState);
+    }
+  }
+
   /** Re-sends the current snapshot to Guests, only while at least one is connected; touches neither the Host UI nor the saved session. */
   private sendHeartbeat(): void {
     if (this.gameState !== null && this.room.players.some((player) => player.connected)) {

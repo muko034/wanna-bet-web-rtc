@@ -149,7 +149,10 @@ export function App() {
       if (document.visibilityState !== 'visible') return;
       const transport = hostTransportRef.current;
       if (!transport) return;
-      transport.recover().then((recovered) => setHostConnectionLost(!recovered));
+      transport.recover().then((recovered) => {
+        setHostConnectionLost(!recovered);
+        if (recovered) connectionManagerRef.current?.rebroadcastState();
+      });
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
