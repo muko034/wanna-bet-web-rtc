@@ -1,8 +1,9 @@
 import { render } from 'preact'
 import './index.css'
 import { App } from './app.tsx'
+import { isDebugMode } from './debug-mode.ts'
 
-if (new URLSearchParams(location.search).has('debug')) {
+if (isDebugMode()) {
   import('eruda').then(({ default: eruda }) => eruda.init())
 }
 

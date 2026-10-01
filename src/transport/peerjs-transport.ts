@@ -1,11 +1,12 @@
 import Peer, { PeerError, type DataConnection, type PeerJSOption } from 'peerjs';
+import { isDebugMode } from '../debug-mode';
 import { PeerUnavailableError, RequestedIdTakenError, type RecoverableTransport } from './transport';
 
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
 
 function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): void {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV || isDebugMode()) {
     console.debug(`[${direction}]`, peerId, message);
   }
 }
@@ -113,12 +114,6 @@ export class PeerJsTransport implements RecoverableTransport {
    */
   recover(): Promise<boolean> {
     const peer = this.peer;
-    console.info('[host-foreground] recover() peer flags:', {
-      hasPeer: !!peer,
-      open: peer?.open,
-      disconnected: peer?.disconnected,
-      destroyed: peer?.destroyed,
-    });
     if (!peer || this.lastRequestedId === undefined) {
       return Promise.resolve(false);
     }
