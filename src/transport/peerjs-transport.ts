@@ -55,7 +55,9 @@ export class PeerJsTransport implements RecoverableTransport {
       peer.on('open', (id) => {
         if (remoteId === undefined) {
           peer.on('connection', (connection) => {
-            connection.on('open', () => this.bindConnection(connection));
+            connection.on('open', () => {
+              this.bindConnection(connection);
+            });
           });
           resolve(id);
           return;
@@ -109,21 +111,27 @@ export class PeerJsTransport implements RecoverableTransport {
 
   /**
    * Restores this Host's stale signaling connection (e.g. after the tab was backgrounded).
-   * `peer.reconnect()` keeps open Guest `DataConnection`s; a destroyed `Peer` is rebuilt under
-   * `lastRequestedId`, which drops them. Resolves `false` if the connection could not be restored.
+   * A peer that still reports `open` can hold a dead socket, so it is re-registered on purpose:
+   * `peer.disconnect()` then `peer.reconnect()`. Both keep open Guest `DataConnection`s; a
+   * destroyed `Peer` is rebuilt under `lastRequestedId`, which drops them. Resolves `false` if
+   * the connection could not be restored.
    */
   recover(): Promise<boolean> {
     const peer = this.peer;
     if (!peer || this.lastRequestedId === undefined) {
       return Promise.resolve(false);
     }
-    if (peer.open && !peer.disconnected) {
-      return Promise.resolve(true);
-    }
     if (peer.destroyed) {
       return this.rebuildHostPeer();
     }
+    if (!peer.disconnected) {
+      peer.disconnect();
+    }
+    return this.reconnectPeer(peer);
+  }
 
+  /** Re-registers a disconnected `peer` with the signaling server; rebuilds it if it ends up destroyed. */
+  private reconnectPeer(peer: Peer): Promise<boolean> {
     return new Promise((resolve) => {
       const onOpen = () => {
         cleanup();

@@ -72,6 +72,16 @@ describe('Host heartbeat', () => {
     second.manager.close();
   });
 
+  it('rebroadcasts the current state at once on request, without waiting for the next heartbeat', async () => {
+    const { manager, states } = await hostWithGuest();
+
+    manager.rebroadcastState();
+
+    expect(states).toHaveLength(1);
+    expect(states[0].payload.snapshot.status).toBe('lobby');
+    manager.close();
+  });
+
   it('sends nothing while no Guest is connected', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
