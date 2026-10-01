@@ -157,10 +157,13 @@ export function watchGameState(transport: Transport, onGameState: (state: GameSt
 /**
  * Watches a Guest's own `transport` for the Host going quiet: every `state` (heartbeat
  * included) is a sign of life, and `HOST_SILENCE_TIMEOUT_MS` without one means the link is
- * dead even though no `close` was ever reported. Fires once, and not at all after the
+ * dead even though no `close` was ever reported. Returns `arm`, which starts the
+ * countdown: call it once the Host has confirmed the connection, so a Host that never sends a
+ * first `state` is caught too, without a slow join tripping it earlier. Every `state` also
+ * (re)starts the countdown. Fires once, and not at all after the
  * connection was already reported dropped.
  */
-export function watchForHostSilence(transport: Transport, onHostSilent: () => void): void {
+export function watchForHostSilence(transport: Transport, onHostSilent: () => void): () => void {
   const protocol = new GuestProtocol(transport);
   let timer: ReturnType<typeof setTimeout> | null = null;
   const stop = () => {
@@ -169,18 +172,20 @@ export function watchForHostSilence(transport: Transport, onHostSilent: () => vo
       timer = null;
     }
   };
-  protocol.on('state', () => {
+  const start = () => {
     stop();
     timer = setTimeout(() => {
       timer = null;
       onHostSilent();
     }, HOST_SILENCE_TIMEOUT_MS);
-  });
+  };
+  protocol.on('state', start);
   transport.onConnectionChange((_peerId, connected) => {
     if (!connected) {
       stop();
     }
   });
+  return start;
 }
 
 /**

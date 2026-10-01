@@ -316,6 +316,21 @@ describe('Host heartbeat on the Guest side', () => {
       expect(onSilent).toHaveBeenCalledOnce();
     });
 
+    it('reports the Host silent 9 s after being armed when it never sends any state at all', async () => {
+      const { guestTransport } = await connectedPair();
+      const onSilent = vi.fn();
+      const arm = watchForHostSilence(guestTransport, onSilent);
+      vi.advanceTimersByTime(HOST_SILENCE_TIMEOUT_MS * 2);
+      expect(onSilent).not.toHaveBeenCalled();
+      arm();
+
+      vi.advanceTimersByTime(HOST_SILENCE_TIMEOUT_MS - 1);
+      expect(onSilent).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+
+      expect(onSilent).toHaveBeenCalledOnce();
+    });
+
     it('counts every state as a sign of life, an unchanged heartbeat included', async () => {
       const { hostTransport, guestTransport } = await connectedPair();
       const onSilent = vi.fn();

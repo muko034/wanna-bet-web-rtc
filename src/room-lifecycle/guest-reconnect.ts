@@ -45,19 +45,23 @@ function delay(ms: number): Promise<void> {
  * — attaching these watchers as early as possible, ahead of sending `join`/`rejoin`, matters
  * because the Host may broadcast a state resend (`resendInProgressState`) synchronously
  * alongside its `welcome` reply: a watcher registered only after that reply resolves could
- * miss it.
+ * miss it. Returns the Host-silence watcher's `arm`, to be called once the Host confirms the
+ * connection (see `completeGuestConnection`) — not at wiring, which may precede a slow join or a
+ * long rejoin retry.
  */
-export function wireGuestConnection(transport: Transport, code: string, callbacks: ReconnectCallbacks): void {
+export function wireGuestConnection(transport: Transport, code: string, callbacks: ReconnectCallbacks): () => void {
   watchGameState(transport, callbacks.onGameState);
   watchForConnectionDrop(transport, callbacks.onConnectionDropped);
-  watchForHostSilence(transport, callbacks.onConnectionDropped);
+  const armHostSilence = watchForHostSilence(transport, callbacks.onConnectionDropped);
   watchForGameStart(transport, () => callbacks.onGameStarted(code));
   watchForBetRejection(transport, callbacks.onBetRejected);
+  return armHostSilence;
 }
 
 /**
  * Finishes wiring up a `transport` the Host has just confirmed (via `join` or `rejoin`):
- * persists the identity the Host returned and enables placing Bets over this connection.
+ * persists the identity the Host returned, enables placing Bets over this connection, and
+ * starts the Host-silence countdown via `armHostSilence`.
  * Called once `wireGuestConnection` has already attached the passive watchers above.
  */
 export function completeGuestConnection(
@@ -67,10 +71,12 @@ export function completeGuestConnection(
   playerId: string,
   reconnectToken: string,
   callbacks: ReconnectCallbacks,
+  armHostSilence: () => void,
 ): void {
   saveIdentity(storage, code, { playerId, reconnectToken });
   const protocol = new GuestProtocol(transport);
   callbacks.onPlaceBetReady((payload) => protocol.placeBet(payload));
+  armHostSilence();
 }
 
 /**
@@ -109,7 +115,7 @@ export async function attemptReconnect(
     return { status: 'no-identity' };
   }
 
-  wireGuestConnection(transport, code, callbacks);
+  const armHostSilence = wireGuestConnection(transport, code, callbacks);
 
   let waitedMs = 0;
   let delayMs = RECONNECT_INITIAL_DELAY_MS;
@@ -117,7 +123,7 @@ export async function attemptReconnect(
     const result = await rejoinRoom(transport, registry, code, stored.reconnectToken);
 
     if (result.status === 'joined') {
-      completeGuestConnection(transport, code, storage, result.playerId, result.reconnectToken, callbacks);
+      completeGuestConnection(transport, code, storage, result.playerId, result.reconnectToken, callbacks, armHostSilence);
       return { status: 'joined', playerId: result.playerId };
     }
     if (result.status === 'unknown-player') {
