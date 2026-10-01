@@ -148,7 +148,6 @@ export function App() {
     const handleVisibilityChange = () => {
       if (document.visibilityState !== 'visible') return;
       const transport = hostTransportRef.current;
-      console.info('[host-foreground] visible, transport present:', !!transport);
       if (!transport) return;
       transport.recover().then((recovered) => setHostConnectionLost(!recovered));
     };
