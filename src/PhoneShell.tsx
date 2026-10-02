@@ -8,6 +8,10 @@ type Props = {
   roomCode?: string;
   /** Runs when the Home button is tapped, for screens rendered outside the Router that must handle it themselves. */
   onHome?: () => void;
+  /** Content for the top bar's right slot, such as the Leaderboard badge. */
+  topRight?: ComponentChildren;
+  /** Rendered above the whole screen, such as the Leaderboard sheet. */
+  overlay?: ComponentChildren;
   children: ComponentChildren;
 };
 
@@ -15,7 +19,7 @@ type Props = {
  * Full-bleed, mobile-first phone frame shared by every screen — the "Big State" layout:
  * one giant color-block idea per screen instead of small cards.
  */
-export function PhoneShell({ background, roomCode, onHome, children }: Props) {
+export function PhoneShell({ background, roomCode, onHome, topRight, overlay, children }: Props) {
   return (
     <div class="vb">
       <div class={`vb-phone ${background}`}>
@@ -37,9 +41,10 @@ export function PhoneShell({ background, roomCode, onHome, children }: Props) {
             </svg>
           </a>
           <span>{roomCode ? `Room ${roomCode}` : ''}</span>
-          <span />
+          {topRight ?? <span />}
         </div>
         <div class="vb-stage">{children}</div>
+        {overlay}
       </div>
     </div>
   );
