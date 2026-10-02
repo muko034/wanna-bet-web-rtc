@@ -16,4 +16,3 @@ Turn-based social betting game. The Host owns authoritative game state; Guests c
 - **Wire protocol:** `docs/message-protocol.md`
 - **Game rules:** `docs/game-rules.md`
 - **Code conventions:** `docs/conventions/`
-- **UI direction:** `docs/ui-design/README.md`

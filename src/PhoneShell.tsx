@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { withBase } from './base-path';
 
 type Props = {
-  /** One of the `vb-bg-*` gradient classes from `index.css`, matching the prototype's per-screen color blocks. */
+  /** One of the `vb-bg-*` gradient classes from `index.css`, giving each screen its own color block. */
   background: string;
   /** Room Code shown in the top bar once a Room exists. */
   roomCode?: string;
