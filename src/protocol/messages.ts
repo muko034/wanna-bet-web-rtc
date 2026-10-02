@@ -22,7 +22,7 @@ const payoutSchema = z.object({
 });
 
 const roundStateSchema = z.object({
-  activePlayerId: z.string(),
+  challengerId: z.string(),
   challengeId: z.string(),
   /** Public broadcast state: only whether a player has already bet, never the amount/prediction. */
   bets: z.array(publicBetSchema),
@@ -30,7 +30,7 @@ const roundStateSchema = z.object({
 });
 
 const resolutionStateSchema = z.object({
-  activePlayerId: z.string(),
+  challengerId: z.string(),
   outcome: z.enum(['YES', 'NO']),
   payouts: z.array(payoutSchema),
 });
@@ -47,7 +47,7 @@ const gameStateSchema = z.object({
   roomId: z.string(),
   /** `lobby`: pre-game, broadcast on every join/rejoin/leave/disconnect. */
   status: z.enum(['lobby', 'active', 'ended']),
-  activePlayerId: z.string().nullable(),
+  challengerId: z.string().nullable(),
   players: z.array(playerSchema),
   round: roundStateSchema.nullable(),
   resolution: resolutionStateSchema.nullable(),

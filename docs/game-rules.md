@@ -1,26 +1,26 @@
 # Wanna Bet Rules
 
 ## Goal
-Each round, players try to predict whether the active player will succeed at a challenge. The goal is to keep the most points by making smart bets and surviving the round sequence.
+Each round, players try to predict whether the challenger will succeed at a challenge. The goal is to keep the most points by making smart bets and surviving the round sequence.
 
 ## Setup
 - The game starts with at least two players.
 - Each player begins with the same starting amount of points (100).
-- One player is designated as the active player for the current round.
+- One player is designated as the challenger for the current round.
 
 ## Round flow
-1. A challenge is presented to the active player.
-2. The other players choose whether they believe the active player will succeed or fail.
-3. Each non-active player places a bet with a chosen amount and a YES/NO prediction.
-4. The active player does not place a bet.
+1. A challenge is presented to the challenger.
+2. The other players choose whether they believe the challenger will succeed or fail.
+3. Each Bettor places a bet with a chosen amount and a YES/NO prediction.
+4. The challenger does not place a bet.
 5. After all bets are placed, the challenge is resolved.
 6. The outcome is applied to all player scores.
-7. The active player rotates to the next player, and a new round begins.
+7. The challenger rotates to the next player, and a new round begins.
 
 ## Betting rules
 - Players may only bet up to half of their current points (rounded down), with a minimum bet of 1.
 - A player with exactly 1 point may still bet their full 1 point, as an exception to the half-of-points cap.
-- Bets are made only by non-active players.
+- Bets are made only by Bettors.
 - A bet includes:
     - amount
     - prediction: YES or NO
@@ -31,17 +31,17 @@ Each round, players try to predict whether the active player will succeed at a c
 - If the outcome is YES:
     - Players who predicted YES gain their bet amount.
     - Players who predicted NO lose their bet amount.
-    - The active player gains the sum of what the NO-predicting players lost.
+    - The challenger gains the sum of what the NO-predicting players lost.
 - If the outcome is NO:
     - Players who predicted NO gain their bet amount.
     - Players who predicted YES lose their bet amount.
-    - The active player's points do not change.
+    - The challenger's points do not change.
 - No player's points can ever drop below 1 as a result of a bet.
 
 ## Winning and losing
 - Players keep playing until the game is ended.
 - The winner is the player with the highest point total when the game ends.
-- A player can lose points if they make an incorrect prediction; the active player never loses points directly from a round's resolution, only bettors do.
+- A player can lose points if they make an incorrect prediction; the challenger never loses points directly from a round's resolution, only bettors do.
 
 ## Player status
 - The host may pause a player, skipping them from betting and rotation until resumed, or remove a player from the game entirely.

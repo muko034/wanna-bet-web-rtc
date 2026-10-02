@@ -8,11 +8,11 @@ import {
 const gameState: GameState = {
   roomId: 'ABCDEF',
   status: 'active',
-  activePlayerId: null,
+  challengerId: null,
   resolution: null,
   players: [{ playerId: 'p1', name: 'Alex', points: 0, status: 'active', connected: true }],
   round: {
-    activePlayerId: 'p1',
+    challengerId: 'p1',
     challengeId: 'c1',
     bets: [{ playerId: 'p1' }],
     outcome: null,
@@ -113,13 +113,13 @@ describe('parseHostToGuestMessage', () => {
     const message = {
       type: 'state',
       seq: 5,
-      payload: { epoch: 'e1', version: 0, snapshot: { ...gameState, status: 'lobby', round: null, activePlayerId: null } },
+      payload: { epoch: 'e1', version: 0, snapshot: { ...gameState, status: 'lobby', round: null, challengerId: null } },
     } as const;
 
     expect(parseHostToGuestMessage(message)).toEqual(message);
   });
 
-  it('accepts a state message carrying the next Active Player and a Resolution summary after a round closes', () => {
+  it('accepts a state message carrying the next Challenger and a Resolution summary after a round closes', () => {
     const message = {
       type: 'state',
       seq: 4,
@@ -128,10 +128,10 @@ describe('parseHostToGuestMessage', () => {
         version: 4,
         snapshot: {
           ...gameState,
-          activePlayerId: 'p2',
+          challengerId: 'p2',
           round: null,
           resolution: {
-            activePlayerId: 'p1',
+            challengerId: 'p1',
             outcome: 'YES',
             payouts: [
               { playerId: 'p1', amount: 15 },

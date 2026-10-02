@@ -45,7 +45,7 @@ export type ResultRow = {
   rank: number;
   /** Name, suffixed with "(you)" on the local player's own row. */
   nameLabel: string;
-  /** "Active player" on the Active Player's row, otherwise `null`. */
+  /** "Challenger" on the Challenger's row, otherwise `null`. */
   roleLabel: string | null;
   points: number;
   deltaLabel: string;
@@ -60,7 +60,7 @@ export type ResultScreen = {
 
 function isSameResolution(a: ResolutionState, b: ResolutionState): boolean {
   return (
-    a.activePlayerId === b.activePlayerId &&
+    a.challengerId === b.challengerId &&
     a.outcome === b.outcome &&
     a.payouts.length === b.payouts.length &&
     a.payouts.every((payout, index) => payout.playerId === b.payouts[index].playerId && payout.amount === b.payouts[index].amount)
@@ -104,8 +104,8 @@ export function resolveResultScreen({
   }
 
   const { resolution, players } = memory.shown;
-  const activePlayerName = players.find((player) => player.playerId === resolution.activePlayerId)?.name;
-  if (!activePlayerName) {
+  const challengerName = players.find((player) => player.playerId === resolution.challengerId)?.name;
+  if (!challengerName) {
     return null;
   }
 
@@ -114,14 +114,14 @@ export function resolveResultScreen({
 
   return {
     background: succeeded ? 'vb-bg-success' : 'vb-bg-fail',
-    title: `${activePlayerName} ${succeeded ? 'succeeded 🎉' : 'failed 💥'}`,
+    title: `${challengerName} ${succeeded ? 'succeeded 🎉' : 'failed 💥'}`,
     rows: ranked.map((player) => {
       const delta = resolution.payouts.find((payout) => payout.playerId === player.playerId)?.amount ?? 0;
       return {
         playerId: player.playerId,
         rank: ranked.findIndex((other) => other.points === player.points) + 1,
         nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
-        roleLabel: player.playerId === resolution.activePlayerId ? 'Active player' : null,
+        roleLabel: player.playerId === resolution.challengerId ? 'Challenger' : null,
         points: player.points,
         ...resolveDelta(delta),
       };

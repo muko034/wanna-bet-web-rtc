@@ -5,13 +5,13 @@ import { BetDelivery, roundKeyOf } from './bet-delivery';
 const payload: PlaceBetPayload = { amount: 10, prediction: 'YES' };
 const ROUND = 'alex:c1';
 
-function stateWith(betPlayerIds: string[], activePlayerId = 'alex', challengeId = 'c1'): GameState {
+function stateWith(betPlayerIds: string[], challengerId = 'alex', challengeId = 'c1'): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
-    activePlayerId,
+    challengerId,
     players: [],
-    round: { activePlayerId, challengeId, bets: betPlayerIds.map((playerId) => ({ playerId })), outcome: null },
+    round: { challengerId, challengeId, bets: betPlayerIds.map((playerId) => ({ playerId })), outcome: null },
     resolution: null,
   };
 }
@@ -30,7 +30,7 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('BetDelivery', () => {
-  it('derives the round key from the Active Player and Challenge', () => {
+  it('derives the round key from the Challenger and Challenge', () => {
     expect(roundKeyOf(stateWith([]))).toBe(ROUND);
     expect(roundKeyOf({ ...stateWith([]), round: null })).toBeNull();
   });

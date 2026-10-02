@@ -45,18 +45,18 @@ peer
 
 **Round**:
 One cycle of the game: a Challenge is presented, Bets are placed, the Challenge is resolved, Payouts are applied, and
-the Active Player rotates. _Avoid_: Turn
+the Challenger rotates. _Avoid_: Turn
 
-**Active Player**:
+**Challenger**:
 The player attempting the Challenge in the current Round. Never places a Bet and never sees the Challenge on their own
-device. _Avoid_: Current player, host (the Active Player is a game role, unrelated to the Host/Guest networking role —
+device. _Avoid_: Active Player, current player, host (the Challenger is a game role, unrelated to the Host/Guest networking role —
 the two can be different players)
 
 **Bettor**:
-A non-Active Player who places a Bet in the current Round. _Avoid_: Other players, non-active player
+A player other than the Challenger who places a Bet in the current Round. _Avoid_: Other players, non-challenger
 
 **Challenge**:
-The task presented to the Active Player for a Round, judged as succeeded or failed. Drawn from the Challenge Bank, not
+The task presented to the Challenger for a Round, judged as succeeded or failed. Drawn from the Challenge Bank, not
 authored freehand. _Avoid_: Task, dare
 
 **Challenge Bank**:
@@ -70,7 +70,7 @@ still in rotation. Resets once every entry in the Challenge Bank has been drawn.
 
 **Illustration**:
 An optional image attached to a Challenge Bank entry, shared unchanged across every Display Language. Hidden from the
-Active Player under the same rule as Challenge text. _Avoid_: Image, picture
+Challenger under the same rule as Challenge text. _Avoid_: Image, picture
 
 **Display Language**:
 A player's own choice of Polish or English for everything their client renders, set independently per player/device
@@ -81,23 +81,31 @@ A Bettor's wager for a Round: an amount of Points and a Prediction. Capped at `f
 _Avoid_: Wager (when used loosely without amount+Prediction)
 
 **Prediction**:
-A Bettor's YES/NO guess on whether the Active Player will succeed at the Challenge. _Avoid_: Guess, call
+A Bettor's YES/NO guess on whether the Challenger will succeed at the Challenge. _Avoid_: Guess, call
 
 **Outcome**:
 The judged result of a Challenge: YES (succeeded) or NO (failed). _Avoid_: Result (ambiguous with Payout results)
 
 **Resolution**:
-The process of applying an Outcome: settling every Bet and adjusting the Active Player's Points. _Avoid_: Settlement
+The process of applying an Outcome: settling every Bet and adjusting the Challenger's Points. _Avoid_: Settlement
 
 **Payout**:
 The Points change applied to one player as a result of Resolution. Payouts are independent per player — a winning
-Bettor's gain and the Active Player's gain/loss are separate flows, not drawn from each other's losses (the game is
+Bettor's gain and the Challenger's gain/loss are separate flows, not drawn from each other's losses (the game is
 **not** zero-sum). _Avoid_: Pool share, pot share (the original rules draft used pool/pot language; that model was
 superseded — see below)
 
 **Points**:
 A player's score. Starts at 100. Floored at 1 — a Bet can never reduce a player to 0, and a player with exactly 1 Point
 may still Bet their full 1 Point. _Avoid_: Score, chips
+
+**Leaderboard**:
+The ranking of players by Points, highest first. Players on equal Points share one rank. Shows every player except
+removed ones; a paused player stays ranked. Reveals Points only, never Bets. _Avoid_: Scoreboard, standings
+
+**Result Screen**:
+The screen shown to every player after a Resolution, listing each player's Points and Payout for the Round. Leaves on
+its own after a short time, or earlier when the player dismisses it. _Avoid_: Results page, round summary
 
 **Host Admin Action**:
 A moderation action only the Host can take on another player: **Pause** (player is skipped from Bets/rotation until

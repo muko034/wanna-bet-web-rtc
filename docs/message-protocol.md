@@ -27,7 +27,7 @@ specific connection (used by `welcome` and `rejected` below).
 
 Two separate identifiers exist per player — conflating them would let any Guest impersonate any other (see ADR 0003):
 
-- **`playerId`** (public): included in every `state` broadcast. Safe to expose — used for rotation, scoreboard display,
+- **`playerId`** (public): included in every `state` broadcast. Safe to expose — used for rotation
   and Bet attribution. Knowing it grants no privilege.
 - **`reconnectToken`** (private secret): generated once at `join`, delivered only via `welcome` to its owner, and never
   included in any broadcast message. Stored client-side (e.g. `localStorage`) and presented only in `rejoin`.
@@ -83,14 +83,14 @@ This is a breaking change for Guests running an older build: they cannot parse t
 ## `GameState` shape
 
 One canonical shape, shared by the `state` message's `snapshot` and the persisted `localStorage` snapshot (the latter wraps
-it as `{ schemaVersion, savedAt, state }` — see host-persistence spec and ADR 0003). `GameState` carries only data a
+it as `{ schemaVersion, savedAt, state }` — see ADR 0003). `GameState` carries only data a
 Guest needs to render — it is not a dumping ground for Host-internal bookkeeping (see `challengeHistory` below).
 
 ```ts
 type GameState = {
   roomId: string;
   status: 'lobby' | 'active' | 'ended';
-  activePlayerId: string | null;
+  challengerId: string | null;
   players: Player[];
   round: RoundState | null;
   resolution: ResolutionState | null;
@@ -105,9 +105,9 @@ type Player = {
 };
 
 type RoundState = {
-  activePlayerId: string;
+  challengerId: string;
   challengeId: string;     // Challenge Bank id, identical for everyone; each client resolves its own Display
-                            // Language content locally (see ADR 0005); the Active Player's own client hides it
+                            // Language content locally (see ADR 0005); the Challenger's own client hides it
   bets: Bet[];
   outcome: 'YES' | 'NO' | null;
 };
@@ -119,7 +119,7 @@ type Bet = {
 };
 
 type ResolutionState = {
-  activePlayerId: string;
+  challengerId: string;
   outcome: 'YES' | 'NO';
   payouts: Payout[];
 };
@@ -134,16 +134,15 @@ Notes:
 
 - `status: 'lobby'`: broadcast before the game starts (on every Guest join, rejoin, leave and disconnect), so every
   device's Lobby/waiting screen can render the live roster — the Host included, with "(you)" on the viewer's own
-  entry. `round` and `resolution` are always `null` here, and `activePlayerId` is always `null`. A Guest only ever
+  entry. `round` and `resolution` are always `null` here, and `challengerId` is always `null`. A Guest only ever
   leaves its waiting screen on a `status: 'active'` broadcast (see `watchForGameStart` in `room-lifecycle`) — a Lobby
   snapshot never starts the game. Lobby snapshots are not written to the Host's persisted `localStorage` snapshot (see
   host-persistence spec).
-- `activePlayerId` tracks the current (or, right after a Resolution, the next) Active Player; `null` before the first
+- `challengerId` tracks the current (or, right after a Resolution, the next) Challenger; `null` before the first
   Round starts.
 - `resolution` carries the most recently completed Round's outcome and Payouts, so a Guest can render the result
-  screen; `null` once no Resolution is pending display (see round-engine spec 20).
-- Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove, and the scoreboard must keep
-  showing them (see host-admin spec).
+  screen; `null` once no Resolution is pending display.
+- Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove.
 - Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
 - `challengeHistory` (Challenge Bank ids already drawn this game, see Challenge History) is **not** part of

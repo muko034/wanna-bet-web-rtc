@@ -62,7 +62,7 @@ describe('autosaving the Host session', () => {
     expect(loadHostSession(storage, 'ABCDEF')?.gameState).toEqual(manager.gameState);
 
     manager.startRound();
-    expect(loadHostSession(storage, 'ABCDEF')?.gameState.round).toEqual(expect.objectContaining({ activePlayerId: 'host-1' }));
+    expect(loadHostSession(storage, 'ABCDEF')?.gameState.round).toEqual(expect.objectContaining({ challengerId: 'host-1' }));
 
     alex.protocol.placeBet({ amount: 10, prediction: 'YES' });
     expect(loadHostSession(storage, 'ABCDEF')?.gameState.round?.bets).toEqual([{ playerId: alex.playerId }]);
@@ -149,7 +149,7 @@ describe('resuming a saved Host session', () => {
     const protocol = new GuestProtocol(guestTransport);
     protocol.rejoin({ reconnectToken: alex.reconnectToken });
 
-    expect(resumed.gameState?.round?.activePlayerId).toBe(alex.playerId);
+    expect(resumed.gameState?.round?.challengerId).toBe(alex.playerId);
     resumed.placeBet('host-1', 5, 'NO');
 
     expect(resumed.gameState?.round?.bets).toEqual([{ playerId: 'host-1' }]);

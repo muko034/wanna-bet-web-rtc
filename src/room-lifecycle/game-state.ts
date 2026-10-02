@@ -34,7 +34,7 @@ export function buildInitialGameState(room: Room): GameState {
   return {
     roomId: room.code,
     status: 'active',
-    activePlayerId: null,
+    challengerId: null,
     resolution: null,
     round: null,
     players: buildPlayers(room),
@@ -51,7 +51,7 @@ export function buildLobbyGameState(room: Room): GameState {
   return {
     roomId: room.code,
     status: 'lobby',
-    activePlayerId: null,
+    challengerId: null,
     resolution: null,
     round: null,
     players: buildPlayers(room),
@@ -77,7 +77,7 @@ export function applyRoundEngineState(
 ): GameState {
   return {
     ...gameState,
-    activePlayerId: roundEngineState.round?.activePlayerId ?? roundEngineState.playerOrder[0] ?? null,
+    challengerId: roundEngineState.round?.challengerId ?? roundEngineState.playerOrder[0] ?? null,
     resolution,
     players: gameState.players.map((player) => ({
       ...player,

@@ -13,7 +13,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
-    activePlayerId: 'guest-2',
+    challengerId: 'guest-2',
     players: [
       { playerId: 'host-1', name: 'Host', points: 115, status: 'active', connected: true },
       { playerId: 'guest-1', name: 'Alex', points: 120, status: 'active', connected: true },
@@ -21,7 +21,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
     ],
     round: null,
     resolution: {
-      activePlayerId: 'host-1',
+      challengerId: 'host-1',
       outcome: 'YES',
       payouts: [
         { playerId: 'host-1', amount: 15 },
@@ -38,13 +38,13 @@ function screenFor(gameState: GameState, localPlayerId: string | null = 'guest-2
 }
 
 describe('resolveResultScreen', () => {
-  it('ranks every player by Points, labels the local player and the Active Player, and signs each Payout delta', () => {
+  it('ranks every player by Points, labels the local player and the Challenger, and signs each Payout delta', () => {
     expect(screenFor(stateWith())).toEqual({
       background: 'vb-bg-success',
       title: 'Host succeeded 🎉',
       rows: [
         { playerId: 'guest-1', rank: 1, nameLabel: 'Alex', roleLabel: null, points: 120, deltaLabel: '+20', deltaClass: 'pos' },
-        { playerId: 'host-1', rank: 2, nameLabel: 'Host', roleLabel: 'Active player', points: 115, deltaLabel: '+15', deltaClass: 'pos' },
+        { playerId: 'host-1', rank: 2, nameLabel: 'Host', roleLabel: 'Challenger', points: 115, deltaLabel: '+15', deltaClass: 'pos' },
         { playerId: 'guest-2', rank: 3, nameLabel: 'Sam (you)', roleLabel: null, points: 85, deltaLabel: '-15', deltaClass: 'neg' },
       ],
     });
@@ -52,7 +52,7 @@ describe('resolveResultScreen', () => {
 
   it('shows a red failure screen for Outcome NO', () => {
     const screen = screenFor(
-      stateWith({ resolution: { activePlayerId: 'host-1', outcome: 'NO', payouts: [{ playerId: 'guest-2', amount: 5 }] } }),
+      stateWith({ resolution: { challengerId: 'host-1', outcome: 'NO', payouts: [{ playerId: 'guest-2', amount: 5 }] } }),
     );
 
     expect(screen?.background).toBe('vb-bg-fail');
@@ -99,7 +99,7 @@ describe('resolveResultScreen', () => {
 describe('result screen memory', () => {
   const nextRoundOpen = stateWith({
     resolution: null,
-    round: { activePlayerId: 'guest-1', challengeId: 'c-2', bets: [], outcome: null },
+    round: { challengerId: 'guest-1', challengeId: 'c-2', bets: [], outcome: null },
   });
 
   it('keeps showing the last observed Resolution after the Host starts the next Round', () => {
@@ -147,7 +147,7 @@ describe('result screen memory', () => {
     const shown = observeResolution(initialResultMemory, stateWith());
     const newer = observeResolution(
       shown,
-      stateWith({ resolution: { activePlayerId: 'guest-1', outcome: 'NO', payouts: [] } }),
+      stateWith({ resolution: { challengerId: 'guest-1', outcome: 'NO', payouts: [] } }),
     );
 
     expect(resolveResultScreen({ memory: newer, localPlayerId: 'guest-2' })?.title).toBe('Alex failed 💥');

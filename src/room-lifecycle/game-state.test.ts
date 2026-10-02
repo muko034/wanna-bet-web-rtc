@@ -19,7 +19,7 @@ describe('buildInitialGameState', () => {
     expect(state).toEqual({
       roomId: 'ABCDEF',
       status: 'active',
-      activePlayerId: null,
+      challengerId: null,
       resolution: null,
       round: null,
       players: [
@@ -53,7 +53,7 @@ describe('buildLobbyGameState', () => {
     expect(state).toEqual({
       roomId: 'ABCDEF',
       status: 'lobby',
-      activePlayerId: null,
+      challengerId: null,
       resolution: null,
       round: null,
       players: [
@@ -66,7 +66,7 @@ describe('buildLobbyGameState', () => {
 });
 
 describe('applyRoundEngineState', () => {
-  it('publishes the next Active Player plus the last Resolution summary after a round resolves', () => {
+  it('publishes the next Challenger plus the last Resolution summary after a round resolves', () => {
     const initialGameState = buildInitialGameState(
       roomWith([
         { playerId: 'p1', name: 'Alex', connected: true },
@@ -81,7 +81,7 @@ describe('applyRoundEngineState', () => {
     };
 
     const next = applyRoundEngineState(initialGameState, roundEngineState, {
-      activePlayerId: 'host-1',
+      challengerId: 'host-1',
       outcome: 'YES',
       payouts: [
         { playerId: 'host-1', amount: 15 },
@@ -90,9 +90,9 @@ describe('applyRoundEngineState', () => {
       ],
     });
 
-    expect(next.activePlayerId).toBe('p2');
+    expect(next.challengerId).toBe('p2');
     expect(next.resolution).toEqual({
-      activePlayerId: 'host-1',
+      challengerId: 'host-1',
       outcome: 'YES',
       payouts: [
         { playerId: 'host-1', amount: 15 },

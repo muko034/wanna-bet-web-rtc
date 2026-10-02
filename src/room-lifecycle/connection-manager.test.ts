@@ -38,7 +38,7 @@ describe('Lobby snapshots', () => {
     expect(manager.gameState).toEqual({
       roomId: 'ABCDEF',
       status: 'lobby',
-      activePlayerId: null,
+      challengerId: null,
       resolution: null,
       round: null,
       players: [expect.objectContaining({ playerId: 'host-1', name: 'Host' })],
@@ -104,7 +104,7 @@ describe('Lobby snapshots', () => {
     const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
     const { reconnectToken } = await joinAndAwaitWelcome(hostId, 'Alex');
     manager.room = { ...manager.room, started: true };
-    manager.gameState = { roomId: 'ABCDEF', status: 'active', activePlayerId: null, resolution: null, round: null, players: [] };
+    manager.gameState = { roomId: 'ABCDEF', status: 'active', challengerId: null, resolution: null, round: null, players: [] };
 
     const rejoiningGuest = await connectGuest(hostId);
     const received: unknown[] = [];
@@ -337,7 +337,7 @@ describe('ConnectionManager', () => {
           snapshot: {
             roomId: 'ABCDEF',
             status: 'active',
-            activePlayerId: null,
+            challengerId: null,
             resolution: null,
             round: null,
             players: [
@@ -351,8 +351,8 @@ describe('ConnectionManager', () => {
   });
 });
 
-describe('choosing the Active Player', () => {
-  it('picks the first Round\'s Active Player at random from every Player, the Host included, in join order', async () => {
+describe('choosing the Challenger', () => {
+  it('picks the first Round\'s Challenger at random from every Player, the Host included, in join order', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
     const receivedCandidates: string[][] = [];
@@ -375,7 +375,7 @@ describe('choosing the Active Player', () => {
     expect(receivedCandidates).toEqual([['host-1', alexId, samId]]);
   });
 
-  it('does not re-randomize the Active Player for later Rounds — it follows the fixed order the first pick established', async () => {
+  it('does not re-randomize the Challenger for later Rounds — it follows the fixed order the first pick established', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
     let pickCount = 0;

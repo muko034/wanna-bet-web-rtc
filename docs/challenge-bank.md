@@ -23,7 +23,7 @@ Notes:
 - `content` must have both `pl` and `en` populated for every entry — the bank is the source of translated text a
   client resolves locally per its own Display Language; there is no missing-language fallback at the entry level (that
   fallback chain applies to UI strings, not Challenge Bank content).
-- `illustration`, when present, is hidden from the Active Player under the same rule as `content` (see round-engine
+- `illustration`, when present, is hidden from the Challenger under the same rule as `content` (see round-engine
   spec 05, `domain-glossary.md`'s Illustration entry).
 - v1 ships all 188 entries from the reference dataset, with minor content fixes and a handful of new entries (see ADR
   0004) — this file documents the contract, not the dataset itself.

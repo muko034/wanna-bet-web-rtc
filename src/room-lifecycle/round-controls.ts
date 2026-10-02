@@ -5,7 +5,7 @@ import type { Room } from './room';
 export type RoundControls =
   | { kind: 'hidden' }
   /** The Host's judging screen: shown only once every Bettor has bet. */
-  | { kind: 'judge-round'; activePlayerName: string; background: 'vb-bg-judge' };
+  | { kind: 'judge-round'; challengerName: string; background: 'vb-bg-judge' };
 
 type Params = {
   code: string | undefined;
@@ -19,10 +19,10 @@ export function resolveRoundControls({ code, room, gameState }: Params): RoundCo
   }
 
   const { round } = gameState;
-  const bettors = gameState.players.filter((player) => player.playerId !== round.activePlayerId);
+  const bettors = gameState.players.filter((player) => player.playerId !== round.challengerId);
   const allBetsIn = bettors.every((bettor) => hasPlacedBet(round, bettor.playerId));
-  const activePlayerName = gameState.players.find((player) => player.playerId === round.activePlayerId)?.name;
-  return allBetsIn && activePlayerName
-    ? { kind: 'judge-round', activePlayerName, background: 'vb-bg-judge' }
+  const challengerName = gameState.players.find((player) => player.playerId === round.challengerId)?.name;
+  return allBetsIn && challengerName
+    ? { kind: 'judge-round', challengerName, background: 'vb-bg-judge' }
     : { kind: 'hidden' };
 }

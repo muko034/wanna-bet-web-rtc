@@ -270,7 +270,7 @@ export function StartedGame({
     >
       {gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
-          <div class="vb-giant-title vb-title-small">Did {roundControls.activePlayerName} pull it off?</div>
+          <div class="vb-giant-title vb-title-small">Did {roundControls.challengerName} pull it off?</div>
           <div class="vb-giant-sub">Every bet is already locked in.</div>
           <div class="vb-tapzones">
             <button class="vb-tapzone success" type="button" onClick={() => onResolveRound('YES')}>

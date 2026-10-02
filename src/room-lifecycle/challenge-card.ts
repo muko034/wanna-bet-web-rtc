@@ -33,7 +33,7 @@ export function resolveChallengeCard({
     return null;
   }
 
-  if (round.activePlayerId === localPlayerId) {
+  if (round.challengerId === localPlayerId) {
     return {
       kind: 'hidden',
       title: '🙈 Hidden from you',

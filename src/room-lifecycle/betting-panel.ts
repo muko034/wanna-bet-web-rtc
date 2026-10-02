@@ -78,7 +78,7 @@ export function resolveBettingPanel({
   const ownBet = betFailed ? null : localBet;
 
   const bettors = gameState.players
-    .filter((player) => player.playerId !== round.activePlayerId)
+    .filter((player) => player.playerId !== round.challengerId)
     .map((player) => {
       const isLocalPlayer = player.playerId === localPlayerId;
       return {
@@ -90,7 +90,7 @@ export function resolveBettingPanel({
     });
 
   const localPlayer = gameState.players.find((player) => player.playerId === localPlayerId);
-  if (!localPlayer || localPlayerId === round.activePlayerId) {
+  if (!localPlayer || localPlayerId === round.challengerId) {
     return { kind: 'status', background: 'vb-bg-wait', bettors };
   }
 

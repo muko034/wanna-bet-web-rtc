@@ -6,7 +6,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
-    activePlayerId: 'guest-1',
+    challengerId: 'guest-1',
     resolution: null,
     players: [
       { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
@@ -14,7 +14,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
       { playerId: 'guest-2', name: 'Sam', points: 100, status: 'active', connected: true },
     ],
     round: {
-      activePlayerId: 'guest-1',
+      challengerId: 'guest-1',
       challengeId: 'challenge-1',
       bets: [],
       outcome: null,
@@ -26,7 +26,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
 describe('resolveBettingPanel', () => {
   it.each([
     ['the Host when another player is active', 'host-1'],
-    ['a Guest who is not the Active Player and has not bet yet', 'guest-2'],
+    ['a Guest who is not the Challenger and has not bet yet', 'guest-2'],
   ])('shows a Bet form for %s', (_label, localPlayerId) => {
     const panel = resolveBettingPanel({ gameState: stateWith(), localPlayerId });
 
@@ -34,13 +34,13 @@ describe('resolveBettingPanel', () => {
   });
 
   it.each([
-    ['the Active Player', 'guest-1'],
+    ['the Challenger', 'guest-1'],
     ['a Bettor who already placed a Bet', 'guest-2'],
   ])('does not show the Bet form for %s', (_label, localPlayerId) => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
-          activePlayerId: 'guest-1',
+          challengerId: 'guest-1',
           challengeId: 'challenge-1',
           bets: localPlayerId === 'guest-2' ? [{ playerId: 'guest-2' }] : [],
           outcome: null,
@@ -83,13 +83,13 @@ describe('resolveBettingPanel', () => {
   });
 
   it.each([
-    ['the Active Player', 'guest-1'],
+    ['the Challenger', 'guest-1'],
     ['a Bettor who already placed a Bet', 'guest-2'],
   ])('uses the waiting background for %s', (_label, localPlayerId) => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
-          activePlayerId: 'guest-1',
+          challengerId: 'guest-1',
           challengeId: 'challenge-1',
           bets: localPlayerId === 'guest-2' ? [{ playerId: 'guest-2' }] : [],
           outcome: null,
@@ -142,7 +142,7 @@ describe('resolveBettingPanel', () => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
-          activePlayerId: 'guest-1',
+          challengerId: 'guest-1',
           challengeId: 'challenge-1',
           bets: [{ playerId: 'guest-2' }],
           outcome: null,
@@ -186,7 +186,7 @@ describe('resolveBettingPanel', () => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
-          activePlayerId: 'guest-1',
+          challengerId: 'guest-1',
           challengeId: 'challenge-1',
           bets: [{ playerId: 'guest-2' }, { playerId: 'host-1' }],
           outcome: null,
@@ -202,7 +202,7 @@ describe('resolveBettingPanel', () => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
-          activePlayerId: 'guest-1',
+          challengerId: 'guest-1',
           challengeId: 'challenge-1',
           bets: [{ playerId: 'host-1' }, { playerId: 'guest-2' }],
           outcome: null,

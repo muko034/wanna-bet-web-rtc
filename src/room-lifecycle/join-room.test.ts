@@ -247,7 +247,7 @@ describe('Host heartbeat on the Guest side', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  const snapshot: GameState = { roomId: 'ABCDEF', status: 'active', activePlayerId: null, players: [], round: null, resolution: null };
+  const snapshot: GameState = { roomId: 'ABCDEF', status: 'active', challengerId: null, players: [], round: null, resolution: null };
   let seq = 0;
   const stateMessage = (epoch: string, version: number, overrides: Partial<GameState> = {}) => ({
     type: 'state' as const,

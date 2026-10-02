@@ -109,7 +109,7 @@
   .vb-rank-sheet-row.me { color: #7CD1FF; }
 
   /* ================= Task card (correction #3) =================
-     The challenge is only ever shown to bettors (never the active player,
+     The challenge is only ever shown to bettors (never the challenger,
      see correction #2), presented as a distinct floating card rather than
      being merged into the giant background type. */
   .vb-task-card {
@@ -273,7 +273,7 @@ const Engine = {
     STATE.screen = "round";
     // Bots aren't real testers switching devices — auto-lock a plausible
     // bet for them immediately so the only device you ever need to drive
-    // by hand is your own (and the active player's, to judge).
+    // by hand is your own (and the challenger's, to judge).
     STATE.players.forEach((p, i) => {
       if (i === STATE.activeIndex || !isBot(p)) return;
       const max = Engine.maxBet(p.id);
@@ -287,10 +287,10 @@ const Engine = {
     Engine.maybeAutoResolveBotRound();
   },
 
-  // Every non-active player independently edits ONLY their own bet — there
+  // Every Bettor independently edits ONLY their own bet — there
   // is no shared "whose turn is it" state, because there's no shared device.
   setPrediction(playerId, prediction) {
-    if (playerId === STATE.players[STATE.activeIndex].id) return; // active player doesn't bet
+    if (playerId === STATE.players[STATE.activeIndex].id) return; // challenger doesn't bet
     if (STATE.bets[playerId] && STATE.bets[playerId].locked) return; // already locked in
     const existing = STATE.bets[playerId] || { amount: Math.min(10, Engine.maxBet(playerId)), prediction: null, locked: false };
     existing.prediction = prediction;
@@ -320,7 +320,7 @@ const Engine = {
     Engine.maybeAutoResolveBotRound();
   },
 
-  // If the active player this round is a bot, there's no real device for
+  // If the challenger this round is a bot, there's no real device for
   // them to judge on — so once every bet is locked in, simulate their
   // attempt automatically after a short "thinking" beat.
   maybeAutoResolveBotRound() {
@@ -338,7 +338,7 @@ const Engine = {
     return Math.max(1, Math.floor(player.points / 2));
   },
 
-  // How many non-active players have locked in their bet, and how many total.
+  // How many Bettors have locked in their bet, and how many total.
   lockCounts() {
     const bettors = STATE.players.filter((p, i) => i !== STATE.activeIndex);
     const locked = bettors.filter(p => STATE.bets[p.id] && STATE.bets[p.id].locked).length;
@@ -352,7 +352,7 @@ const Engine = {
 
   resolve(outcome) {
     STATE.outcome = outcome;
-    const activePlayer = STATE.players[STATE.activeIndex];
+    const challenger = STATE.players[STATE.activeIndex];
     const deltas = {};
     STATE.players.forEach((p, i) => {
       if (i === STATE.activeIndex) return;
@@ -362,8 +362,8 @@ const Engine = {
       deltas[p.id] = won ? bet.amount : -bet.amount;
       p.points += deltas[p.id];
     });
-    deltas[activePlayer.id] = outcome === "YES" ? 10 : -10;
-    activePlayer.points += deltas[activePlayer.id];
+    deltas[challenger.id] = outcome === "YES" ? 10 : -10;
+    challenger.points += deltas[challenger.id];
     STATE.lastDeltas = deltas;
     STATE.screen = "resolved";
     render();
@@ -459,7 +459,7 @@ function esc(str) {
    floating card (see correction #3) so it reads as a distinct object from
    the giant background type. A persistent rank strip is shown throughout
    the round so every player can see their current placement (#1). The
-   active player never sees the challenge text on their own device (#2) —
+   challenger never sees the challenge text on their own device (#2) —
    only the other (betting) players do. Each player's own phone only ever
    shows their own bet — never anyone else's.
    ========================================================================= */
@@ -611,7 +611,7 @@ function renderVariantB(s) {
           const rank = ranked.indexOf(p) + 1;
           const d = s.lastDeltas[p.id] || 0;
           const bet = s.bets[p.id];
-          const sub = i === s.activeIndex ? "Active player" : (bet ? `Bet ${bet.amount} on ${bet.prediction}` : "No bet");
+          const sub = i === s.activeIndex ? "Challenger" : (bet ? `Bet ${bet.amount} on ${bet.prediction}` : "No bet");
           return `<div class="vb-score-row2"><span class="name">#${rank} ${esc(p.name)}${p.id === viewer.id ? " (you)" : ""}<span class="sub">${sub}</span></span><span>${p.points} <span class="vb-delta ${d >= 0 ? 'pos' : 'neg'}">${d >= 0 ? '+' : ''}${d}</span></span></div>`;
         }).join("")}
       </div>

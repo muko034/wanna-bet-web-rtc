@@ -14,19 +14,19 @@ function stateWith(overrides: Partial<RoundEngineState> = {}): RoundEngineState 
 
 describe('roundEngineReducer', () => {
   describe('START_ROUND', () => {
-    it('starts a round for the designated Active Player with a Challenge drawn from the bank', () => {
+    it('starts a round for the designated Challenger with a Challenge drawn from the bank', () => {
       const state = stateWith();
       const bank = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }];
 
       const { state: next } = roundEngineReducer(state, {
         type: 'START_ROUND',
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeBank: bank,
         pickChallenge: (candidates) => candidates[0],
       });
 
       expect(next.round).toEqual({
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeId: 'c1',
         bets: [],
         outcome: null,
@@ -40,7 +40,7 @@ describe('roundEngineReducer', () => {
 
       roundEngineReducer(state, {
         type: 'START_ROUND',
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeBank: bank,
         pickChallenge: (candidates) => {
           seenCandidates = candidates;
@@ -58,7 +58,7 @@ describe('roundEngineReducer', () => {
 
       roundEngineReducer(state, {
         type: 'START_ROUND',
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeBank: bank,
         pickChallenge: (candidates) => {
           seenCandidates = candidates;
@@ -75,7 +75,7 @@ describe('roundEngineReducer', () => {
 
       const { state: next } = roundEngineReducer(state, {
         type: 'START_ROUND',
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeBank: bank,
         pickChallenge: (candidates) => candidates[0],
       });
@@ -89,7 +89,7 @@ describe('roundEngineReducer', () => {
 
       const { state: next } = roundEngineReducer(state, {
         type: 'START_ROUND',
-        activePlayerId: 'p1',
+        challengerId: 'p1',
         challengeBank: bank,
         pickChallenge: (candidates) => candidates[0],
       });
@@ -101,7 +101,7 @@ describe('roundEngineReducer', () => {
   describe('PLACE_BET', () => {
     it('records a Bettor Bet with an amount and Prediction against the current round', () => {
       const state = stateWith({
-        round: { activePlayerId: 'p1', challengeId: 'c1', bets: [], outcome: null },
+        round: { challengerId: 'p1', challengeId: 'c1', bets: [], outcome: null },
       });
 
       const { state: next } = roundEngineReducer(state, {
@@ -119,7 +119,7 @@ describe('roundEngineReducer', () => {
     function openRound(points: Record<string, number>, bets: Bet[] = []): RoundEngineState {
       return stateWith({
         points,
-        round: { activePlayerId: 'p1', challengeId: 'c1', bets, outcome: null },
+        round: { challengerId: 'p1', challengeId: 'c1', bets, outcome: null },
       });
     }
 
@@ -189,12 +189,12 @@ describe('roundEngineReducer', () => {
       expect(result.state.round?.bets).toHaveLength(2);
     });
 
-    it('rejects a Bet from the Active Player', () => {
+    it('rejects a Bet from the Challenger', () => {
       const state = openRound({ p1: 100, p2: 100, p3: 100 });
 
       const result = placeBet(state, 'p1', 10);
 
-      expect(result.rejection).toBe('ACTIVE_PLAYER_CANNOT_BET');
+      expect(result.rejection).toBe('CHALLENGER_CANNOT_BET');
       expect(result.state).toBe(state);
     });
 
@@ -209,12 +209,12 @@ describe('roundEngineReducer', () => {
   });
 
   describe('RESOLVE_ROUND', () => {
-    it('on Outcome YES: pays YES Bettors their Bet, charges NO Bettors their Bet, and gives the Active Player the NO Bettors\' losses, then rotates the Active Player', () => {
+    it('on Outcome YES: pays YES Bettors their Bet, charges NO Bettors their Bet, and gives the Challenger the NO Bettors\' losses, then rotates the Challenger', () => {
       const state = stateWith({
         playerOrder: ['p1', 'p2', 'p3'],
         points: { p1: 100, p2: 100, p3: 100 },
         round: {
-          activePlayerId: 'p1',
+          challengerId: 'p1',
           challengeId: 'c1',
           bets: [
             { playerId: 'p2', amount: 20, prediction: 'YES' },
@@ -241,12 +241,12 @@ describe('roundEngineReducer', () => {
       expect(next.playerOrder).toEqual(['p2', 'p3', 'p1']);
     });
 
-    it('on Outcome NO: pays NO Bettors their Bet, charges YES Bettors their Bet, and leaves the Active Player\'s Points unchanged', () => {
+    it('on Outcome NO: pays NO Bettors their Bet, charges YES Bettors their Bet, and leaves the Challenger\'s Points unchanged', () => {
       const state = stateWith({
         playerOrder: ['p1', 'p2', 'p3'],
         points: { p1: 100, p2: 100, p3: 100 },
         round: {
-          activePlayerId: 'p1',
+          challengerId: 'p1',
           challengeId: 'c1',
           bets: [
             { playerId: 'p2', amount: 20, prediction: 'YES' },
@@ -274,7 +274,7 @@ describe('roundEngineReducer', () => {
       const state = stateWith({
         points: { p1: 100, p2: 1, p3: 100 },
         round: {
-          activePlayerId: 'p1',
+          challengerId: 'p1',
           challengeId: 'c1',
           bets: [{ playerId: 'p2', amount: 1, prediction: 'YES' }],
           outcome: null,
@@ -307,7 +307,7 @@ describe('roundEngineReducer', () => {
       for (let roundNumber = 0; roundNumber < 300; roundNumber++) {
         state = roundEngineReducer(state, {
           type: 'START_ROUND',
-          activePlayerId: state.playerOrder[0],
+          challengerId: state.playerOrder[0],
           challengeBank: [{ id: 'c1' }],
           pickChallenge: (candidates) => candidates[0],
         }).state;

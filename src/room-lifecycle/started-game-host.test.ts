@@ -39,17 +39,17 @@ describe('starting a round from the Host', () => {
   it('broadcasts the started Round from the shared GameState, and each device resolves its own Challenge visibility from that same state', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    let activePlayerId: string | undefined;
+    let challengerId: string | undefined;
     const manager = new ConnectionManager(
       hostTransport,
       roomWith([]),
       () => {},
       (candidateIds) => candidateIds[0],
-      (candidateIds) => activePlayerId ?? candidateIds[0],
+      (candidateIds) => challengerId ?? candidateIds[0],
     );
     const alex = await joinGuest(hostId, 'Alex');
     const sam = await joinGuest(hostId, 'Sam');
-    activePlayerId = alex.playerId;
+    challengerId = alex.playerId;
 
     const alexStates: GameState[] = [];
     const samStates: GameState[] = [];
@@ -61,7 +61,7 @@ describe('starting a round from the Host', () => {
     const guestState = alexStates.at(-1);
 
     expect(guestState?.round).toEqual({
-      activePlayerId: alex.playerId,
+      challengerId: alex.playerId,
       challengeId: challengeBank[0].id,
       bets: [],
       outcome: null,
@@ -104,17 +104,17 @@ describe('starting a round from the Host', () => {
   it('applies an incoming placeBet intent and rebroadcasts only public "has bet" state to every device', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    let activePlayerId: string | undefined;
+    let challengerId: string | undefined;
     const manager = new ConnectionManager(
       hostTransport,
       roomWith([]),
       () => {},
       (candidateIds) => candidateIds[0],
-      () => activePlayerId ?? 'host-1',
+      () => challengerId ?? 'host-1',
     );
     const alex = await joinGuest(hostId, 'Alex');
     const sam = await joinGuest(hostId, 'Sam');
-    activePlayerId = alex.playerId;
+    challengerId = alex.playerId;
 
     const alexStates: GameState[] = [];
     const samStates: GameState[] = [];
@@ -140,21 +140,21 @@ describe('starting a round from the Host', () => {
 
   it.each([
     { label: 'an invalid amount', bettor: 'sam', bet: { amount: 9999, prediction: 'NO' as const }, reason: 'INVALID_BET_AMOUNT' },
-    { label: 'an Active Player betting', bettor: 'alex', bet: { amount: 5, prediction: 'NO' as const }, reason: 'ACTIVE_PLAYER_CANNOT_BET' },
+    { label: 'a Challenger betting', bettor: 'alex', bet: { amount: 5, prediction: 'NO' as const }, reason: 'CHALLENGER_CANNOT_BET' },
   ])('replies to only the Bettor with a rejected placeBet for $label', async ({ bettor, bet, reason }) => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    let activePlayerId: string | undefined;
+    let challengerId: string | undefined;
     const manager = new ConnectionManager(
       hostTransport,
       roomWith([]),
       () => {},
       (candidateIds) => candidateIds[0],
-      () => activePlayerId ?? 'host-1',
+      () => challengerId ?? 'host-1',
     );
     const alex = await joinGuest(hostId, 'Alex');
     const sam = await joinGuest(hostId, 'Sam');
-    activePlayerId = alex.playerId;
+    challengerId = alex.playerId;
     const guests = { alex, sam };
     const rejections: Record<string, unknown[]> = { alex: [], sam: [] };
     new GuestProtocol(alex.guestTransport).on('rejected', (payload) => rejections.alex.push(payload));
@@ -171,17 +171,17 @@ describe('starting a round from the Host', () => {
   it('rejects a duplicate placeBet with DUPLICATE_BET while keeping the first Bet', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    let activePlayerId: string | undefined;
+    let challengerId: string | undefined;
     const manager = new ConnectionManager(
       hostTransport,
       roomWith([]),
       () => {},
       (candidateIds) => candidateIds[0],
-      () => activePlayerId ?? 'host-1',
+      () => challengerId ?? 'host-1',
     );
     const alex = await joinGuest(hostId, 'Alex');
     const sam = await joinGuest(hostId, 'Sam');
-    activePlayerId = alex.playerId;
+    challengerId = alex.playerId;
     const rejections: unknown[] = [];
     const samProtocol = new GuestProtocol(sam.guestTransport);
     samProtocol.on('rejected', (payload) => rejections.push(payload));
@@ -198,18 +198,18 @@ describe('starting a round from the Host', () => {
   it("notifies the Host's own onGameStateChange callback when a Guest's placeBet arrives, so the Host's own screen reflects it — not just the broadcast to other Guests", async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
-    let activePlayerId: string | undefined;
+    let challengerId: string | undefined;
     const hostGameStates: GameState[] = [];
     const manager = new ConnectionManager(
       hostTransport,
       roomWith([]),
       () => {},
       (candidateIds) => candidateIds[0],
-      () => activePlayerId ?? 'host-1',
+      () => challengerId ?? 'host-1',
       (gameState) => hostGameStates.push(gameState),
     );
     const sam = await joinGuest(hostId, 'Sam');
-    activePlayerId = 'host-1';
+    challengerId = 'host-1';
 
     manager.startGame();
     manager.startRound();
@@ -282,7 +282,7 @@ describe('starting a round from the Host', () => {
       expect(hostState).toMatchObject({
         roomId: 'ABCDEF',
         status: 'active',
-        activePlayerId: alex.playerId,
+        challengerId: alex.playerId,
         players: [
           { playerId: 'host-1', name: 'Host', points: expectedPoints.host, status: 'active', connected: true },
           { playerId: alex.playerId, name: 'Alex', points: expectedPoints.alex, status: 'active', connected: true },
@@ -291,13 +291,13 @@ describe('starting a round from the Host', () => {
         // The next Round — for Alex, the next player in rotation after the Host — has already
         // auto-started, bundled into this same GameState alongside the Resolution below.
         round: {
-          activePlayerId: alex.playerId,
+          challengerId: alex.playerId,
           challengeId: challengeBank[1].id,
           bets: [],
           outcome: null,
         },
         resolution: {
-          activePlayerId: 'host-1',
+          challengerId: 'host-1',
           outcome,
         },
       });

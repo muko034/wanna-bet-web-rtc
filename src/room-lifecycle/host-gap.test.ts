@@ -12,7 +12,7 @@ import type { Room } from './room';
 
 const BET: PlaceBetPayload = { amount: 10, prediction: 'YES' };
 
-/** A started game with the Host as Active Player and one Guest, Sam, who has a stored identity. */
+/** A started game with the Host as Challenger and one Guest, Sam, who has a stored identity. */
 async function startedGameWithSam() {
   const registry = new RoomRegistry();
   const hostTransport = new FakeTransport();
@@ -81,7 +81,7 @@ function samsDevice(game: Awaited<ReturnType<typeof startedGameWithSam>>) {
 }
 
 function roundKey(state: GameState): string {
-  return `${state.round!.activePlayerId}:${state.round!.challengeId}`;
+  return `${state.round!.challengerId}:${state.round!.challengeId}`;
 }
 
 const settle = () => vi.advanceTimersByTimeAsync(0);

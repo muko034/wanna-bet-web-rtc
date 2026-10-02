@@ -17,14 +17,14 @@ export type Bet = {
 };
 
 export type Round = {
-  activePlayerId: string;
+  challengerId: string;
   challengeId: string;
   bets: Bet[];
   outcome: Prediction | null;
 };
 
 export type RoundEngineState = {
-  /** Player ids in rotation order; the Active Player rotates through this list. */
+  /** Player ids in rotation order; the Challenger rotates through this list. */
   playerOrder: string[];
   points: Record<string, number>;
   challengeHistory: string[];
@@ -35,7 +35,7 @@ export type ChallengeBankEntry = { id: string };
 
 export type StartRoundAction = {
   type: 'START_ROUND';
-  activePlayerId: string;
+  challengerId: string;
   challengeBank: ChallengeBankEntry[];
   /** Injected randomness: picks one id out of the given candidate pool. */
   pickChallenge: (candidateIds: string[]) => string;
@@ -59,7 +59,7 @@ export type Payout = { playerId: string; amount: number };
 
 export const BET_REJECTIONS = [
   'UNKNOWN_PLAYER',
-  'ACTIVE_PLAYER_CANNOT_BET',
+  'CHALLENGER_CANNOT_BET',
   'DUPLICATE_BET',
   'INVALID_BET_AMOUNT',
 ] as const;
@@ -105,7 +105,7 @@ function startRound(state: RoundEngineState, action: StartRoundAction): RoundEng
       ...state,
       challengeHistory: [...priorHistory, challengeId],
       round: {
-        activePlayerId: action.activePlayerId,
+        challengerId: action.challengerId,
         challengeId,
         bets: [],
         outcome: null,
@@ -144,7 +144,7 @@ function validateBet(
 ): BetRejection | undefined {
   const points = state.points[action.playerId];
   if (points === undefined) return 'UNKNOWN_PLAYER';
-  if (action.playerId === round.activePlayerId) return 'ACTIVE_PLAYER_CANNOT_BET';
+  if (action.playerId === round.challengerId) return 'CHALLENGER_CANNOT_BET';
   if (round.bets.some((bet) => bet.playerId === action.playerId)) return 'DUPLICATE_BET';
   if (!Number.isInteger(action.amount) || action.amount < 1 || action.amount > maxBetAmount(points)) {
     return 'INVALID_BET_AMOUNT';
@@ -172,7 +172,7 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
     .filter((bet) => bet.prediction === 'NO')
     .reduce((sum, bet) => sum + bet.amount, 0);
   if (action.outcome === 'YES' && noLosses > 0) {
-    payouts.push({ playerId: round.activePlayerId, amount: noLosses });
+    payouts.push({ playerId: round.challengerId, amount: noLosses });
   }
 
   const points = { ...state.points };
@@ -188,14 +188,14 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
       ...state,
       points,
       round: null,
-      playerOrder: rotate(state.playerOrder, round.activePlayerId),
+      playerOrder: rotate(state.playerOrder, round.challengerId),
     },
     payouts: appliedPayouts,
   };
 }
 
-function rotate(playerOrder: string[], activePlayerId: string): string[] {
-  const index = playerOrder.indexOf(activePlayerId);
+function rotate(playerOrder: string[], challengerId: string): string[] {
+  const index = playerOrder.indexOf(challengerId);
   const nextIndex = (index + 1) % playerOrder.length;
   return [...playerOrder.slice(nextIndex), ...playerOrder.slice(0, nextIndex)];
 }

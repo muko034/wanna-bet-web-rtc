@@ -14,7 +14,7 @@ type PendingBet = PlaceBetContext & {
 
 /** Identifies a Round on the Guest side; `null` when no Round is open. */
 export function roundKeyOf(state: GameState): string | null {
-  return state.round ? `${state.round.activePlayerId}:${state.round.challengeId}` : null;
+  return state.round ? `${state.round.challengerId}:${state.round.challengeId}` : null;
 }
 
 /**

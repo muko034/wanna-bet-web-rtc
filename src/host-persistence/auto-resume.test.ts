@@ -6,7 +6,7 @@ import { resolveAutoResume } from './auto-resume';
 function sessionFor(code: string, started: boolean): HostSession {
   return {
     room: { code, hostName: 'Host', hostPlayerId: 'host-1', players: [], playerCount: 1, started },
-    gameState: { roomId: code, status: started ? 'active' : 'lobby', activePlayerId: null, resolution: null, round: null, players: [] },
+    gameState: { roomId: code, status: started ? 'active' : 'lobby', challengerId: null, resolution: null, round: null, players: [] },
     roundEngineState: started ? { playerOrder: ['host-1'], points: { 'host-1': 100 }, challengeHistory: [], round: null } : null,
     firstRoundStarted: false,
     reconnectTokens: {},

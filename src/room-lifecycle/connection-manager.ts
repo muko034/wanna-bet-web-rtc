@@ -55,8 +55,8 @@ export class ConnectionManager {
   /** Notified with the full Host session after every GameState change, Lobby snapshots included, for autosave. */
   private readonly onSessionChange: (session: HostSession) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
-  /** Picks the very first Active Player at random; every Round after that follows the fixed order it establishes. */
-  private readonly pickActivePlayer: (candidateIds: string[]) => string;
+  /** Picks the very first Challenger at random; every Round after that follows the fixed order it establishes. */
+  private readonly pickChallenger: (candidateIds: string[]) => string;
   /** Live connection binding: which player a currently-connected peer id belongs to. */
   private readonly playerIdByPeerId = new Map<string, string>();
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
@@ -69,7 +69,7 @@ export class ConnectionManager {
     initialRoom: Room,
     onRoomChange: (room: Room) => void,
     pickChallenge: (candidateIds: string[]) => string = randomChallenge,
-    pickActivePlayer: (candidateIds: string[]) => string = randomPlayer,
+    pickChallenger: (candidateIds: string[]) => string = randomPlayer,
     onGameStateChange: (gameState: GameState) => void = () => {},
     onSessionChange: (session: HostSession) => void = () => {},
   ) {
@@ -79,7 +79,7 @@ export class ConnectionManager {
     this.onSessionChange = onSessionChange;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
-    this.pickActivePlayer = pickActivePlayer;
+    this.pickChallenger = pickChallenger;
     this.protocol = new HostProtocol(transport);
     this.protocol.on('join', (payload, peerId) => this.handleJoin(payload, peerId));
     this.protocol.on('placeBet', (payload, peerId) => this.handlePlaceBet(payload, peerId));
@@ -156,24 +156,24 @@ export class ConnectionManager {
   }
 
   /**
-   * Advances `roundEngineState` to a fresh Round for the next Active Player — picked at random the
+   * Advances `roundEngineState` to a fresh Round for the next Challenger — picked at random the
    * first time, then following the fixed rotation order that first pick establishes and
    * `RESOLVE_ROUND` maintains thereafter (see docs/game-rules.md's rotation rule). Updates
    * `this.firstRoundStarted` as a side effect.
    */
   private advanceRound(roundEngineState: RoundEngineState): RoundEngineState {
-    const activePlayerId = this.firstRoundStarted
+    const challengerId = this.firstRoundStarted
       ? roundEngineState.playerOrder[0]
-      : this.pickActivePlayer(roundEngineState.playerOrder);
+      : this.pickChallenger(roundEngineState.playerOrder);
 
     const orderedState = this.firstRoundStarted
       ? roundEngineState
-      : { ...roundEngineState, playerOrder: rotateToFront(roundEngineState.playerOrder, activePlayerId) };
+      : { ...roundEngineState, playerOrder: rotateToFront(roundEngineState.playerOrder, challengerId) };
     this.firstRoundStarted = true;
 
     const { state: nextRoundEngineState } = roundEngineReducer(orderedState, {
       type: 'START_ROUND',
-      activePlayerId,
+      challengerId,
       challengeBank,
       pickChallenge: this.pickChallenge,
     });
@@ -182,7 +182,7 @@ export class ConnectionManager {
   }
 
   /**
-   * Starts a Round for the next Active Player — picked at random the first time, then following the fixed
+   * Starts a Round for the next Challenger — picked at random the first time, then following the fixed
    * rotation order that first pick establishes (see `docs/game-rules.md`'s rotation rule). Still used for
    * Round 1 only; every Round after that auto-starts as part of `resolveRound`.
    */
@@ -225,8 +225,8 @@ export class ConnectionManager {
       throw new Error('Cannot resolve a Round before the game has started');
     }
 
-    const activePlayerId = this.roundEngineState.round?.activePlayerId;
-    if (!activePlayerId) {
+    const challengerId = this.roundEngineState.round?.challengerId;
+    if (!challengerId) {
       throw new Error('Cannot resolve a Round when no Round is open');
     }
 
@@ -239,7 +239,7 @@ export class ConnectionManager {
     // synchronous emits into a single render, hiding the Host's own result screen.
     this.roundEngineState = this.advanceRound(resolvedRoundEngineState);
     this.gameState = applyRoundEngineState(this.gameState, this.roundEngineState, {
-      activePlayerId,
+      challengerId,
       outcome,
       payouts,
     });

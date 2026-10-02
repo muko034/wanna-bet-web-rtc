@@ -18,7 +18,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
-    activePlayerId: 'guest-1',
+    challengerId: 'guest-1',
     resolution: null,
     players: [
       { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
@@ -26,7 +26,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
       { playerId: 'guest-2', name: 'Sam', points: 100, status: 'active', connected: true },
     ],
     round: {
-      activePlayerId: 'guest-1',
+      challengerId: 'guest-1',
       challengeId: illustratedChallenge.id,
       bets: [],
       outcome: null,
@@ -36,7 +36,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
 }
 
 describe('resolveChallengeCard', () => {
-  it('hides the Challenge text and Illustration on the Active Player device while the round is awaiting bets', () => {
+  it('hides the Challenge text and Illustration on the Challenger device while the round is awaiting bets', () => {
     const view = resolveChallengeCard({
       gameState: stateWith(),
       localPlayerId: 'guest-1',
@@ -52,7 +52,7 @@ describe('resolveChallengeCard', () => {
   });
 
   it.each([
-    ['the Host when the Host is not the Active Player', 'host-1'],
+    ['the Host when the Host is not the Challenger', 'host-1'],
     ['another Guest who is betting this round', 'guest-2'],
   ])('shows the real Challenge text and Illustration for %s', (_label, localPlayerId) => {
     const view = resolveChallengeCard({

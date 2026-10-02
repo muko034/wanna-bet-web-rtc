@@ -19,14 +19,14 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: 'ABCDEF',
     status: 'active',
-    activePlayerId: 'p1',
+    challengerId: 'p1',
     resolution: null,
     players: [
       { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
       { playerId: 'p1', name: 'Alex', points: 100, status: 'active', connected: true },
     ],
     round: {
-      activePlayerId: 'p1',
+      challengerId: 'p1',
       challengeId: 'challenge-1',
       bets: [],
       outcome: null,
@@ -42,9 +42,9 @@ describe('resolveRoundControls', () => {
     { playerId: 'p2', name: 'Sam', points: 100, status: 'active', connected: true },
   ];
 
-  function roundWith(activePlayerId: string, bettorIds: string[]): GameState['round'] {
+  function roundWith(challengerId: string, bettorIds: string[]): GameState['round'] {
     return {
-      activePlayerId,
+      challengerId,
       challengeId: 'challenge-1',
       bets: bettorIds.map((playerId) => ({ playerId })),
       outcome: null,
@@ -72,12 +72,12 @@ describe('resolveRoundControls', () => {
       code: 'ABCDEF',
       room: roomWith(),
       gameState: stateWith({ players: threePlayers, round: roundWith('p1', ['host-1', 'p2']) }),
-    })).toEqual({ kind: 'judge-round', activePlayerName: 'Alex', background: 'vb-bg-judge' });
+    })).toEqual({ kind: 'judge-round', challengerName: 'Alex', background: 'vb-bg-judge' });
   });
 
-  it('shows the judging screen to a Host who is the Active Player once every other player has bet', () => {
+  it('shows the judging screen to a Host who is the Challenger once every other player has bet', () => {
     const gameState = stateWith({
-      activePlayerId: 'host-1',
+      challengerId: 'host-1',
       players: threePlayers,
       round: roundWith('host-1', ['p1']),
     });
@@ -86,8 +86,8 @@ describe('resolveRoundControls', () => {
     expect(resolveRoundControls({
       code: 'ABCDEF',
       room: roomWith(),
-      gameState: stateWith({ activePlayerId: 'host-1', players: threePlayers, round: roundWith('host-1', ['p1', 'p2']) }),
-    })).toEqual({ kind: 'judge-round', activePlayerName: 'Host', background: 'vb-bg-judge' });
+      gameState: stateWith({ challengerId: 'host-1', players: threePlayers, round: roundWith('host-1', ['p1', 'p2']) }),
+    })).toEqual({ kind: 'judge-round', challengerName: 'Host', background: 'vb-bg-judge' });
   });
 
   it('never shows an Outcome control on a non-Host device, even once all Bets are in', () => {

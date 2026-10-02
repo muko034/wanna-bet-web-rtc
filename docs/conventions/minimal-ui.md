@@ -20,5 +20,5 @@ and reserve explicit confirmation for moments where a genuine decision is being 
 
 ```ts
 resolveRound(outcome);
-startRound(); // the next Active Player is already determined — nothing left to confirm
+startRound(); // the next Challenger is already determined — nothing left to confirm
 ```

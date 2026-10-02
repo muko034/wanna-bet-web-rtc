@@ -15,9 +15,9 @@ function sessionFor(code: string, hostPoints = 100): HostSession {
     gameState: {
       roomId: code,
       status: 'active',
-      activePlayerId: 'host-1',
+      challengerId: 'host-1',
       resolution: null,
-      round: { activePlayerId: 'host-1', challengeId: '001', bets: [{ playerId: 'p1' }], outcome: null },
+      round: { challengerId: 'host-1', challengeId: '001', bets: [{ playerId: 'p1' }], outcome: null },
       players: [
         { playerId: 'host-1', name: 'Host', points: hostPoints, status: 'active', connected: true },
         { playerId: 'p1', name: 'Alex', points: 90, status: 'active', connected: true },
@@ -27,7 +27,7 @@ function sessionFor(code: string, hostPoints = 100): HostSession {
       playerOrder: ['host-1', 'p1'],
       points: { 'host-1': hostPoints, p1: 90 },
       challengeHistory: ['001'],
-      round: { activePlayerId: 'host-1', challengeId: '001', bets: [{ playerId: 'p1', amount: 10, prediction: 'YES' }], outcome: null },
+      round: { challengerId: 'host-1', challengeId: '001', bets: [{ playerId: 'p1', amount: 10, prediction: 'YES' }], outcome: null },
     },
     firstRoundStarted: true,
     reconnectTokens: { 'token-1': 'p1' },
