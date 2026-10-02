@@ -11,6 +11,7 @@ export type LeaderboardRow = {
   nameLabel: string;
   points: number;
   paused: boolean;
+  isLocal: boolean;
 };
 
 export type LeaderboardBadge = {
@@ -47,17 +48,19 @@ export function resolveLeaderboard({
 
   const rows = ranked.map((player): LeaderboardRow => {
     const rank = ranked.findIndex((other) => other.points === player.points) + 1;
+    const isLocal = player.playerId === localPlayerId;
     return {
       playerId: player.playerId,
       rank,
       medal: medalFor(rank),
-      nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
+      nameLabel: isLocal ? `${player.name} (you)` : player.name,
       points: player.points,
       paused: player.status === 'paused',
+      isLocal,
     };
   });
 
-  const own = rows.find((row) => row.playerId === localPlayerId);
+  const own = rows.find((row) => row.isLocal);
   return {
     badge: own ? { text: `#${own.rank} · ${own.points} pts`, medal: own.medal } : null,
     rows,

@@ -23,6 +23,20 @@ describe('resolveLeaderboard', () => {
     ]);
   });
 
+  it('flags only the local row, even when another name ends with "(you)"', () => {
+    const players = [
+      playerWith({ playerId: 'a', name: 'Ann (you)', points: 80 }),
+      playerWith({ playerId: 'b', name: 'Bob', points: 150 }),
+    ];
+
+    const { rows } = resolveLeaderboard({ players, localPlayerId: 'b' });
+
+    expect(rows.map((row) => [row.playerId, row.isLocal])).toEqual([
+      ['b', true],
+      ['a', false],
+    ]);
+  });
+
   it('shows the local player rank and Points in the badge', () => {
     const players = [
       playerWith({ playerId: 'a', points: 80 }),

@@ -239,11 +239,12 @@ export function StartedGame({
 
   const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null });
 
+  const resultShown = resultScreen !== null;
   useEffect(() => {
-    if (resultScreen) {
+    if (resultShown) {
       setLeaderboardOpen(false);
     }
-  }, [resultScreen !== null]);
+  }, [resultShown]);
 
   const handleLockIn = () => {
     if (!roundKey || prediction === null || !localPlayerId) {

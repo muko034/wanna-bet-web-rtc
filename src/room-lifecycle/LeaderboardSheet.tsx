@@ -26,7 +26,7 @@ export function LeaderboardSheet({ rows, onClose }: SheetProps) {
         <div class="vb-rank-sheet-handle" />
         <div class="vb-rank-sheet-title">Leaderboard</div>
         {rows.map((row) => (
-          <div class={`vb-rank-sheet-row${row.nameLabel.endsWith('(you)') ? ' me' : ''}${row.paused ? ' paused' : ''}`} key={row.playerId}>
+          <div class={`vb-rank-sheet-row${row.isLocal ? ' me' : ''}${row.paused ? ' paused' : ''}`} key={row.playerId}>
             <span class="vb-rank-sheet-place">
               {row.medal ?? ''}#{row.rank}
             </span>
