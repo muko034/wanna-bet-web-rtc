@@ -3,8 +3,10 @@ import type { GameState } from '../protocol/messages';
 import {
   deriveResultMemory,
   dismissResult,
+  expireResult,
   initialResultMemory,
   observeResolution,
+  RESULT_SCREEN_DURATION_MS,
   resolveResultScreen,
   resultMemoryOpenedOn,
 } from './result-screen';
@@ -195,5 +197,63 @@ describe('deriveResultMemory', () => {
     const resolved = deriveResultMemory(opened, stateWith());
 
     expect(resolveResultScreen({ memory: resolved, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
+  });
+});
+
+describe('expireResult', () => {
+  const T0 = 1_000_000;
+  const screenOf = (memory: ReturnType<typeof observeResolution>) => resolveResultScreen({ memory, localPlayerId: 'guest-2' });
+  const different = stateWith({ resolution: { challengerId: 'guest-1', outcome: 'NO', payouts: [] } });
+
+  it('is 5 seconds', () => {
+    expect(RESULT_SCREEN_DURATION_MS).toBe(5000);
+  });
+
+  it('keeps the screen just before the duration has passed and removes it at the duration', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+
+    expect(screenOf(expireResult(shown, T0 + 4_999))).not.toBeNull();
+    expect(screenOf(expireResult(shown, T0 + 5_000))).toBeNull();
+  });
+
+  it('does not restart the time when the Host re-sends the same Resolution', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+    const heartbeat = observeResolution(shown, stateWith(), T0 + 3_000);
+
+    expect(screenOf(expireResult(heartbeat, T0 + 5_000))).toBeNull();
+  });
+
+  it('restarts the time when a different Resolution replaces the screen', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+    const replaced = observeResolution(shown, different, T0 + 3_000);
+
+    expect(screenOf(expireResult(replaced, T0 + 5_000))).not.toBeNull();
+    expect(screenOf(expireResult(replaced, T0 + 8_000))).toBeNull();
+  });
+
+  it('is not shown again after expiry while the same Resolution stays broadcast', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+    const expired = expireResult(shown, T0 + 5_000);
+
+    expect(screenOf(observeResolution(expired, stateWith(), T0 + 6_000))).toBeNull();
+  });
+
+  it('still lets "Next round" dismiss at once', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+
+    expect(screenOf(dismissResult(shown))).toBeNull();
+  });
+
+  it('leaves a Resolution already broadcast on open treated as seen', () => {
+    const opened = deriveResultMemory(null, stateWith(), T0);
+
+    expect(screenOf(observeResolution(opened, stateWith(), T0 + 1_000))).toBeNull();
+  });
+
+  it('returns the same memory object when nothing expires', () => {
+    const shown = observeResolution(initialResultMemory, stateWith(), T0);
+
+    expect(expireResult(shown, T0 + 1_000)).toBe(shown);
+    expect(expireResult(initialResultMemory, T0)).toBe(initialResultMemory);
   });
 });
