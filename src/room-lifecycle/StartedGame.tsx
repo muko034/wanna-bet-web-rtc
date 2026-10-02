@@ -11,6 +11,8 @@ import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
+import { resolveLeaderboard } from './leaderboard';
+import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
@@ -147,6 +149,7 @@ export function StartedGame({
 
   const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
@@ -234,6 +237,15 @@ export function StartedGame({
   const roundControls = resolveRoundControls({ code, room, gameState });
   const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
 
+  const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null });
+
+  const resultShown = resultScreen !== null;
+  useEffect(() => {
+    if (resultShown) {
+      setLeaderboardOpen(false);
+    }
+  }, [resultShown]);
+
   const handleLockIn = () => {
     if (!roundKey || prediction === null || !localPlayerId) {
       return;
@@ -270,6 +282,8 @@ export function StartedGame({
     <PhoneShell
       background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
       roomCode={view.roomCode}
+      topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
+      overlay={leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} />}
     >
       {gameState?.round && roundControls.kind === 'judge-round' ? (
         <>

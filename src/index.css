@@ -362,3 +362,78 @@ input {
 .vb-delta.neg {
   color: #ffafa9;
 }
+.vb-rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+}
+.vb-rank-medal {
+  font-size: 13px;
+}
+.vb-rank-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  z-index: 5;
+}
+.vb-rank-sheet {
+  width: 100%;
+  background: #191a22;
+  border-radius: 22px 22px 0 0;
+  padding: 10px 20px 26px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+.vb-rank-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 6px auto 14px;
+}
+.vb-rank-sheet-title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+.vb-rank-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.vb-rank-sheet-row:last-child {
+  border-bottom: none;
+}
+.vb-rank-sheet-row.me {
+  color: #7cd1ff;
+}
+.vb-rank-sheet-row.paused {
+  opacity: 0.5;
+}
+.vb-rank-sheet-place {
+  min-width: 44px;
+  opacity: 0.7;
+  font-weight: 800;
+}
+.vb-rank-sheet-name {
+  flex: 1;
+}
