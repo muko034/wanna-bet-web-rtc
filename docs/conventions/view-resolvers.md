@@ -50,3 +50,12 @@ When a resolver's variants map to a different screen background, put the `vb-bg-
 ```ts
 | { kind: 'judge-round'; challengerName: string; background: 'vb-bg-judge' }
 ```
+
+## Mark the local player's row in the resolver
+
+When a resolver returns per-player rows, have it identify the local player instead of leaving that to the component. Build `nameLabel` with a "(you)" suffix for the local player's own row, and expose a boolean flag such as `isLocal` when the view needs to style or find that row. The component never compares `playerId` against the local id or matches the "(you)" text, so the rule is defined and tested in one place.
+
+```ts
+const isLocal = player.playerId === localPlayerId;
+return { nameLabel: isLocal ? `${player.name} (you)` : player.name, isLocal };
+```
