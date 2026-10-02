@@ -1,6 +1,10 @@
 import type { GameState, Player, ResolutionState } from '../protocol/messages';
 
-type ObservedResolution = { resolution: ResolutionState; players: Player[] };
+/** How long the Result Screen stays before it leaves by itself. */
+export const RESULT_SCREEN_DURATION_MS = 5_000;
+
+/** `shownAt` is when this device first showed the Resolution, in epoch ms. */
+type ObservedResolution = { resolution: ResolutionState; players: Player[]; shownAt: number };
 
 /**
  * What one device remembers about Resolutions: the one it is still showing (`shown`, which
@@ -30,14 +34,18 @@ export function resultMemoryOpenedOn(gameState: GameState | null): ResultMemory 
  * seen, as `resultMemoryOpenedOn` does), rather than at mount — a `gameState` that only becomes
  * available asynchronously must not be treated as "nothing to open onto yet, resolution is new".
  */
-export function deriveResultMemory(storedMemory: ResultMemory | null, gameState: GameState | null): ResultMemory {
+export function deriveResultMemory(
+  storedMemory: ResultMemory | null,
+  gameState: GameState | null,
+  now: number = Date.now(),
+): ResultMemory {
   if (gameState === null) {
     return storedMemory ?? initialResultMemory;
   }
   if (storedMemory === null) {
     return resultMemoryOpenedOn(gameState);
   }
-  return observeResolution(storedMemory, gameState);
+  return observeResolution(storedMemory, gameState, now);
 }
 
 export type ResultRow = {
@@ -72,7 +80,7 @@ function isSameResolution(a: ResolutionState, b: ResolutionState): boolean {
  * for display; `resolution: null` (the next Round started) only clears the broadcast marker, so
  * whatever is being shown stays until dismissed. Returns `memory` itself when nothing changes.
  */
-export function observeResolution(memory: ResultMemory, gameState: GameState | null): ResultMemory {
+export function observeResolution(memory: ResultMemory, gameState: GameState | null, now: number = Date.now()): ResultMemory {
   const resolution = gameState?.resolution ?? null;
   if (!gameState || !resolution) {
     return memory.broadcast === null ? memory : { ...memory, broadcast: null };
@@ -80,11 +88,19 @@ export function observeResolution(memory: ResultMemory, gameState: GameState | n
   if (memory.broadcast !== null && isSameResolution(memory.broadcast, resolution)) {
     return memory;
   }
-  return { shown: { resolution, players: gameState.players }, broadcast: resolution };
+  return { shown: { resolution, players: gameState.players, shownAt: now }, broadcast: resolution };
 }
 
 export function dismissResult(memory: ResultMemory): ResultMemory {
   return memory.shown === null ? memory : { ...memory, shown: null };
+}
+
+/** Drops the shown Resolution once `RESULT_SCREEN_DURATION_MS` has passed since it was first shown. */
+export function expireResult(memory: ResultMemory, now: number = Date.now()): ResultMemory {
+  if (memory.shown === null || now - memory.shown.shownAt < RESULT_SCREEN_DURATION_MS) {
+    return memory;
+  }
+  return dismissResult(memory);
 }
 
 function resolveDelta(delta: number): Pick<ResultRow, 'deltaLabel' | 'deltaClass'> {

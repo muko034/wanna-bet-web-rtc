@@ -18,6 +18,7 @@ import { ReconnectingScreen } from './ReconnectingScreen';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
 import { useForegroundRetry } from './use-foreground-retry';
+import { useResultScreenExpiry } from './use-result-screen-expiry';
 import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
@@ -161,6 +162,8 @@ export function StartedGame({
       setStoredResultMemory(resultMemory);
     }
   }, [gameState, resultMemory, storedResultMemory]);
+
+  useResultScreenExpiry(resultMemory, setStoredResultMemory);
 
   useEffect(() => {
     if (view.view === 'redirect-to-lobby') {
