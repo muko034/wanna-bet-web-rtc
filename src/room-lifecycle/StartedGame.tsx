@@ -314,11 +314,17 @@ export function StartedGame({
               {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
             </div>
           ) : null}
-          <div class="vb-status-pill">
-            {bettingPanel.bettors.length === 0
-              ? 'Waiting for bettors.'
-              : bettingPanel.bettors.map((bettor) => `${bettor.hasBet ? '✓' : '○'} ${bettor.name}`).join(' · ')}
-          </div>
+          {bettingPanel.bettors.length === 0 ? (
+            <div class="vb-status-pill">Waiting for bettors.</div>
+          ) : (
+            <div class="vb-bettor-pills">
+              {bettingPanel.bettors.map((bettor) => (
+                <div key={bettor.playerId} class={`vb-status-pill${bettor.hasBet ? ' placed' : ''}`}>
+                  {bettor.name}
+                </div>
+              ))}
+            </div>
+          )}
           {bettingPanel.kind === 'form' ? (
             <div class="vb-bet-form">
               <div class="vb-tapzones">

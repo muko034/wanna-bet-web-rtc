@@ -11,3 +11,13 @@ A state variant of a block (chosen, positive, negative, yes/no) is a short unpre
 ```tsx
 <span class={`vb-delta ${row.deltaClass}`}>{row.deltaLabel}</span>
 ```
+
+## Adjust a reused block from its container with a descendant selector
+
+When a block is reused inside a layout container and needs a different margin or padding there, override only the difference with a selector scoped to the container, such as `.vb-bettor-pills .vb-status-pill`, `.vb-task-title .vb-task-label` or `.vb-bet-form .vb-tapzone`. Do not fork the block into a new class or a variant: the base block keeps its standalone look, and the container owns how its children sit inside it.
+
+```css
+.vb-bettor-pills .vb-status-pill {
+  margin-bottom: 0;
+}
+```
