@@ -133,22 +133,25 @@ input {
   background: rgba(255, 255, 255, 0.12);
   padding: 16px 22px;
   border-radius: 18px;
-  margin-bottom: 22px;
 }
-.vb-share-link {
+.vb-code-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 10px 14px;
   margin-bottom: 26px;
-  max-width: 100%;
 }
-.vb-share-link code {
-  font-size: 12px;
-  overflow-wrap: anywhere;
-  text-align: left;
+.vb-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
 }
 .vb-avatar-row {
   display: flex;

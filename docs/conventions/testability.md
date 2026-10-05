@@ -11,3 +11,18 @@ constructor(generateRoomCode: () => string = generateCode) { /* ... */ }
 
 export function saveHostSession(storage: Storage, session: HostSession, now: number = Date.now()): void {
 ```
+
+## Use `it.each` tables for input/output variations of one behaviour
+
+When several cases exercise the same behaviour with different inputs, write one `it.each` table instead of copy-pasted
+`it` blocks. Add a leading label column when cases need names, and use printf placeholders (`%s`, `%i`) in the title so
+each row reports readably.
+
+```ts
+it.each([
+  ['plain code', 'ABCDEF', 'ABCDEF'],
+  ['full URL', 'https://example.com/room/abcdef', 'ABCDEF'],
+])('%s', (_name, input, expected) => {
+  expect(extractRoomCode(input)).toBe(expected);
+});
+```
