@@ -43,3 +43,16 @@ useEffect(() => {
   };
 }, [code]);
 ```
+
+## Clear an effect's timer in its cleanup
+
+When an effect starts a `setTimeout` or `setInterval`, keep the handle in a local `const` and clear it in the returned
+cleanup. A re-run or unmount then can't fire a stale callback that sets state for a view that has moved on.
+
+```ts
+useEffect(() => {
+  if (!copied) return;
+  const timer = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
+  return () => clearTimeout(timer);
+}, [copied]);
+```
