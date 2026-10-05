@@ -3,6 +3,7 @@ import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { withBase } from '../base-path';
+import { extractRoomCode } from './extract-room-code';
 
 type Props = {
   path?: string;
@@ -14,7 +15,7 @@ export function JoinCode(_props: Props) {
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
-    route(withBase(`room/${code.trim().toUpperCase()}`));
+    route(withBase(`room/${code}`));
   };
 
   return (
@@ -30,7 +31,7 @@ export function JoinCode(_props: Props) {
           style="text-transform:uppercase"
           autofocus
           value={code}
-          onInput={(event) => setCode((event.target as HTMLInputElement).value)}
+          onInput={(event) => setCode(extractRoomCode((event.target as HTMLInputElement).value))}
           required
         />
         <button class="vb-cta" type="submit">

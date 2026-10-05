@@ -1,6 +1,7 @@
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
+import { CopyInviteButton } from './CopyInviteButton';
 import { resolveLobbyRoster } from './lobby-roster';
 import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
@@ -30,12 +31,9 @@ export function Lobby({ room, gameState, code, onStart }: Props) {
   return (
     <PhoneShell background="vb-bg-lobby" roomCode={room.code}>
       <div class="vb-eyebrow2">Room code</div>
-      <div class="vb-code-giant">{room.code}</div>
-      <div class="vb-share-link">
-        <code>{link}</code>
-        <button type="button" onClick={() => navigator.clipboard?.writeText(link)}>
-          Copy
-        </button>
+      <div class="vb-code-row">
+        <div class="vb-code-giant">{room.code}</div>
+        <CopyInviteButton link={link} />
       </div>
       <div class="vb-avatar-row">
         {roster.length === 0 ? (
