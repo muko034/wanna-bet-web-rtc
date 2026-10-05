@@ -158,7 +158,7 @@ describe('resuming a saved Host session', () => {
     protocol.rejoin({ reconnectToken: alex.reconnectToken });
 
     expect(resumed.gameState?.round?.challengerId).toBe(alex.playerId);
-    resumed.placeBet('host-1', 5, 'NO');
+    resumed.placeBet('host-1', 5, 'NO', resumed.gameState!.round!.challengeId);
 
     expect(resumed.gameState?.round?.bets).toEqual([{ playerId: 'host-1' }]);
   });

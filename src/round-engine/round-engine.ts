@@ -51,8 +51,8 @@ export type RedrawChallengeAction = {
 export type PlaceBetAction = {
   type: 'PLACE_BET';
   playerId: string;
-  /** The Challenge the Bettor saw; when given, a Bet for any other Challenge is refused as stale. */
-  challengeId?: string;
+  /** The Challenge the Bettor saw; a Bet for any other Challenge is refused as stale. */
+  challengeId: string;
   amount: number;
   prediction: Prediction;
 };
@@ -177,7 +177,7 @@ function validateBet(
   round: Round,
   action: PlaceBetAction,
 ): BetRejection | undefined {
-  if (action.challengeId !== undefined && action.challengeId !== round.challengeId) return 'STALE_CHALLENGE';
+  if (action.challengeId !== round.challengeId) return 'STALE_CHALLENGE';
   const points = state.points[action.playerId];
   if (points === undefined) return 'UNKNOWN_PLAYER';
   if (action.playerId === round.challengerId) return 'CHALLENGER_CANNOT_BET';

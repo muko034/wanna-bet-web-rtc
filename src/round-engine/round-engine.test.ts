@@ -207,6 +207,7 @@ describe('roundEngineReducer', () => {
       const { state: next } = roundEngineReducer(state, {
         type: 'PLACE_BET',
         playerId: 'p2',
+        challengeId: 'c1',
         amount: 10,
         prediction: 'YES',
       });
@@ -224,7 +225,7 @@ describe('roundEngineReducer', () => {
     }
 
     function placeBet(state: RoundEngineState, playerId: string, amount: number) {
-      return roundEngineReducer(state, { type: 'PLACE_BET', playerId, amount, prediction: 'YES' });
+      return roundEngineReducer(state, { type: 'PLACE_BET', playerId, challengeId: 'c1', amount, prediction: 'YES' });
     }
 
     it.each([
@@ -417,6 +418,7 @@ describe('roundEngineReducer', () => {
           state = roundEngineReducer(state, {
             type: 'PLACE_BET',
             playerId,
+            challengeId: 'c1',
             amount: attempt,
             prediction: random() < 0.5 ? 'YES' : 'NO',
           }).state;

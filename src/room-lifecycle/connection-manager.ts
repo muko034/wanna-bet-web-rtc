@@ -218,13 +218,13 @@ export class ConnectionManager {
     return this.gameState;
   }
 
-  placeBet(playerId: string, amount: number, prediction: Prediction): GameState {
-    this.applyBet(playerId, amount, prediction);
+  placeBet(playerId: string, amount: number, prediction: Prediction, challengeId: string): GameState {
+    this.applyBet(playerId, amount, prediction, challengeId);
     return this.gameState!;
   }
 
   /** Applies a Bet and broadcasts the resulting state; returns why it was refused, if it was. */
-  private applyBet(playerId: string, amount: number, prediction: Prediction, challengeId?: string): BetRejection | undefined {
+  private applyBet(playerId: string, amount: number, prediction: Prediction, challengeId: string): BetRejection | undefined {
     if (this.gameState === null || this.roundEngineState === null) {
       throw new Error('Cannot place a Bet before the game has started');
     }

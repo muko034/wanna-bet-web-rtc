@@ -172,7 +172,12 @@ export function App() {
 
   const handlePlaceBet = useCallback((payload: PlaceBetPayload, context: PlaceBetContext) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
-      connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
+      connectionManagerRef.current.placeBet(
+        room.hostPlayerId,
+        payload.amount,
+        payload.prediction,
+        payload.challengeId,
+      );
       return;
     }
 
