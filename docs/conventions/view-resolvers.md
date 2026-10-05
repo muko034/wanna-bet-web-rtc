@@ -59,3 +59,14 @@ When a resolver returns per-player rows, have it identify the local player inste
 const isLocal = player.playerId === localPlayerId;
 return { nameLabel: isLocal ? `${player.name} (you)` : player.name, isLocal };
 ```
+
+## Map a closed union to display data with a `Record` lookup table
+
+When a closed string union (a status, a time limit, a result code) maps to labels, messages, or view fragments, declare a module-level `Record<Union, ...>` table and index it, instead of an if/switch chain. The compiler then rejects the table until every member of the union is mapped, so adding a variant cannot silently fall through to missing copy. Use `Exclude<...>` in the key type to drop members that never reach the table.
+
+```ts
+const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = {
+  'room-full': 'This Room is already full (20 players).',
+  // ...
+};
+```

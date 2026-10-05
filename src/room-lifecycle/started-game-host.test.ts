@@ -74,6 +74,8 @@ describe('starting a round from the Host', () => {
       displayLanguage: 'en',
     })).toEqual({
       kind: 'hidden',
+      challengeType: challengeBank[0].type,
+      timeLimit: null,
       title: '🙈 Hidden from you',
       detail: 'Get ready to attempt it.',
     });
@@ -85,6 +87,8 @@ describe('starting a round from the Host', () => {
       displayLanguage: 'en',
     })).toEqual({
       kind: 'visible',
+      challengeType: challengeBank[0].type,
+      timeLimit: null,
       text: challengeBank[0].content.en,
       ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
     });
@@ -96,6 +100,8 @@ describe('starting a round from the Host', () => {
       displayLanguage: 'en',
     })).toEqual({
       kind: 'visible',
+      challengeType: challengeBank[0].type,
+      timeLimit: null,
       text: challengeBank[0].content.en,
       ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
     });

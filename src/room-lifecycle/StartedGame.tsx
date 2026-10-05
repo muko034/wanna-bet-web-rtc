@@ -9,6 +9,7 @@ import type { GameState, Prediction, PlaceBetPayload } from '../protocol/message
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
+import { ChallengeCardTitle } from './ChallengeCardTitle';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
 import { resolveLeaderboard } from './leaderboard';
@@ -302,13 +303,13 @@ export function StartedGame({
         <>
           {challengeCard?.kind === 'hidden' ? (
             <div class="vb-task-card vb-task-hidden">
-              <div class="vb-task-label">Challenge</div>
+              <ChallengeCardTitle card={challengeCard} />
               <div class="vb-task-text">{challengeCard.title}</div>
               <div class="vb-task-detail">{challengeCard.detail}</div>
             </div>
           ) : challengeCard?.kind === 'visible' ? (
             <div class="vb-task-card">
-              <div class="vb-task-label">Challenge</div>
+              <ChallengeCardTitle card={challengeCard} />
               <div class="vb-task-text">{challengeCard.text}</div>
               {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
             </div>
