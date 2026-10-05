@@ -4,8 +4,8 @@ import type { ChallengeCardView } from './challenge-card';
 export function ChallengeCardTitle({ card }: { card: ChallengeCardView }) {
   const { timeLimit } = card;
   return (
-    <div class="vb-task-label">
-      {card.challengeType} CHALLENGE
+    <div class="vb-task-title">
+      <div class="vb-task-label">{card.challengeType} CHALLENGE</div>
       {timeLimit && (
         <svg
           class={`vb-hourglass ${timeLimit.color}`}
