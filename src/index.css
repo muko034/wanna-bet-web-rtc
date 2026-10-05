@@ -266,6 +266,7 @@ input {
 .vb-task-title {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   margin-bottom: 10px;
 }
@@ -278,13 +279,13 @@ input {
   flex-shrink: 0;
 }
 .vb-hourglass.yellow {
-  fill: #ffd400;
+  fill: #ffe38a;
 }
 .vb-hourglass.red {
-  fill: #e5251b;
+  fill: #ff9a94;
 }
 .vb-hourglass.black {
-  fill: #000;
+  fill: #6b6b7d;
 }
 .vb-task-text {
   font-size: 19px;
