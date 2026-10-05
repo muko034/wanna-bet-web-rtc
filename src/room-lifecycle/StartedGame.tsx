@@ -23,7 +23,7 @@ import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { HomeDialog } from './HomeDialog';
 import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
-import { resolveRoundControls } from './round-controls';
+import { isHostRoom, resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
 import { useForegroundRetry } from './use-foreground-retry';
 import { useResultScreenExpiry } from './use-result-screen-expiry';
@@ -102,7 +102,7 @@ export function StartedGame({
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
-  const isGuestUnresolved = !(room !== null && room.code === code) && guestGameStartedCode !== code;
+  const isGuestUnresolved = !isHostRoom(code, room) && guestGameStartedCode !== code;
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
   // effect below from scratch (including its own automatic retry budget) rather than a
   // single bare attempt.

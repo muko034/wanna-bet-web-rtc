@@ -5,7 +5,7 @@ import { FakeStorage } from '../fake-storage';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
-import { joinRoom } from './join-room';
+import { joinRoom, makeGameStartedHandler } from './join-room';
 import { saveIdentity, loadIdentity } from './player-identity';
 import { leaveRoom } from './guest-leave';
 import type { Room } from './room';
@@ -299,6 +299,40 @@ describe('leaveRoom', () => {
 
     expect(callbacks.onGameStarted).not.toHaveBeenCalled();
     expect(callbacks.onGameState).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'active' }));
+  });
+
+  it('does not navigate to the play route once the Guest has left', async () => {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const navigate = vi.fn();
+    const transport = new FakeTransport();
+    await attemptReconnect(transport, registry, storage, code, { ...noopCallbacks(), onGameStarted: makeGameStartedHandler(vi.fn(), navigate) });
+
+    leaveRoom(transport, storage, code);
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the play route when the game starts while the Guest is still in', async () => {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const navigate = vi.fn();
+    await attemptReconnect(new FakeTransport(), registry, storage, code, { ...noopCallbacks(), onGameStarted: makeGameStartedHandler(vi.fn(), navigate) });
+
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+
+    expect(navigate).toHaveBeenCalledWith(expect.stringContaining(`room/${code}/play`));
   });
 
   it("deletes the Guest's stored identity", async () => {

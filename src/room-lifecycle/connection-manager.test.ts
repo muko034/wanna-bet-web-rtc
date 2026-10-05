@@ -447,4 +447,25 @@ describe('a Guest leaving mid-game', () => {
     expect(manager.gameState?.round?.challengerId).toBe('host-1');
     expect(manager.gameState?.round?.bets).toEqual([]);
   });
+
+  it('keeps the Game running with the Host alone when the last Guest leaves', async () => {
+    const { manager, guest } = await startedGameWithGuest();
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.room.players).toEqual([]);
+    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
+    expect(manager.gameState?.status).toBe('active');
+    expect(manager.gameState?.round?.challengerId).toBe('host-1');
+  });
+
+  it('keeps the Host as Challenger with a fresh Round when the last Guest leaves as Challenger', async () => {
+    const { manager, guest, playerId } = await startedGameWithGuest((ids) => ids.find((id) => id !== 'host-1')!);
+    expect(manager.gameState?.round?.challengerId).toBe(playerId);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
+    expect(manager.gameState?.round?.challengerId).toBe('host-1');
+  });
 });

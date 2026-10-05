@@ -1,4 +1,5 @@
 import type { Room } from './room';
+import { isHostRoom } from './round-controls';
 
 export type HomeDialogAction = 'leave' | 'go-home' | 'cancel';
 
@@ -21,7 +22,7 @@ const CANCEL: HomeDialogOption = { action: 'cancel', label: 'Cancel', style: 'li
 
 /** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave, the Host may Go Home (the Room stays open). */
 export function resolveHomeDialog({ code, room }: Params): HomeDialog {
-  const isHost = room !== null && room.code === code;
+  const isHost = isHostRoom(code, room);
   return {
     options: [
       isHost

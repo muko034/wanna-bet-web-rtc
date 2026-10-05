@@ -3,6 +3,7 @@ import type { GameState } from '../protocol/messages';
 import { PeerUnavailableError, type Transport } from '../transport/transport';
 import { isBetRejection, type BetRejection } from '../round-engine/round-engine';
 import type { RoomRegistry } from './room-registry';
+import { withBase } from '../base-path';
 
 export type JoinResult =
   | { status: 'joined'; playerId: string; reconnectToken: string }
@@ -212,4 +213,12 @@ export function watchForBetRejection(transport: Transport, onBetRejected: (reaso
       onBetRejected(payload.reason);
     }
   });
+}
+
+/** Builds the Guest's game-started handler: tells the caller, then navigates to the play route through the injected `navigate`. */
+export function makeGameStartedHandler(notify: (code: string) => void, navigate: (path: string) => void): (code: string) => void {
+  return (code) => {
+    notify(code);
+    navigate(withBase(`room/${code}/play`));
+  };
 }

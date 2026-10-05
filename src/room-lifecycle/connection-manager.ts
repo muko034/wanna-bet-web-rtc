@@ -378,16 +378,16 @@ export class ConnectionManager {
       this.refreshLobby();
       return;
     }
-    this.removeFromGame(playerId);
+    this.removeFromGame(playerId, this.roundEngineState, this.gameState);
   }
 
-  private removeFromGame(playerId: string): void {
-    const wasChallenger = this.roundEngineState!.round?.challengerId === playerId;
-    const { state: removed } = roundEngineReducer(this.roundEngineState!, { type: 'REMOVE_PLAYER', playerId });
+  private removeFromGame(playerId: string, roundEngineState: RoundEngineState, gameState: GameState): void {
+    const wasChallenger = roundEngineState.round?.challengerId === playerId;
+    const { state: removed } = roundEngineReducer(roundEngineState, { type: 'REMOVE_PLAYER', playerId });
     this.roundEngineState = wasChallenger ? this.advanceRound(removed) : removed;
     this.gameState = {
-      ...applyRoundEngineState(this.gameState!, this.roundEngineState, this.gameState!.resolution),
-      players: this.gameState!.players.filter((p) => p.playerId !== playerId),
+      ...applyRoundEngineState(gameState, this.roundEngineState, gameState.resolution),
+      players: gameState.players.filter((p) => p.playerId !== playerId),
     };
     this.emitGameState(this.gameState);
   }

@@ -47,7 +47,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 | `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`.                                 |
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
 | `placeBet` | `{ amount, prediction, challengeId }` | Actor derived from the connection binding. `challengeId` is the Challenge the Bettor saw when betting. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`), including `STALE_CHALLENGE` when `challengeId` no longer matches the Round's Challenge. |
-| `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. |
+| `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. Mid-game it also drops the Guest's Bet and, if the Guest was the Challenger, starts a new Round for the next Challenger. |
 
 ### Host → one Guest
 
