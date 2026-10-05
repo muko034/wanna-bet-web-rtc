@@ -10,6 +10,7 @@ import { loadIdentity } from './player-identity';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
 import { resolveChallengeCard } from './challenge-card';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
+import { isChallengeRedrawn } from './challenge-change';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
 import { resolveLeaderboard } from './leaderboard';
@@ -44,6 +45,8 @@ type Props = {
   /** The reconnect fallback ("Can't reach the Host") triggered, so any pending Bet has failed. */
   onReconnectGaveUp: () => void;
   onResolveRound: (outcome: Prediction) => void;
+  /** Host only: replaces the current Challenge with a new draw. */
+  onRedraw: () => void;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
   onGameStarted: (code: string) => void;
   onGameState: (state: GameState) => void;
@@ -81,6 +84,7 @@ export function StartedGame({
   betFailedRoundKey,
   onReconnectGaveUp,
   onResolveRound,
+  onRedraw,
   onGameStarted,
   onGameState,
   onPlaceBetReady,
@@ -228,6 +232,27 @@ export function StartedGame({
     setPrediction(null);
   }, [roundKey]);
 
+  // A Redraw is a changed Challenge id within the same Round; the notice belongs to the Round key
+  // it announced, so it never replays once the screen moves on.
+  const previousGameStateRef = useRef<GameState | null>(null);
+  const [challengeNotice, setChallengeNotice] = useState<{ roundKey: string; count: number } | null>(null);
+  useEffect(() => {
+    const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
+    previousGameStateRef.current = gameState;
+    if (redrawn && roundKey) {
+      setChallengeNotice((notice) => ({ roundKey, count: (notice?.count ?? 0) + 1 }));
+    }
+  }, [gameState, roundKey]);
+  const activeNotice = challengeNotice?.roundKey === roundKey ? challengeNotice : null;
+  const cardClass = activeNotice ? 'vb-task-card vb-shake' : 'vb-task-card';
+  const redrawButton = room?.code === code && (
+    <button class="vb-home-fab vb-redraw" type="button" aria-label="Redraw Challenge" onClick={onRedraw}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+        <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z" />
+      </svg>
+    </button>
+  );
+
   const bettingPanel = useMemo(
     () => resolveBettingPanel({ gameState, localPlayerId: localPlayerId ?? null, localBet, betFailed: betFailedRoundKey === roundKey, linkLostForMs }),
     [gameState, localBet, localPlayerId, betFailedRoundKey, roundKey, linkLostForMs],
@@ -251,8 +276,12 @@ export function StartedGame({
     if (!roundKey || prediction === null || !localPlayerId) {
       return;
     }
-    onPlaceBet({ amount, prediction }, { roundKey, playerId: localPlayerId });
-    setSubmittedBet({ roundKey, bet: { amount, prediction } });
+    if (!gameState?.round) {
+      return;
+    }
+    const bet: PlaceBetPayload = { amount, prediction, challengeId: gameState.round.challengeId };
+    onPlaceBet(bet, { roundKey, playerId: localPlayerId });
+    setSubmittedBet({ roundKey, bet });
   };
 
   if (resultScreen) {
@@ -301,14 +330,22 @@ export function StartedGame({
         </>
       ) : gameState?.round ? (
         <>
+          {activeNotice && (
+            <div class="vb-change-banner" role="status" key={`banner-${activeNotice.count}`}>
+              Challenge changed
+              <span class="vb-change-hint">Bet again</span>
+            </div>
+          )}
           {challengeCard?.kind === 'hidden' ? (
-            <div class="vb-task-card vb-task-hidden">
+            <div class={`${cardClass} vb-task-hidden`} key={`card-${activeNotice?.count ?? 0}`}>
+              {redrawButton}
               <ChallengeCardTitle card={challengeCard} />
               <div class="vb-task-text">{challengeCard.title}</div>
               <div class="vb-task-detail">{challengeCard.detail}</div>
             </div>
           ) : challengeCard?.kind === 'visible' ? (
-            <div class="vb-task-card">
+            <div class={cardClass} key={`card-${activeNotice?.count ?? 0}`}>
+              {redrawButton}
               <ChallengeCardTitle card={challengeCard} />
               <div class="vb-task-text">{challengeCard.text}</div>
               {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
@@ -326,7 +363,7 @@ export function StartedGame({
             </div>
           )}
           {bettingPanel.kind === 'form' ? (
-            <div class="vb-bet-form">
+            <div class={`vb-bet-form${activeNotice ? ' vb-pop-in' : ''}`}>
               <div class="vb-tapzones">
                 {(['YES', 'NO'] as const).map((choice) => (
                   <button

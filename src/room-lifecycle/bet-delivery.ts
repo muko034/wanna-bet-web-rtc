@@ -66,10 +66,16 @@ export class BetDelivery {
 
   /**
    * The Host refused the Bet. A `DUPLICATE_BET` means an earlier send of this same Bet was
-   * already applied, so its confirming `state` is what to keep waiting for.
+   * already applied, so its confirming `state` is what to keep waiting for. A `STALE_CHALLENGE`
+   * means a Redraw replaced the Challenge: the Bet is dropped without a failure, since the
+   * next `state` already shows the new Challenge and an empty bet form.
    */
   onRejected(reason: BetRejection): void {
     if (reason === 'DUPLICATE_BET') return;
+    if (reason === 'STALE_CHALLENGE') {
+      this.settle();
+      return;
+    }
     this.failPending();
   }
 

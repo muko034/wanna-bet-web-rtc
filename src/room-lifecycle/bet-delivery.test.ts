@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import { BetDelivery, roundKeyOf } from './bet-delivery';
 
-const payload: PlaceBetPayload = { amount: 10, prediction: 'YES' };
+const payload: PlaceBetPayload = { amount: 10, prediction: 'YES', challengeId: 'c1' };
 const ROUND = 'alex:c1';
 
 function stateWith(betPlayerIds: string[], challengerId = 'alex', challengeId = 'c1'): GameState {
@@ -150,6 +150,28 @@ describe('BetDelivery', () => {
 
     expect(send).toHaveBeenCalledTimes(1);
     expect(onFailed).not.toHaveBeenCalled();
+  });
+
+  it('drops a pending Bet without starting the lost-link timer when a Redraw changes the Challenge', () => {
+    const { send, onFailed, onLinkLost, delivery, place } = setup();
+    place();
+    delivery.onState(stateWith([], 'alex', 'c2'));
+    vi.advanceTimersByTime(60_000);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(onLinkLost).not.toHaveBeenCalled();
+    expect(onFailed).not.toHaveBeenCalled();
+  });
+
+  it('drops a Bet refused as STALE_CHALLENGE silently: no failure, no lost link, no resend', () => {
+    const { send, onFailed, onLinkLost, delivery, place } = setup();
+    place();
+    delivery.onRejected('STALE_CHALLENGE');
+    vi.advanceTimersByTime(60_000);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(onFailed).not.toHaveBeenCalled();
+    expect(onLinkLost).not.toHaveBeenCalled();
   });
 
   it('ignores rejections, failures and states when nothing is pending', () => {

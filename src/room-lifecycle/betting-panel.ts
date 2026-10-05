@@ -1,4 +1,7 @@
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
+
+/** The part of a Bet the Bettor sees on screen; the Challenge id is wire-only. */
+type OwnBet = Pick<PlaceBetPayload, 'amount' | 'prediction'>;
 import { maxBetAmount } from '../round-engine/bet-cap';
 
 export type BettorStatus = {
@@ -18,7 +21,7 @@ export type BettingPanel =
       background: BettingBackground;
       bettors: BettorStatus[];
       /** The local player's own Bet, or `null` when this device no longer remembers it. */
-      ownBet: PlaceBetPayload | null;
+      ownBet: OwnBet | null;
       waitingLabel: string;
       /** Shown under "Locked in" once the link to the Host has been down long enough to be worth mentioning. */
       reconnectingNotice: string | null;
@@ -38,7 +41,7 @@ type Params = {
   /** `null` until this device's identity is known. */
   localPlayerId: string | null;
   /** The Bet this device sent for the current Round, which the Host's public broadcast never echoes back. */
-  localBet?: PlaceBetPayload | null;
+  localBet?: OwnBet | null;
   /** The Bet this device last locked in for the current Round never reached the Host, so `localBet` no longer counts. */
   betFailed?: boolean;
   /** How long the link to the Host has been down, or `null` while it is up. */

@@ -76,7 +76,12 @@ const rejoinMessageSchema = z.object({
 
 const placeBetMessageSchema = z.object({
   type: z.literal('placeBet'),
-  payload: z.object({ amount: z.number(), prediction: z.enum(['YES', 'NO']) }),
+  payload: z.object({
+    amount: z.number(),
+    prediction: z.enum(['YES', 'NO']),
+    /** The Challenge the Bettor saw; the Host refuses the Bet if the Round's Challenge has changed since. */
+    challengeId: z.string(),
+  }),
 });
 
 const leaveMessageSchema = z.object({

@@ -46,7 +46,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 |------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`.                                 |
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
-| `placeBet` | `{ amount, prediction }` | Actor derived from the connection binding. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`). |
+| `placeBet` | `{ amount, prediction, challengeId }` | Actor derived from the connection binding. `challengeId` is the Challenge the Bettor saw when betting. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`), including `STALE_CHALLENGE` when `challengeId` no longer matches the Round's Challenge. |
 | `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. |
 
 ### Host → one Guest
@@ -54,7 +54,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 | type       | payload                        | notes                                                                                                                                                                                                                     |
 |------------|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `welcome`  | `{ playerId, reconnectToken }` | Sent once, immediately after a successful `join`/`rejoin`, only to that connection. The one and only time `reconnectToken` is transmitted.                                                                                |
-| `rejected` | `{ reason, action }`           | Sent only to the Guest whose action was rejected. `action` echoes the offending message's `type` for the Guest's own error handling. `reason` is an extensible string enum (e.g. `INVALID_BET_AMOUNT`, `UNKNOWN_PLAYER`). |
+| `rejected` | `{ reason, action }`           | Sent only to the Guest whose action was rejected. `action` echoes the offending message's `type` for the Guest's own error handling. `reason` is an extensible string enum (e.g. `INVALID_BET_AMOUNT`, `UNKNOWN_PLAYER`, `STALE_CHALLENGE`). |
 
 ### Host → all Guests
 
@@ -145,6 +145,12 @@ Notes:
 - Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove.
 - Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
+- **Redraw:** when the Host redraws the Challenge (see `domain-glossary.md`), the Round keeps its `challengerId` and
+  gets a new `challengeId`, and `bets` is emptied. There is no extra field: a Guest detects a Redraw as a changed
+  `challengeId` within the same Round. A `placeBet` still carrying the replaced `challengeId` is refused with
+  `rejected` reason `STALE_CHALLENGE`; the Host changes no state, and the Guest handles it silently (the next `state`
+  already shows the new Challenge and an empty bet form). This is a breaking change for Guests running an older build:
+  their `placeBet` has no `challengeId`, so the Host cannot parse it. Guests must reload to the new build.
 - `challengeHistory` (Challenge Bank ids already drawn this game, see Challenge History) is **not** part of
   `GameState` and is never broadcast — no Guest reads it. It exists only inside the Host's persisted `localStorage`
   snapshot, alongside (not inside) `state`: `{ schemaVersion, savedAt, state, challengeHistory }`.

@@ -13,6 +13,106 @@ function stateWith(overrides: Partial<RoundEngineState> = {}): RoundEngineState 
 }
 
 describe('roundEngineReducer', () => {
+  describe('REDRAW_CHALLENGE', () => {
+    const bank = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }];
+    const roundWith = (challengeId: string, bets: Bet[] = []) => ({ challengerId: 'p1', challengeId, bets, outcome: null });
+    const redraw = (state: RoundEngineState, pickChallenge: (ids: string[]) => string = (ids) => ids[0]) =>
+      roundEngineReducer(state, { type: 'REDRAW_CHALLENGE', challengeBank: bank, pickChallenge });
+
+    it('replaces the Challenge, empties the Bets and keeps the Challenger and Points', () => {
+      const state = stateWith({
+        challengeHistory: ['c1'],
+        points: { p1: 90, p2: 120, p3: 80 },
+        round: roundWith('c1', [{ playerId: 'p2', amount: 10, prediction: 'YES' }]),
+      });
+
+      const { state: next, payouts } = redraw(state);
+
+      expect(next.round).toEqual({ challengerId: 'p1', challengeId: 'c2', bets: [], outcome: null });
+      expect(next.points).toEqual({ p1: 90, p2: 120, p3: 80 });
+      expect(next.playerOrder).toEqual(['p1', 'p2', 'p3']);
+      expect(payouts).toEqual([]);
+    });
+
+    it('keeps the replaced Challenge in the Challenge History and adds the new one', () => {
+      const state = stateWith({ challengeHistory: ['c1'], round: roundWith('c1') });
+
+      expect(redraw(state).state.challengeHistory).toEqual(['c1', 'c2']);
+    });
+
+    it('prefers Challenges not in the Challenge History, never the current one', () => {
+      const state = stateWith({ challengeHistory: ['c2'], round: roundWith('c1') });
+      let seen: string[] = [];
+
+      redraw(state, (ids) => {
+        seen = ids;
+        return ids[0];
+      });
+
+      expect(seen).toEqual(['c3']);
+    });
+
+    it('never offers the current Challenge even when it is missing from the History', () => {
+      const state = stateWith({ challengeHistory: [], round: roundWith('c1') });
+      let seen: string[] = [];
+
+      redraw(state, (ids) => {
+        seen = ids;
+        return ids[0];
+      });
+
+      expect(seen).toEqual(['c2', 'c3']);
+    });
+
+    it('draws from the whole Bank minus the current Challenge and resets the History when no undrawn entry remains', () => {
+      const state = stateWith({ challengeHistory: ['c3', 'c2', 'c1'], round: roundWith('c1') });
+      let seen: string[] = [];
+
+      const { state: next } = redraw(state, (ids) => {
+        seen = ids;
+        return ids[1];
+      });
+
+      expect(seen).toEqual(['c2', 'c3']);
+      expect(next.round?.challengeId).toBe('c3');
+      expect(next.challengeHistory).toEqual(['c3']);
+    });
+
+    it('treats the current Challenge as the only undrawn entry as exhausted', () => {
+      const state = stateWith({ challengeHistory: ['c2', 'c3'], round: roundWith('c1') });
+      let seen: string[] = [];
+
+      const { state: next } = redraw(state, (ids) => {
+        seen = ids;
+        return ids[0];
+      });
+
+      expect(seen).toEqual(['c2', 'c3']);
+      expect(next.challengeHistory).toEqual(['c2']);
+    });
+
+    it('throws when no Round is in progress', () => {
+      expect(() => redraw(stateWith())).toThrow('No Round is currently in progress');
+    });
+  });
+
+  describe('PLACE_BET with a stale Challenge', () => {
+    it('refuses a Bet for a Challenge that is no longer the Round\'s and changes no state', () => {
+      const state = stateWith({ round: { challengerId: 'p1', challengeId: 'c2', bets: [], outcome: null } });
+
+      const result = roundEngineReducer(state, {
+        type: 'PLACE_BET',
+        playerId: 'p2',
+        amount: 10,
+        prediction: 'YES',
+        challengeId: 'c1',
+      });
+
+      expect(result.rejection).toBe('STALE_CHALLENGE');
+      expect(result.state).toBe(state);
+    });
+  });
+
   describe('START_ROUND', () => {
     it('starts a round for the designated Challenger with a Challenge drawn from the bank', () => {
       const state = stateWith();

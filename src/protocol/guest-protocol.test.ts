@@ -100,9 +100,9 @@ describe('GuestProtocol', () => {
     const received: unknown[] = [];
     hostTransport.onMessage((message) => received.push(message));
 
-    protocol.placeBet({ amount: 10, prediction: 'YES' });
+    protocol.placeBet({ amount: 10, prediction: 'YES', challengeId: 'c1' });
 
-    expect(received).toEqual([{ type: 'placeBet', payload: { amount: 10, prediction: 'YES' } }]);
+    expect(received).toEqual([{ type: 'placeBet', payload: { amount: 10, prediction: 'YES', challengeId: 'c1' } }]);
   });
 
   it('sendLeave sends a correctly-shaped leave message with no seq field', async () => {

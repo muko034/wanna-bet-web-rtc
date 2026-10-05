@@ -3,6 +3,7 @@ import { FakeStorage } from '../fake-storage';
 import { GuestProtocol } from '../protocol/guest-protocol';
 import { ConnectionManager } from '../room-lifecycle/connection-manager';
 import type { Room } from '../room-lifecycle/room';
+import { challengeBank } from '../challenge-bank/challenge-bank';
 import { FakeTransport } from '../transport/fake-transport';
 import { loadHostSession, saveHostSession } from './host-session-store';
 
@@ -64,9 +65,16 @@ describe('autosaving the Host session', () => {
     manager.startRound();
     expect(loadHostSession(storage, 'ABCDEF')?.gameState.round).toEqual(expect.objectContaining({ challengerId: 'host-1' }));
 
-    alex.protocol.placeBet({ amount: 10, prediction: 'YES' });
+    alex.protocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[0].id });
     expect(loadHostSession(storage, 'ABCDEF')?.gameState.round?.bets).toEqual([{ playerId: alex.playerId }]);
 
+    manager.redrawChallenge();
+    const redrawn = loadHostSession(storage, 'ABCDEF');
+    expect(redrawn?.gameState.round?.bets).toEqual([]);
+    expect(redrawn?.gameState.round?.challengeId).toBe(challengeBank[1].id);
+    expect(redrawn?.roundEngineState?.challengeHistory).toEqual([challengeBank[0].id, challengeBank[1].id]);
+
+    alex.protocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[1].id });
     manager.resolveRound('NO');
     const saved = loadHostSession(storage, 'ABCDEF');
     expect(saved?.gameState).toEqual(manager.gameState);
@@ -86,7 +94,7 @@ async function hostReloadedMidGame() {
   manager.room = { ...manager.room, started: true };
   manager.startGame();
   manager.startRound();
-  alex.protocol.placeBet({ amount: 10, prediction: 'YES' });
+  alex.protocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[0].id });
   manager.resolveRound('NO');
   const gameStateBeforeReload = manager.gameState;
 

@@ -131,7 +131,7 @@ describe('starting a round from the Host', () => {
 
     manager.startGame();
     manager.startRound();
-    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
+    samProtocol.placeBet({ amount: 10, prediction: 'NO', challengeId: challengeBank[0].id });
 
     const alexState = alexStates.at(-1);
     const samState = samStates.at(-1);
@@ -145,8 +145,8 @@ describe('starting a round from the Host', () => {
   });
 
   it.each([
-    { label: 'an invalid amount', bettor: 'sam', bet: { amount: 9999, prediction: 'NO' as const }, reason: 'INVALID_BET_AMOUNT' },
-    { label: 'a Challenger betting', bettor: 'alex', bet: { amount: 5, prediction: 'NO' as const }, reason: 'CHALLENGER_CANNOT_BET' },
+    { label: 'an invalid amount', bettor: 'sam', bet: { amount: 9999, prediction: 'NO' as const, challengeId: challengeBank[0].id }, reason: 'INVALID_BET_AMOUNT' },
+    { label: 'a Challenger betting', bettor: 'alex', bet: { amount: 5, prediction: 'NO' as const, challengeId: challengeBank[0].id }, reason: 'CHALLENGER_CANNOT_BET' },
   ])('replies to only the Bettor with a rejected placeBet for $label', async ({ bettor, bet, reason }) => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
@@ -194,8 +194,8 @@ describe('starting a round from the Host', () => {
 
     manager.startGame();
     manager.startRound();
-    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
-    samProtocol.placeBet({ amount: 10, prediction: 'NO' });
+    samProtocol.placeBet({ amount: 10, prediction: 'NO', challengeId: challengeBank[0].id });
+    samProtocol.placeBet({ amount: 10, prediction: 'NO', challengeId: challengeBank[0].id });
 
     expect(rejections).toEqual([{ reason: 'DUPLICATE_BET', action: 'placeBet' }]);
     expect(manager.gameState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
@@ -219,7 +219,7 @@ describe('starting a round from the Host', () => {
 
     manager.startGame();
     manager.startRound();
-    new GuestProtocol(sam.guestTransport).placeBet({ amount: 10, prediction: 'NO' });
+    new GuestProtocol(sam.guestTransport).placeBet({ amount: 10, prediction: 'NO', challengeId: challengeBank[0].id });
 
     const latestHostState = hostGameStates.at(-1);
     expect(latestHostState?.round?.bets).toEqual([{ playerId: sam.playerId }]);
@@ -269,8 +269,8 @@ describe('starting a round from the Host', () => {
 
       manager.startGame();
       manager.startRound();
-      alexProtocol.placeBet({ amount: 20, prediction: 'YES' });
-      samProtocol.placeBet({ amount: 15, prediction: 'NO' });
+      alexProtocol.placeBet({ amount: 20, prediction: 'YES', challengeId: challengeBank[0].id });
+      samProtocol.placeBet({ amount: 15, prediction: 'NO', challengeId: challengeBank[0].id });
 
       const hostGameStatesBefore = hostGameStates.length;
       const alexStatesBefore = alexStates.length;
@@ -318,4 +318,86 @@ describe('starting a round from the Host', () => {
       expect(hostGameStates.at(-1)).toEqual(hostState);
     },
   );
+});
+
+describe('Host redraws the Challenge', () => {
+  async function startedGame(challenger: 'host' | 'guest') {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    let challengerId = 'host-1';
+    const hostStates: GameState[] = [];
+    const manager = new ConnectionManager(
+      hostTransport,
+      roomWith([]),
+      () => {},
+      (candidateIds) => candidateIds[0],
+      () => challengerId,
+      (state) => hostStates.push(state),
+    );
+    const sam = await joinGuest(hostId, 'Sam');
+    if (challenger === 'guest') challengerId = sam.playerId;
+    const samProtocol = new GuestProtocol(sam.guestTransport);
+    const samStates: GameState[] = [];
+    const samRejections: { reason: string; action: string }[] = [];
+    samProtocol.on('state', (payload) => samStates.push(payload.snapshot));
+    samProtocol.on('rejected', (payload) => samRejections.push(payload));
+    manager.startGame();
+    manager.startRound();
+    return { manager, sam, samProtocol, samStates, samRejections, hostStates, challengerId };
+  }
+
+  it('broadcasts a different Challenge with no Bets, the same Challenger and unchanged Points', async () => {
+    const { manager, sam, samProtocol, samStates, challengerId } = await startedGame('host');
+    samProtocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[0].id });
+    expect(samStates.at(-1)?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+
+    manager.redrawChallenge();
+
+    const state = samStates.at(-1);
+    expect(state?.round).toEqual({ challengerId, challengeId: challengeBank[1].id, bets: [], outcome: null });
+    expect(state?.players.map((player) => player.points)).toEqual([100, 100]);
+    expect(manager.gameState).toEqual(state);
+  });
+
+  it('lets the Host redraw while being the Challenger, notifying its own screen too', async () => {
+    const { manager, hostStates } = await startedGame('host');
+
+    manager.redrawChallenge();
+
+    expect(hostStates.at(-1)?.round?.challengerId).toBe('host-1');
+    expect(hostStates.at(-1)?.round?.challengeId).toBe(challengeBank[1].id);
+  });
+
+  it('lets the Bettor bet again on the new Challenge after the old Bet was discarded', async () => {
+    const { manager, sam, samProtocol, samStates, samRejections } = await startedGame('host');
+    samProtocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[0].id });
+    manager.redrawChallenge();
+
+    samProtocol.placeBet({ amount: 20, prediction: 'NO', challengeId: challengeBank[1].id });
+
+    expect(samRejections).toEqual([]);
+    expect(samStates.at(-1)?.round?.bets).toEqual([{ playerId: sam.playerId }]);
+  });
+
+  it('refuses a Bet for the replaced Challenge with STALE_CHALLENGE and changes no state', async () => {
+    const { manager, samProtocol, samStates, samRejections } = await startedGame('host');
+    manager.redrawChallenge();
+    const before = manager.gameState;
+
+    samProtocol.placeBet({ amount: 10, prediction: 'YES', challengeId: challengeBank[0].id });
+
+    expect(samRejections).toEqual([{ reason: 'STALE_CHALLENGE', action: 'placeBet' }]);
+    expect(manager.gameState).toEqual(before);
+    expect(samStates.at(-1)?.round?.bets).toEqual([]);
+  });
+
+  it('cannot redraw before a Round is in progress', async () => {
+    const hostTransport = new FakeTransport();
+    await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    expect(() => manager.redrawChallenge()).toThrow();
+
+    manager.startGame();
+    expect(() => manager.redrawChallenge()).toThrow();
+  });
 });

@@ -41,9 +41,18 @@ export type StartRoundAction = {
   pickChallenge: (candidateIds: string[]) => string;
 };
 
+export type RedrawChallengeAction = {
+  type: 'REDRAW_CHALLENGE';
+  challengeBank: ChallengeBankEntry[];
+  /** Injected randomness: picks one id out of the given candidate pool. */
+  pickChallenge: (candidateIds: string[]) => string;
+};
+
 export type PlaceBetAction = {
   type: 'PLACE_BET';
   playerId: string;
+  /** The Challenge the Bettor saw; when given, a Bet for any other Challenge is refused as stale. */
+  challengeId?: string;
   amount: number;
   prediction: Prediction;
 };
@@ -53,7 +62,7 @@ export type ResolveRoundAction = {
   outcome: Prediction;
 };
 
-export type RoundEngineAction = StartRoundAction | PlaceBetAction | ResolveRoundAction;
+export type RoundEngineAction = StartRoundAction | RedrawChallengeAction | PlaceBetAction | ResolveRoundAction;
 
 export type Payout = { playerId: string; amount: number };
 
@@ -62,6 +71,7 @@ export const BET_REJECTIONS = [
   'CHALLENGER_CANNOT_BET',
   'DUPLICATE_BET',
   'INVALID_BET_AMOUNT',
+  'STALE_CHALLENGE',
 ] as const;
 
 export type BetRejection = (typeof BET_REJECTIONS)[number];
@@ -85,6 +95,8 @@ export function roundEngineReducer(
   switch (action.type) {
     case 'START_ROUND':
       return startRound(state, action);
+    case 'REDRAW_CHALLENGE':
+      return redrawChallenge(state, action);
     case 'PLACE_BET':
       return placeBet(state, action);
     case 'RESOLVE_ROUND':
@@ -110,6 +122,29 @@ function startRound(state: RoundEngineState, action: StartRoundAction): RoundEng
         bets: [],
         outcome: null,
       },
+    },
+    payouts: [],
+  };
+}
+
+/**
+ * Replaces the Round's Challenge and discards its Bets; the Challenger and Points stay. The new
+ * Challenge is never the current one and prefers entries outside the Challenge History; with none
+ * left, it draws from the whole Bank and the History restarts.
+ */
+function redrawChallenge(state: RoundEngineState, action: RedrawChallengeAction): RoundEngineResult {
+  const round = requireRound(state);
+  const otherIds = action.challengeBank.map((entry) => entry.id).filter((id) => id !== round.challengeId);
+  const undrawnIds = otherIds.filter((id) => !state.challengeHistory.includes(id));
+  const bankWasExhausted = undrawnIds.length === 0;
+  const challengeId = action.pickChallenge(bankWasExhausted ? otherIds : undrawnIds);
+  const priorHistory = bankWasExhausted ? [] : state.challengeHistory;
+
+  return {
+    state: {
+      ...state,
+      challengeHistory: [...priorHistory, challengeId],
+      round: { ...round, challengeId, bets: [] },
     },
     payouts: [],
   };
@@ -142,6 +177,7 @@ function validateBet(
   round: Round,
   action: PlaceBetAction,
 ): BetRejection | undefined {
+  if (action.challengeId !== undefined && action.challengeId !== round.challengeId) return 'STALE_CHALLENGE';
   const points = state.points[action.playerId];
   if (points === undefined) return 'UNKNOWN_PLAYER';
   if (action.playerId === round.challengerId) return 'CHALLENGER_CANNOT_BET';

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeStorage } from '../fake-storage';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
+import { challengeBank } from '../challenge-bank/challenge-bank';
 import { FakeTransport } from '../transport/fake-transport';
 import { BET_CONFIRMATION_TIMEOUT_MS, BetDelivery } from './bet-delivery';
 import { ConnectionManager, HEARTBEAT_INTERVAL_MS } from './connection-manager';
@@ -10,7 +11,7 @@ import { saveIdentity } from './player-identity';
 import { RoomRegistry } from './room-registry';
 import type { Room } from './room';
 
-const BET: PlaceBetPayload = { amount: 10, prediction: 'YES' };
+const BET: PlaceBetPayload = { amount: 10, prediction: 'YES', challengeId: challengeBank[0].id };
 
 /** A started game with the Host as Challenger and one Guest, Sam, who has a stored identity. */
 async function startedGameWithSam() {
@@ -153,7 +154,7 @@ describe('a Guest through a Host gap', () => {
     sam.connect();
     await settle();
 
-    sam.lockIn({ amount: 9_999, prediction: 'YES' });
+    sam.lockIn({ ...BET, amount: 9_999 });
     await settle();
 
     expect(sam.failures).toEqual([roundKey(game.manager.gameState!)]);

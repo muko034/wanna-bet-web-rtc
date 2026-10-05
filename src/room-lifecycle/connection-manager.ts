@@ -196,13 +196,35 @@ export class ConnectionManager {
     return this.gameState;
   }
 
+  /**
+   * Replaces the current Round's Challenge with a new draw, discarding every Bet and keeping the
+   * Challenger. A local Host action, not a wire message: Guests see it in the broadcast `state`.
+   * Throws when no Round is in progress.
+   */
+  redrawChallenge(): GameState {
+    if (this.gameState === null || this.roundEngineState === null) {
+      throw new Error('Cannot redraw a Challenge before the game has started');
+    }
+
+    const { state: nextRoundEngineState } = roundEngineReducer(this.roundEngineState, {
+      type: 'REDRAW_CHALLENGE',
+      challengeBank,
+      pickChallenge: this.pickChallenge,
+    });
+
+    this.roundEngineState = nextRoundEngineState;
+    this.gameState = applyRoundEngineState(this.gameState, nextRoundEngineState, this.gameState.resolution);
+    this.emitGameState(this.gameState);
+    return this.gameState;
+  }
+
   placeBet(playerId: string, amount: number, prediction: Prediction): GameState {
     this.applyBet(playerId, amount, prediction);
     return this.gameState!;
   }
 
   /** Applies a Bet and broadcasts the resulting state; returns why it was refused, if it was. */
-  private applyBet(playerId: string, amount: number, prediction: Prediction): BetRejection | undefined {
+  private applyBet(playerId: string, amount: number, prediction: Prediction, challengeId?: string): BetRejection | undefined {
     if (this.gameState === null || this.roundEngineState === null) {
       throw new Error('Cannot place a Bet before the game has started');
     }
@@ -212,6 +234,7 @@ export class ConnectionManager {
       playerId,
       amount,
       prediction,
+      challengeId,
     });
 
     this.roundEngineState = nextRoundEngineState;
@@ -357,7 +380,7 @@ export class ConnectionManager {
       return;
     }
 
-    const rejection = this.applyBet(playerId, payload.amount, payload.prediction);
+    const rejection = this.applyBet(playerId, payload.amount, payload.prediction, payload.challengeId);
     if (rejection) {
       this.protocol.rejected(peerId, { reason: rejection, action: 'placeBet' });
     }

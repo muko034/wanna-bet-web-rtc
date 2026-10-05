@@ -261,6 +261,9 @@ export function App() {
           onResolveRound={(outcome) => {
             connectionManagerRef.current?.resolveRound(outcome);
           }}
+          onRedraw={() => {
+            connectionManagerRef.current?.redrawChallenge();
+          }}
           onGameStarted={setGuestGameStartedCode}
           onGameState={handleGuestGameState}
           onPlaceBetReady={handlePlaceBetReady}
