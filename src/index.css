@@ -217,6 +217,20 @@ input {
   font-weight: 700;
   margin-bottom: 8px;
 }
+.vb-status-pill.placed {
+  background: #fff;
+  color: #c96f13;
+}
+.vb-bettor-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.vb-bettor-pills .vb-status-pill {
+  margin-bottom: 0;
+}
 .vb-host-recovery-banner {
   position: fixed;
   top: 0;
