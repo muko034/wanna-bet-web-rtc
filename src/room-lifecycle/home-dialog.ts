@@ -1,7 +1,9 @@
 import type { Room } from './room';
 
+export type HomeDialogAction = 'leave' | 'go-home' | 'cancel';
+
 export type HomeDialogOption = {
-  action: 'leave' | 'go-home' | 'cancel';
+  action: HomeDialogAction;
   label: string;
   style: 'destructive' | 'primary' | 'link';
 };
@@ -28,4 +30,17 @@ export function resolveHomeDialog({ code, room }: Params): HomeDialog {
       CANCEL,
     ],
   };
+}
+
+export type HomeChoiceEffect = { kind: 'leave'; code: string } | { kind: 'go-home' } | { kind: 'none' };
+
+/** What happens once a dialog option is chosen: Cancel changes nothing, Leave needs the Room code. */
+export function resolveHomeChoice(action: HomeDialogAction, code: string | undefined): HomeChoiceEffect {
+  if (action === 'go-home') {
+    return { kind: 'go-home' };
+  }
+  if (action === 'leave' && code) {
+    return { kind: 'leave', code };
+  }
+  return { kind: 'none' };
 }

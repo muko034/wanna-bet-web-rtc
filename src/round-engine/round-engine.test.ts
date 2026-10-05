@@ -24,6 +24,12 @@ describe('roundEngineReducer', () => {
       expect(next.points).toEqual({ p1: 100, p3: 100 });
     });
 
+    it('returns the same state when the player is unknown', () => {
+      const state = stateWith();
+
+      expect(remove(state, 'ghost').state).toBe(state);
+    });
+
     it("removes a Bettor's Bet from the open Round and keeps the rest", () => {
       const state = stateWith({
         round: roundWith('p1', [

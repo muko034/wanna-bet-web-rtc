@@ -1,15 +1,15 @@
-import type { HomeDialog as HomeDialogView } from './home-dialog';
+import type { HomeDialog as HomeDialogView, HomeDialogAction, HomeDialogOption } from './home-dialog';
 
 type Props = {
   dialog: HomeDialogView;
-  onChoose: (action: HomeDialogView['options'][number]['action']) => void;
+  onChoose: (action: HomeDialogAction) => void;
 };
 
-const STYLE_CLASS = {
+const STYLE_CLASS: Record<HomeDialogOption['style'], string> = {
   destructive: 'vb-dialog-destructive',
   primary: 'vb-cta',
   link: 'vb-dialog-link',
-} as const;
+};
 
 /** Confirmation dialog the Home button opens during a Game; its options come from `resolveHomeDialog`. */
 export function HomeDialog({ dialog, onChoose }: Props) {

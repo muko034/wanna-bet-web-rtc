@@ -22,7 +22,7 @@ import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemo
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { HomeDialog } from './HomeDialog';
-import { resolveHomeDialog } from './home-dialog';
+import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
 import { useForegroundRetry } from './use-foreground-retry';
@@ -269,11 +269,12 @@ export function StartedGame({
   const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
 
   const homeDialog = resolveHomeDialog({ code, room });
-  const chooseHomeOption = (action: 'leave' | 'go-home' | 'cancel') => {
+  const chooseHomeOption = (action: HomeDialogAction) => {
     setHomeDialogOpen(false);
-    if (action === 'leave' && code) {
-      onLeave(code);
-    } else if (action === 'go-home') {
+    const effect = resolveHomeChoice(action, code);
+    if (effect.kind === 'leave') {
+      onLeave(effect.code);
+    } else if (effect.kind === 'go-home') {
       route(withBase('/'));
     }
   };

@@ -253,6 +253,15 @@ function rotate(playerOrder: string[], challengerId: string): string[] {
  * open Round — their Bet is dropped, and a Round whose Challenger is removed is discarded.
  */
 function removePlayer(state: RoundEngineState, action: RemovePlayerAction): RoundEngineResult {
+  const isKnown =
+    state.playerOrder.includes(action.playerId) ||
+    action.playerId in state.points ||
+    (state.round?.bets.some((bet) => bet.playerId === action.playerId) ?? false) ||
+    state.round?.challengerId === action.playerId;
+  if (!isKnown) {
+    return { state, payouts: [] };
+  }
+
   const { [action.playerId]: _removed, ...points } = state.points;
   const round = state.round;
   const nextRound =

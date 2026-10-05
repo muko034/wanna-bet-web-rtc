@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveHomeDialog } from './home-dialog';
+import { resolveHomeChoice, resolveHomeDialog } from './home-dialog';
 import type { Room } from './room';
 
 const hostRoom: Room = { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players: [], playerCount: 1, started: true };
@@ -27,5 +27,23 @@ describe('resolveHomeDialog', () => {
     const result = resolveHomeDialog({ code: 'ZZZZZZ', room: hostRoom });
 
     expect(result.options.map((option) => option.action)).toEqual(['leave', 'cancel']);
+  });
+});
+
+describe('resolveHomeChoice', () => {
+  it('Leave carries the Room code', () => {
+    expect(resolveHomeChoice('leave', 'ABCDEF')).toEqual({ kind: 'leave', code: 'ABCDEF' });
+  });
+
+  it('Leave without a Room code changes nothing', () => {
+    expect(resolveHomeChoice('leave', undefined)).toEqual({ kind: 'none' });
+  });
+
+  it('Go Home goes Home', () => {
+    expect(resolveHomeChoice('go-home', 'ABCDEF')).toEqual({ kind: 'go-home' });
+  });
+
+  it('Cancel changes nothing', () => {
+    expect(resolveHomeChoice('cancel', 'ABCDEF')).toEqual({ kind: 'none' });
   });
 });
