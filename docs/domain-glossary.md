@@ -117,10 +117,21 @@ A moderation action only the Host can take on another player: **Pause** (player 
 resumed) or **Remove** (player exits the Room permanently). There is no automatic disconnect handling — a disconnected
 player who hasn't been Paused or Removed is still waited on. _Avoid_: Kick, ban, timeout
 
+**Sit Out**:
+A Guest's own voluntary step away from the Game without Leaving. The Guest is skipped from Bets/rotation like a Paused
+player and returns by rejoining the Room. Returning never undoes a Pause set by the Host. _Avoid_: Self-Pause, away,
+idle
+
 **Leave**:
-A player's own voluntary exit from the Room, self-triggered rather than Host-initiated. Produces the identical outcome
-as a Host Remove (permanent, no path back) but is not itself a Host Admin Action — it's self-service, not moderation.
-_Avoid_: Quit, disconnect (a dropped connection alone is not a Leave — see Host Admin Action)
+A player's own voluntary exit from the Room, self-triggered rather than Host-initiated. For a Guest, produces the
+identical outcome as a Host Remove (permanent, no path back) but is not itself a Host Admin Action — it's
+self-service, not moderation. When the Host Leaves, the Room ends for everyone (see Game Result Screen) and cannot be
+reopened. _Avoid_: Quit, disconnect (a dropped connection alone is not a Leave — see Host Admin Action)
+
+**Game Result Screen**:
+The final screen shown to every player when the Room ends: the Leaderboard with its Winners marked. Every player on
+the highest Points is a Winner. Distinct from the Result Screen, which follows a single Resolution. _Avoid_: Final
+results, end screen, game over
 
 ## Note on the original game-rules.md draft
 
