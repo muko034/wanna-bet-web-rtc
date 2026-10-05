@@ -21,6 +21,8 @@ import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
+import { HomeDialog } from './HomeDialog';
+import { resolveHomeDialog } from './home-dialog';
 import { resolveRoundControls } from './round-controls';
 import { resolveStartedGameView, type ReconnectPhase } from './started-game-view';
 import { useForegroundRetry } from './use-foreground-retry';
@@ -62,6 +64,8 @@ type Props = {
    * Lobby's join screen before the game started.
    */
   onConnectionLost: () => void;
+  /** Guest only: Leave the Room for good and go Home. */
+  onLeave: (code: string) => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
   createGuestTransport: () => PeerJsTransport;
 };
@@ -92,8 +96,10 @@ export function StartedGame({
   onPlaceBetReady,
   onBetRejected,
   onConnectionLost,
+  onLeave,
   createGuestTransport,
 }: Props) {
+  const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
   const isGuestUnresolved = !(room !== null && room.code === code) && guestGameStartedCode !== code;
@@ -262,6 +268,17 @@ export function StartedGame({
   const roundControls = resolveRoundControls({ code, room, gameState });
   const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
 
+  const homeDialog = resolveHomeDialog({ code, room });
+  const chooseHomeOption = (action: 'leave' | 'go-home' | 'cancel') => {
+    setHomeDialogOpen(false);
+    if (action === 'leave' && code) {
+      onLeave(code);
+    } else if (action === 'go-home') {
+      route(withBase('/'));
+    }
+  };
+  const dialogOverlay = homeDialogOpen && <HomeDialog dialog={homeDialog} onChoose={chooseHomeOption} />;
+
   const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null });
 
   const resultShown = resultScreen !== null;
@@ -282,7 +299,7 @@ export function StartedGame({
 
   if (resultScreen) {
     return (
-      <PhoneShell background={resultScreen.background} roomCode={view.roomCode}>
+      <PhoneShell background={resultScreen.background} roomCode={view.roomCode} onHome={() => setHomeDialogOpen(true)} overlay={dialogOverlay}>
         <div class="vb-giant-title">{resultScreen.title}</div>
         <div class="vb-score-list">
           {resultScreen.rows.map((row) => (
@@ -308,8 +325,14 @@ export function StartedGame({
     <PhoneShell
       background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
       roomCode={view.roomCode}
+      onHome={() => setHomeDialogOpen(true)}
       topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
-      overlay={leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} />}
+      overlay={
+        <>
+          {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} />}
+          {dialogOverlay}
+        </>
+      }
     >
       {gameState?.round && roundControls.kind === 'judge-round' ? (
         <>

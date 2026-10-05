@@ -16,3 +16,8 @@ export function loadIdentity(storage: Storage, code: string): StoredIdentity | n
   const raw = storage.getItem(KEY_PREFIX + code);
   return raw === null ? null : (JSON.parse(raw) as StoredIdentity);
 }
+
+/** Removes the identity stored for `code`'s Room, so reopening its URL no longer resumes this player. */
+export function deleteIdentity(storage: Storage, code: string): void {
+  storage.removeItem(KEY_PREFIX + code);
+}

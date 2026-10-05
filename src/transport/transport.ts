@@ -32,6 +32,9 @@ export interface Transport {
    * `connected: true` when it opens, `false` when it drops.
    */
   onConnectionChange(handler: (peerId: string, connected: boolean) => void): void;
+
+  /** Closes this transport for good: peers see it drop, and it neither sends nor reports anything afterwards. */
+  close(): void;
 }
 
 /** A Host `connect(undefined, requestedId)` call asked for an id already claimed by another peer. */

@@ -13,6 +13,40 @@ function stateWith(overrides: Partial<RoundEngineState> = {}): RoundEngineState 
 }
 
 describe('roundEngineReducer', () => {
+  describe('REMOVE_PLAYER', () => {
+    const roundWith = (challengerId: string, bets: Bet[]) => ({ challengerId, challengeId: 'c1', bets, outcome: null });
+    const remove = (state: RoundEngineState, playerId: string) => roundEngineReducer(state, { type: 'REMOVE_PLAYER', playerId });
+
+    it('drops the player from the rotation and the Points table', () => {
+      const { state: next } = remove(stateWith(), 'p2');
+
+      expect(next.playerOrder).toEqual(['p1', 'p3']);
+      expect(next.points).toEqual({ p1: 100, p3: 100 });
+    });
+
+    it("removes a Bettor's Bet from the open Round and keeps the rest", () => {
+      const state = stateWith({
+        round: roundWith('p1', [
+          { playerId: 'p2', amount: 10, prediction: 'YES' },
+          { playerId: 'p3', amount: 5, prediction: 'NO' },
+        ]),
+      });
+
+      const { state: next } = remove(state, 'p2');
+
+      expect(next.round).toEqual(roundWith('p1', [{ playerId: 'p3', amount: 5, prediction: 'NO' }]));
+    });
+
+    it('discards the open Round when its Challenger is removed', () => {
+      const state = stateWith({ round: roundWith('p1', [{ playerId: 'p2', amount: 10, prediction: 'YES' }]) });
+
+      const { state: next } = remove(state, 'p1');
+
+      expect(next.round).toBeNull();
+      expect(next.playerOrder).toEqual(['p2', 'p3']);
+    });
+  });
+
   describe('REDRAW_CHALLENGE', () => {
     const bank = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }];
     const roundWith = (challengeId: string, bets: Bet[] = []) => ({ challengerId: 'p1', challengeId, bets, outcome: null });

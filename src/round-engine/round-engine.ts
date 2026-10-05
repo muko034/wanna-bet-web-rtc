@@ -62,7 +62,17 @@ export type ResolveRoundAction = {
   outcome: Prediction;
 };
 
-export type RoundEngineAction = StartRoundAction | RedrawChallengeAction | PlaceBetAction | ResolveRoundAction;
+export type RemovePlayerAction = {
+  type: 'REMOVE_PLAYER';
+  playerId: string;
+};
+
+export type RoundEngineAction =
+  | StartRoundAction
+  | RedrawChallengeAction
+  | PlaceBetAction
+  | ResolveRoundAction
+  | RemovePlayerAction;
 
 export type Payout = { playerId: string; amount: number };
 
@@ -101,6 +111,8 @@ export function roundEngineReducer(
       return placeBet(state, action);
     case 'RESOLVE_ROUND':
       return resolveRound(state, action);
+    case 'REMOVE_PLAYER':
+      return removePlayer(state, action);
   }
 }
 
@@ -234,4 +246,27 @@ function rotate(playerOrder: string[], challengerId: string): string[] {
   const index = playerOrder.indexOf(challengerId);
   const nextIndex = (index + 1) % playerOrder.length;
   return [...playerOrder.slice(nextIndex), ...playerOrder.slice(0, nextIndex)];
+}
+
+/**
+ * Takes a player out of the Game: out of the rotation and the Points table, and out of the
+ * open Round — their Bet is dropped, and a Round whose Challenger is removed is discarded.
+ */
+function removePlayer(state: RoundEngineState, action: RemovePlayerAction): RoundEngineResult {
+  const { [action.playerId]: _removed, ...points } = state.points;
+  const round = state.round;
+  const nextRound =
+    round === null || round.challengerId === action.playerId
+      ? null
+      : { ...round, bets: round.bets.filter((bet) => bet.playerId !== action.playerId) };
+
+  return {
+    state: {
+      ...state,
+      playerOrder: state.playerOrder.filter((id) => id !== action.playerId),
+      points,
+      round: nextRound,
+    },
+    payouts: [],
+  };
 }

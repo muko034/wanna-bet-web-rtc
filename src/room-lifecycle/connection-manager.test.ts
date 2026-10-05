@@ -398,3 +398,53 @@ describe('choosing the Challenger', () => {
     expect(pickCount).toBe(1);
   });
 });
+
+describe('a Guest leaving mid-game', () => {
+  async function startedGameWithGuest(pickChallenger: (ids: string[]) => string = () => 'host-1') {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, pickChallenger);
+    const guest = await connectGuest(hostId);
+    const welcome = new Promise<WelcomePayload>((resolve) => {
+      guest.onMessage((message) => {
+        if ((message as { type?: unknown }).type === 'welcome') resolve((message as { payload: WelcomePayload }).payload);
+      });
+    });
+    guest.send({ type: 'join', payload: { name: 'Sam' } });
+    const { playerId } = await welcome;
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, guest, playerId };
+  }
+
+  it('removes the Guest from the Room and the GameState', async () => {
+    const { manager, guest, playerId } = await startedGameWithGuest();
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.room.players.map((p) => p.playerId)).not.toContain(playerId);
+    expect(manager.room.playerCount).toBe(1);
+    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
+    expect(manager.gameState?.status).toBe('active');
+  });
+
+  it("drops the Guest's Bet from the open Round", async () => {
+    const { manager, guest, playerId } = await startedGameWithGuest();
+    manager.placeBet(playerId, 10, 'YES', manager.gameState!.round!.challengeId);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState?.round?.bets).toEqual([]);
+  });
+
+  it('discards the Round and starts one for the next Challenger when the Challenger leaves', async () => {
+    const { manager, guest, playerId } = await startedGameWithGuest((ids) => ids.find((id) => id !== 'host-1')!);
+    expect(manager.gameState?.round?.challengerId).toBe(playerId);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState?.round?.challengerId).toBe('host-1');
+    expect(manager.gameState?.round?.bets).toEqual([]);
+  });
+});
