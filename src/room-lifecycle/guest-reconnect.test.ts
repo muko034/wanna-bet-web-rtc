@@ -246,8 +246,31 @@ describe('attemptReconnect', () => {
     await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
     const placeBet = vi.mocked(callbacks.onPlaceBetReady).mock.calls[0][0]!;
 
-    placeBet({ amount: 9999, prediction: 'YES' });
+    placeBet({ amount: 9999, prediction: 'YES', challengeId: manager.gameState!.round!.challengeId });
 
     expect(callbacks.onBetRejected).toHaveBeenCalledExactlyOnceWith('INVALID_BET_AMOUNT');
+  });
+
+  it('reports a Bet refused for a replaced Challenge through onBetRejected as STALE_CHALLENGE', async () => {
+    const registry = new RoomRegistry();
+    const hostTransport = new FakeTransport();
+    const code = registry.generate();
+    await hostTransport.connect(undefined, registry.transportIdFor(code));
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, () => 'host-1');
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const callbacks = noopCallbacks();
+    await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
+    const placeBet = vi.mocked(callbacks.onPlaceBetReady).mock.calls[0][0]!;
+    const seenChallengeId = manager.gameState!.round!.challengeId;
+    manager.redrawChallenge();
+
+    placeBet({ amount: 10, prediction: 'YES', challengeId: seenChallengeId });
+
+    expect(callbacks.onBetRejected).toHaveBeenCalledExactlyOnceWith('STALE_CHALLENGE');
   });
 });

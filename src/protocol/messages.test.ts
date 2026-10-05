@@ -39,13 +39,19 @@ describe('parseGuestToHostMessage', () => {
   });
 
   it('accepts a valid placeBet message', () => {
-    const message = { type: 'placeBet', payload: { amount: 10, prediction: 'YES' } };
+    const message = { type: 'placeBet', payload: { amount: 10, prediction: 'YES', challengeId: 'c1' } };
     expect(parseGuestToHostMessage(message)).toEqual(message);
+  });
+
+  it('rejects a placeBet message without the Challenge id the Bettor saw', () => {
+    expect(
+      parseGuestToHostMessage({ type: 'placeBet', payload: { amount: 10, prediction: 'YES' } }),
+    ).toBeUndefined();
   });
 
   it('rejects a placeBet message with a non-numeric amount', () => {
     expect(
-      parseGuestToHostMessage({ type: 'placeBet', payload: { amount: '10', prediction: 'YES' } }),
+      parseGuestToHostMessage({ type: 'placeBet', payload: { amount: '10', prediction: 'YES', challengeId: 'c1' } }),
     ).toBeUndefined();
   });
 

@@ -13,8 +13,13 @@ type Params = {
   gameState: GameState | null;
 };
 
+/** Whether this device is the Host of the Room at `code`: the one rule behind every Host-only control. */
+export function isHostRoom(code: string | undefined, room: Room | null): boolean {
+  return !!code && !!room && room.code === code;
+}
+
 export function resolveRoundControls({ code, room, gameState }: Params): RoundControls {
-  if (!code || !room || room.code !== code || !gameState?.round) {
+  if (!isHostRoom(code, room) || !gameState?.round) {
     return { kind: 'hidden' };
   }
 

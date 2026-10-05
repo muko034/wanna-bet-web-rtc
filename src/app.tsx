@@ -172,7 +172,12 @@ export function App() {
 
   const handlePlaceBet = useCallback((payload: PlaceBetPayload, context: PlaceBetContext) => {
     if (room && connectionManagerRef.current?.room.code === room.code) {
-      connectionManagerRef.current.placeBet(room.hostPlayerId, payload.amount, payload.prediction);
+      connectionManagerRef.current.placeBet(
+        room.hostPlayerId,
+        payload.amount,
+        payload.prediction,
+        payload.challengeId,
+      );
       return;
     }
 
@@ -260,6 +265,9 @@ export function App() {
           onReconnectGaveUp={handleReconnectGaveUp}
           onResolveRound={(outcome) => {
             connectionManagerRef.current?.resolveRound(outcome);
+          }}
+          onRedraw={() => {
+            connectionManagerRef.current?.redrawChallenge();
           }}
           onGameStarted={setGuestGameStartedCode}
           onGameState={handleGuestGameState}
