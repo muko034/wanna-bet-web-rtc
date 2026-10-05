@@ -1,8 +1,9 @@
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
+import { maxBetAmount } from '../round-engine/bet-cap';
+
 /** The part of a Bet the Bettor sees on screen; the Challenge id is wire-only. */
 type OwnBet = Pick<PlaceBetPayload, 'amount' | 'prediction'>;
-import { maxBetAmount } from '../round-engine/bet-cap';
 
 export type BettorStatus = {
   playerId: string;
