@@ -68,6 +68,11 @@ from here. _Avoid_: Task bank, question bank, deck
 The set of Challenge Bank entries already drawn during a Room's current game, kept so a Round doesn't repeat one
 still in rotation. Resets once every entry in the Challenge Bank has been drawn. _Avoid_: Used challenges, seen list
 
+**Redraw**:
+A Host-only action that replaces the current Round's Challenge with a new draw from the Challenge Bank, used when the
+Challenge is unplayable or unfair for the group. Discards every Bet already placed that Round, so Bettors must bet
+again; the Challenger stays the same. The replaced Challenge stays in Challenge History. _Avoid_: Reroll, skip
+
 **Illustration**:
 An optional image attached to a Challenge Bank entry, shared unchanged across every Display Language. Hidden from the
 Challenger under the same rule as Challenge text. _Avoid_: Image, picture
