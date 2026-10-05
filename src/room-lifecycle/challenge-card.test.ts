@@ -46,6 +46,8 @@ describe('resolveChallengeCard', () => {
 
     expect(view).toEqual({
       kind: 'hidden',
+      challengeType: 'PHYSICAL',
+      timeLimit: null,
       title: '🙈 Hidden from you',
       detail: 'Get ready to attempt it.',
     });
@@ -64,9 +66,29 @@ describe('resolveChallengeCard', () => {
 
     expect(view).toEqual({
       kind: 'visible',
+      challengeType: 'PHYSICAL',
+      timeLimit: null,
       text: 'English challenge text',
       illustration: '/images/challenge-1.png',
     });
+  });
+
+  it.each([
+    ['QUARTER_MINUTE', { label: '15s', color: 'yellow' }],
+    ['HALF_MINUTE', { label: '30s', color: 'red' }],
+    ['ONE_MINUTE', { label: '60s', color: 'black' }],
+    ['NONE', null],
+  ] as const)('maps time limit %s for both the visible and the hidden variant', (timeLimit, expected) => {
+    const challenge: ChallengeBankEntry = { ...illustratedChallenge, type: 'MENTAL', timeLimit };
+    for (const localPlayerId of ['guest-1', 'guest-2']) {
+      const view = resolveChallengeCard({
+        gameState: stateWith(),
+        localPlayerId,
+        challengeBank: [challenge],
+        displayLanguage: 'en',
+      });
+      expect(view).toMatchObject({ challengeType: 'MENTAL', timeLimit: expected });
+    }
   });
 
   it('returns no Challenge card before any round has started', () => {

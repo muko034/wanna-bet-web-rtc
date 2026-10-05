@@ -3,7 +3,25 @@ import type { GameState } from '../protocol/messages';
 
 export type DisplayLanguage = 'pl' | 'en';
 
-export type ChallengeCardView =
+export type ChallengeTimeLimitView = {
+  label: '15s' | '30s' | '60s';
+  color: 'yellow' | 'red' | 'black';
+};
+
+type ChallengeCardHeader = {
+  challengeType: ChallengeBankEntry['type'];
+  timeLimit: ChallengeTimeLimitView | null;
+};
+
+const TIME_LIMIT_VIEWS: Record<ChallengeBankEntry['timeLimit'], ChallengeTimeLimitView | null> = {
+  NONE: null,
+  QUARTER_MINUTE: { label: '15s', color: 'yellow' },
+  HALF_MINUTE: { label: '30s', color: 'red' },
+  ONE_MINUTE: { label: '60s', color: 'black' },
+};
+
+export type ChallengeCardView = ChallengeCardHeader &
+  (
   | {
       kind: 'hidden';
       title: string;
@@ -13,7 +31,7 @@ export type ChallengeCardView =
       kind: 'visible';
       text: string;
       illustration?: string;
-    };
+    });
 
 type Params = {
   gameState: GameState | null;
@@ -33,20 +51,26 @@ export function resolveChallengeCard({
     return null;
   }
 
+  const challenge = challengeBank.find((entry) => entry.id === round.challengeId);
+  if (!challenge) {
+    throw new Error(`Unknown Challenge id "${round.challengeId}"`);
+  }
+  const header: ChallengeCardHeader = {
+    challengeType: challenge.type,
+    timeLimit: TIME_LIMIT_VIEWS[challenge.timeLimit],
+  };
+
   if (round.challengerId === localPlayerId) {
     return {
+      ...header,
       kind: 'hidden',
       title: '🙈 Hidden from you',
       detail: 'Get ready to attempt it.',
     };
   }
 
-  const challenge = challengeBank.find((entry) => entry.id === round.challengeId);
-  if (!challenge) {
-    throw new Error(`Unknown Challenge id "${round.challengeId}"`);
-  }
-
   return {
+    ...header,
     kind: 'visible',
     text: challenge.content[displayLanguage],
     ...(challenge.illustration ? { illustration: challenge.illustration } : {}),
