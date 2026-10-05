@@ -127,19 +127,17 @@ input {
   max-width: 320px;
 }
 .vb-code-giant {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 26px;
   font-size: 34px;
   font-weight: 900;
   letter-spacing: 0.14em;
   background: rgba(255, 255, 255, 0.12);
   padding: 16px 22px;
   border-radius: 18px;
-}
-.vb-code-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 26px;
 }
 .vb-copy-btn {
   display: flex;
@@ -149,7 +147,7 @@ input {
   height: 44px;
   border: 0;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.16);
   color: inherit;
   cursor: pointer;
 }

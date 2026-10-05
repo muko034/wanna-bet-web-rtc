@@ -31,8 +31,8 @@ export function Lobby({ room, gameState, code, onStart }: Props) {
   return (
     <PhoneShell background="vb-bg-lobby" roomCode={room.code}>
       <div class="vb-eyebrow2">Room code</div>
-      <div class="vb-code-row">
-        <div class="vb-code-giant">{room.code}</div>
+      <div class="vb-code-giant">
+        <span>{room.code}</span>
         <CopyInviteButton link={link} />
       </div>
       <div class="vb-avatar-row">
