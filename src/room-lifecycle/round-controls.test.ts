@@ -67,6 +67,21 @@ describe('resolveRoundControls', () => {
     })).toEqual({ kind: 'hidden' });
   });
 
+  it.each([
+    { name: 'sat out', pausedBy: 'self' as const },
+    { name: 'paused by the Host', pausedBy: 'host' as const },
+  ])('shows the judging screen without waiting for a Bettor who is $name', ({ pausedBy }) => {
+    const players = threePlayers.map((player) =>
+      player.playerId === 'p2' ? { ...player, status: 'paused' as const, pausedBy } : player,
+    );
+
+    expect(resolveRoundControls({
+      code: 'ABCDEF',
+      room: roomWith(),
+      gameState: stateWith({ players, round: roundWith('p1', ['host-1']) }),
+    })).toEqual({ kind: 'judge-round', challengerName: 'Alex', background: 'vb-bg-judge' });
+  });
+
   it('shows the judging screen on the Host device as soon as the last Bettor has bet', () => {
     expect(resolveRoundControls({
       code: 'ABCDEF',

@@ -20,7 +20,7 @@ import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBan
 import type { GameState, PlaceBetPayload } from './protocol/messages';
 import { BetDelivery, type PlaceBetContext } from './room-lifecycle/bet-delivery';
 import type { BetRejection } from './round-engine/round-engine';
-import { leaveRoom } from './room-lifecycle/guest-leave';
+import { leaveRoom, sitOutOfRoom } from './room-lifecycle/guest-leave';
 
 type RoomRouteProps = {
   path?: string;
@@ -230,18 +230,28 @@ export function App() {
     return transport;
   }, []);
 
-  /** A Guest's Leave: tells the Host, closes the connection, forgets the identity, and drops every trace of the Game before going Home. */
-  const handleGuestLeave = useCallback((code: string) => {
+  /** Ends this device's Guest session: runs `exit` on the live transport, drops every trace of the Game and goes Home. */
+  const exitGuestGame = useCallback((exit: (transport: PeerJsTransport) => void) => {
     const transport = guestTransportRef.current;
     guestTransportRef.current = null;
     if (transport) {
-      leaveRoom(transport, localStorage, code);
+      exit(transport);
     }
     handlePlaceBetReady(null);
     setGuestGameStartedCode(null);
     setGuestGameState(null);
     route(withBase('/'));
   }, [handlePlaceBetReady]);
+
+  /** A Guest's Leave: tells the Host, closes the connection and forgets the identity. */
+  const handleGuestLeave = useCallback((code: string) => {
+    exitGuestGame((transport) => leaveRoom(transport, localStorage, code));
+  }, [exitGuestGame]);
+
+  /** A Guest's Sit out: tells the Host and closes the connection but keeps the identity, so the play URL rejoins later. */
+  const handleGuestSitOut = useCallback(() => {
+    exitGuestGame(sitOutOfRoom);
+  }, [exitGuestGame]);
 
   if (reopening) {
     return (
@@ -289,6 +299,7 @@ export function App() {
           onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
           onLeave={handleGuestLeave}
+          onSitOut={handleGuestSitOut}
           createGuestTransport={createGuestTransport}
         />
         <NotFound default />

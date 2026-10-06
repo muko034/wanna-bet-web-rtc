@@ -40,6 +40,8 @@ const playerSchema = z.object({
   name: z.string(),
   points: z.number(),
   status: z.enum(['active', 'paused', 'removed']),
+  /** Who paused the player: `self` is a Sit Out, `host` a Host Pause. Present only while `status` is `paused`. */
+  pausedBy: z.enum(['self', 'host']).optional(),
   connected: z.boolean(),
 });
 
@@ -89,6 +91,11 @@ const leaveMessageSchema = z.object({
   payload: z.object({}),
 });
 
+const sitOutMessageSchema = z.object({
+  type: z.literal('sitOut'),
+  payload: z.object({}),
+});
+
 // Host → Guest message schemas — every message carries `seq`.
 
 const welcomeMessageSchema = z.object({
@@ -123,6 +130,7 @@ export type RejoinMessage = z.infer<typeof rejoinMessageSchema>;
 export type PlaceBetMessage = z.infer<typeof placeBetMessageSchema>;
 export type PlaceBetPayload = PlaceBetMessage['payload'];
 export type LeaveMessage = z.infer<typeof leaveMessageSchema>;
+export type SitOutMessage = z.infer<typeof sitOutMessageSchema>;
 export type WelcomeMessage = z.infer<typeof welcomeMessageSchema>;
 export type RejectedMessage = z.infer<typeof rejectedMessageSchema>;
 export type StateMessage = z.infer<typeof stateMessageSchema>;
@@ -132,6 +140,7 @@ const guestToHostMessageSchema = z.discriminatedUnion('type', [
   rejoinMessageSchema,
   placeBetMessageSchema,
   leaveMessageSchema,
+  sitOutMessageSchema,
 ]);
 
 const hostToGuestMessageSchema = z.discriminatedUnion('type', [

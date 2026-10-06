@@ -52,6 +52,11 @@ export class GuestProtocol {
     this.transport.send({ type: 'leave', payload: {} });
   }
 
+  /** Sends a `sitOut` message to the Host. */
+  sitOut(): void {
+    this.transport.send({ type: 'sitOut', payload: {} });
+  }
+
   private handleMessage(message: unknown): void {
     const parsed = parseHostToGuestMessage(message);
     if (!parsed) {

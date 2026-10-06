@@ -27,6 +27,7 @@ function sessionFor(code: string, hostPoints = 100): HostSession {
       playerOrder: ['host-1', 'p1'],
       points: { 'host-1': hostPoints, p1: 90 },
       challengeHistory: ['001'],
+      pausedPlayerIds: [],
       round: { challengerId: 'host-1', challengeId: '001', bets: [{ playerId: 'p1', amount: 10, prediction: 'YES' }], outcome: null },
     },
     firstRoundStarted: true,

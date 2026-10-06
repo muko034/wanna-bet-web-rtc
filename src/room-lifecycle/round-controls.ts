@@ -20,7 +20,7 @@ export function resolveRoundControls({ code, room, gameState }: Params): RoundCo
   }
 
   const { round } = gameState;
-  const bettors = gameState.players.filter((player) => player.playerId !== round.challengerId);
+  const bettors = gameState.players.filter((player) => player.playerId !== round.challengerId && player.status !== 'paused');
   const allBetsIn = bettors.every((bettor) => hasPlacedBet(round, bettor.playerId));
   const challengerName = gameState.players.find((player) => player.playerId === round.challengerId)?.name;
   return allBetsIn && challengerName

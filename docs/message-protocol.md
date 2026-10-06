@@ -33,7 +33,7 @@ Two separate identifiers exist per player — conflating them would let any Gues
   included in any broadcast message. Stored client-side (e.g. `localStorage`) and presented only in `rejoin`.
 
 The Host binds each live connection to a `reconnectToken` in memory at handshake time. Every later message from that
-connection (`placeBet`, `leave`) carries no identity field at all — the Host derives the actor from the connection
+connection (`placeBet`, `leave`, `sitOut`) carries no identity field at all — the Host derives the actor from the connection
 itself, so impersonation after the handshake is structurally impossible, not just discouraged.
 
 Room access control is the shareable link/`peerId` alone (per ADR 0001) — no separate join PIN.
@@ -48,6 +48,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
 | `placeBet` | `{ amount, prediction, challengeId }` | Actor derived from the connection binding. `challengeId` is the Challenge the Bettor saw when betting. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`), including `STALE_CHALLENGE` when `challengeId` no longer matches the Round's Challenge. |
 | `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. |
+| `sitOut`   | `{}`                     | The Guest steps away (see Sit Out in the glossary). The Host sets the player to `status: 'paused'`, `pausedBy: 'self'`; actor derived from the connection binding. The Guest then closes its transport. A placed Bet stays in the Round; a Challenger's Round is discarded and the Game rotates. |
 
 ### Host → one Guest
 
@@ -101,6 +102,7 @@ type Player = {
   name: string;
   points: number;
   status: 'active' | 'paused' | 'removed';
+  pausedBy?: 'self' | 'host';  // present only while `status` is 'paused': 'self' is a Sit Out, 'host' a Host Pause
   connected: boolean;      // live connection status, independent of `status`
 };
 
@@ -132,6 +134,9 @@ type Payout = {
 
 Notes:
 
+- Rejoin and Sit Out: a `rejoin` sets a player with `pausedBy: 'self'` back to `status: 'active'` and clears `pausedBy`;
+  a player with `pausedBy: 'host'` stays paused. There is no `resume` message. The Round Engine skips paused players when
+  picking the next Challenger and when deciding whether every Bettor has bet.
 - `status: 'lobby'`: broadcast before the game starts (on every Guest join, rejoin, leave and disconnect), so every
   device's Lobby/waiting screen can render the live roster — the Host included, with "(you)" on the viewer's own
   entry. `round` and `resolution` are always `null` here, and `challengerId` is always `null`. A Guest only ever
