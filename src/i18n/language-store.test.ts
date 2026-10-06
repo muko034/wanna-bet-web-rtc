@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FakeStorage } from '../fake-storage';
 import { detectLanguage, loadLanguage, saveLanguage } from './language-store';
 
@@ -8,6 +8,8 @@ describe('detectLanguage', () => {
     ['pl-PL', 'pl'],
     ['en', 'en'],
     ['en-GB', 'en'],
+    ['EN-us', 'en'],
+    ['PL', 'pl'],
     ['de-DE', 'pl'],
     ['', 'pl'],
   ])('maps %j to %s', (tag, expected) => {
@@ -36,6 +38,10 @@ describe('loadLanguage', () => {
 });
 
 describe('saveLanguage', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('round-trips through loadLanguage, deferring the write', () => {
     vi.useFakeTimers();
     const storage = new FakeStorage();
@@ -43,6 +49,5 @@ describe('saveLanguage', () => {
     expect(storage.getItem('wanna-bet:language')).toBeNull();
     vi.runAllTimers();
     expect(loadLanguage(storage, 'pl-PL')).toBe('en');
-    vi.useRealTimers();
   });
 });
