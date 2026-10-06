@@ -24,6 +24,28 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
 }
 
 describe('resolveBettingPanel', () => {
+  it('leaves a paused player out of the bettor pills and the waiting count', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        players: [
+          { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-2', name: 'Sam', points: 100, status: 'paused', connected: false },
+        ],
+        round: {
+          challengerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: [{ playerId: 'host-1' }],
+          outcome: null,
+        },
+      }),
+      localPlayerId: 'host-1',
+    });
+
+    expect(panel.bettors.map((bettor) => bettor.playerId)).toEqual(['host-1']);
+    expect(panel.kind === 'locked' && panel.waitingLabel).toBe('Everyone has bet.');
+  });
+
   it.each([
     ['the Host when another player is active', 'host-1'],
     ['a Guest who is not the Challenger and has not bet yet', 'guest-2'],

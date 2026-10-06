@@ -4,9 +4,11 @@ import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
 import { joinRoom, makeGameStartedHandler, type JoinResult } from './join-room';
-import { attemptReconnect, completeGuestConnection, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
+import { attemptReconnect, completeGuestConnection, muteWhile, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
 import { loadIdentity } from './player-identity';
 import { resolveLobbyRoster } from './lobby-roster';
+import { HomeDialog } from './HomeDialog';
+import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { useForegroundRetry } from './use-foreground-retry';
 import { roomRegistry } from './room-registry-instance';
@@ -37,6 +39,12 @@ type Props = {
    * one a different route established (see `app.tsx`).
    */
   createGuestTransport: () => PeerJsTransport;
+  /** Whether this Guest has sat out or left, so signals from the connection they closed must be ignored. */
+  isSatOut: () => boolean;
+  /** Leave the Room for good and go Home. */
+  onLeave: (code: string) => void;
+  /** Step away but keep the identity, so the Room's link rejoins later. */
+  onSitOut: (code: string) => void;
 };
 
 type Status =
@@ -62,8 +70,9 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut }: Props) {
   const [name, setName] = useState('');
+  const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: 'form' });
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
   // effect below from scratch (including its own automatic retry budget) rather than a
@@ -79,7 +88,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   useForegroundRetry(status.kind === 'rejoining', () => setRetryKey((key) => key + 1));
 
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
-  const makeCallbacks = (): ReconnectCallbacks => ({
+  const makeCallbacks = (): ReconnectCallbacks => muteWhile(isSatOut, {
     onGameState: (state) => callbacksRef.current.onGameState(state),
     onGameStarted: makeGameStartedHandler((startedCode) => callbacksRef.current.onGameStarted(startedCode), route),
     // A drop is never a dead end: notify the App-level state a Guest's connection relies on
@@ -147,8 +156,22 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   if (status.kind === 'joined') {
     const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: status.playerId });
+    const chooseHomeOption = (action: HomeDialogAction) => {
+      setHomeDialogOpen(false);
+      const effect = resolveHomeChoice(action, code, null);
+      if (effect.kind === 'leave') {
+        onLeave(effect.code);
+      } else if (effect.kind === 'sit-out') {
+        onSitOut(effect.code);
+      }
+    };
     return (
-      <PhoneShell background="vb-bg-wait" roomCode={code}>
+      <PhoneShell
+        background="vb-bg-wait"
+        roomCode={code}
+        onHome={() => setHomeDialogOpen(true)}
+        overlay={homeDialogOpen && <HomeDialog dialog={resolveHomeDialog({ code, room: null })} onChoose={chooseHomeOption} />}
+      >
         <div class="vb-giant-title" style="font-size:24px">
           You're in!
         </div>

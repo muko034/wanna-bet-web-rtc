@@ -29,6 +29,26 @@ export type ReconnectCallbacks = {
   onBetRejected: (reason: BetRejection) => void;
 };
 
+/**
+ * Wraps `callbacks` so the signals a stale connection can still deliver after the Guest sat out
+ * (a late `state` broadcast, the game-started cue, the drop its own close causes) do nothing
+ * while `isMuted` holds. Bet readiness and rejections pass through: they only ever clear state.
+ */
+export function muteWhile(isMuted: () => boolean, callbacks: ReconnectCallbacks): ReconnectCallbacks {
+  return {
+    ...callbacks,
+    onGameState: (state) => {
+      if (!isMuted()) callbacks.onGameState(state);
+    },
+    onGameStarted: (code) => {
+      if (!isMuted()) callbacks.onGameStarted(code);
+    },
+    onConnectionDropped: () => {
+      if (!isMuted()) callbacks.onConnectionDropped();
+    },
+  };
+}
+
 /** Delay before the first automatic retry attempt. */
 const RECONNECT_INITIAL_DELAY_MS = 2_000;
 /** Per-attempt delay cap — `RECONNECT_INITIAL_DELAY_MS` doubles on every retry up to this ceiling. */

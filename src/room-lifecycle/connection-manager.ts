@@ -67,6 +67,8 @@ export class ConnectionManager {
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
   private firstRoundStarted = false;
+  /** Guests who sat out in the Lobby; `startGame` begins them paused. */
+  private readonly lobbySatOut = new Set<string>();
   private readonly heartbeatTimer: ReturnType<typeof setInterval>;
 
   constructor(
@@ -173,6 +175,10 @@ export class ConnectionManager {
   startGame(): GameState {
     this.gameState = buildInitialGameState(this.room);
     this.roundEngineState = buildInitialRoundEngineState(this.room);
+    for (const playerId of this.lobbySatOut) {
+      this.pausePlayer(playerId, 'self');
+    }
+    this.lobbySatOut.clear();
     this.emitGameState(this.gameState);
     return this.gameState;
   }
@@ -186,7 +192,7 @@ export class ConnectionManager {
   private advanceRound(roundEngineState: RoundEngineState): RoundEngineState {
     const challengerId = this.firstRoundStarted
       ? roundEngineState.playerOrder[0]
-      : this.pickChallenger(roundEngineState.playerOrder);
+      : this.pickChallenger(roundEngineState.playerOrder.filter((id) => !roundEngineState.pausedPlayerIds.includes(id)));
 
     const orderedState = this.firstRoundStarted
       ? roundEngineState
@@ -354,6 +360,7 @@ export class ConnectionManager {
       players: this.room.players.map((p) => (p.playerId === playerId ? { ...p, connected: true } : p)),
     };
 
+    this.lobbySatOut.delete(playerId);
     this.resumeSelfSitOut(playerId);
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
@@ -389,6 +396,10 @@ export class ConnectionManager {
   private handleSitOut(_payload: SitOutMessage['payload'], peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
+      return;
+    }
+    if (this.gameState === null || this.gameState.status === 'lobby') {
+      this.lobbySatOut.add(playerId);
       return;
     }
     this.pausePlayer(playerId, 'self');
@@ -438,6 +449,7 @@ export class ConnectionManager {
     }
 
     this.playerIdByPeerId.delete(peerId);
+    this.lobbySatOut.delete(playerId);
     for (const [reconnectToken, id] of this.playerIdByReconnectToken) {
       if (id === playerId) this.playerIdByReconnectToken.delete(reconnectToken);
     }
@@ -466,6 +478,9 @@ export class ConnectionManager {
       players: gameState.players.filter((p) => p.playerId !== playerId),
     };
     this.emitGameState(this.gameState);
+    if (this.gameState.players.every((p) => p.playerId === this.room.hostPlayerId)) {
+      this.leave();
+    }
   }
 
   private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {

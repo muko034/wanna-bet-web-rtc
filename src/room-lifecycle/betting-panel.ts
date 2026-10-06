@@ -82,7 +82,7 @@ export function resolveBettingPanel({
   const ownBet = betFailed ? null : localBet;
 
   const bettors = gameState.players
-    .filter((player) => player.playerId !== round.challengerId)
+    .filter((player) => player.playerId !== round.challengerId && player.status !== 'paused')
     .map((player) => {
       const isLocalPlayer = player.playerId === localPlayerId;
       return {

@@ -35,10 +35,13 @@ type RoomRouteProps = {
   onBetRejected: (reason: BetRejection) => void;
   onConnectionLost: () => void;
   createGuestTransport: () => PeerJsTransport;
+  isSatOut: () => boolean;
+  onLeave: (code: string) => void;
+  onSitOut: () => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport }: RoomRouteProps) {
+function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut }: RoomRouteProps) {
   if (room && room.code === code) {
     return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} />;
   }
@@ -52,6 +55,9 @@ function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameS
       onBetRejected={onBetRejected}
       onConnectionLost={onConnectionLost}
       createGuestTransport={createGuestTransport}
+      isSatOut={isSatOut}
+      onLeave={onLeave}
+      onSitOut={onSitOut}
     />
   );
 }
@@ -86,6 +92,9 @@ export function App() {
   const [betDelivery] = useState(() => new BetDelivery(setBetFailedRoundKey, () => guestConnectionLostRef.current()));
   const reopeningTransportRef = useRef<PeerJsTransport | null>(null);
   const guestTransportRef = useRef<PeerJsTransport | null>(null);
+  /** Set when this device's Guest sat out or left, so the closing connection's late signals cannot pull the Guest back; cleared by the next transport. */
+  const satOutRef = useRef(false);
+  const isSatOut = useCallback(() => satOutRef.current, []);
   /** This device's own Host transport, held so the foreground-recovery effect below can reach it regardless of which flow (fresh create vs. reopen) last opened it. `null` on a Guest's device. */
   const hostTransportRef = useRef<RecoverableTransport | null>(null);
   /** Set when `hostTransportRef`'s `recover()` fails. */
@@ -237,6 +246,7 @@ export function App() {
    */
   const createGuestTransport = useCallback((): PeerJsTransport => {
     guestTransportRef.current?.close();
+    satOutRef.current = false;
     const transport = new PeerJsTransport();
     guestTransportRef.current = transport;
     return transport;
@@ -246,6 +256,7 @@ export function App() {
   const exitGuestGame = useCallback((exit: (transport: PeerJsTransport) => void) => {
     const transport = guestTransportRef.current;
     guestTransportRef.current = null;
+    satOutRef.current = true;
     if (transport) {
       exit(transport);
     }
@@ -290,6 +301,9 @@ export function App() {
           onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
           createGuestTransport={createGuestTransport}
+          isSatOut={isSatOut}
+          onLeave={handleGuestLeave}
+          onSitOut={handleGuestSitOut}
         />
         <StartedGame
           path={withBase('room/:code/play')}
@@ -314,6 +328,7 @@ export function App() {
           onSitOut={handleGuestSitOut}
           onHostLeave={handleHostLeave}
           createGuestTransport={createGuestTransport}
+          isSatOut={isSatOut}
         />
         <NotFound default />
       </Router>

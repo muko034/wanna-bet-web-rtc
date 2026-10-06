@@ -4,11 +4,12 @@ import { PeerUnavailableError } from '../transport/transport';
 import { FakeStorage } from '../fake-storage';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
-import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
+import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
 import { joinRoom, makeGameStartedHandler } from './join-room';
 import { saveIdentity, loadIdentity } from './player-identity';
 import { leaveRoom } from './guest-leave';
 import type { Room } from './room';
+import type { GameState } from '../protocol/messages';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
   return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false, ...overrides };
@@ -390,5 +391,48 @@ describe('the Host leaving the Room', () => {
     const { code, storage } = await connectedGuestInStartedGame();
 
     expect(loadIdentity(storage, code)).not.toBeNull();
+  });
+});
+
+describe('muteWhile', () => {
+  const state: GameState = { roomId: 'ABCDEF', status: 'active', challengerId: 'host-1', resolution: null, players: [], round: null };
+
+  it('drops game-state, game-started and connection-dropped signals while muted', () => {
+    const callbacks = noopCallbacks();
+    const muted = muteWhile(() => true, callbacks);
+
+    muted.onGameState(state);
+    muted.onGameStarted('ABCDEF');
+    muted.onConnectionDropped();
+
+    expect(callbacks.onGameState).not.toHaveBeenCalled();
+    expect(callbacks.onGameStarted).not.toHaveBeenCalled();
+    expect(callbacks.onConnectionDropped).not.toHaveBeenCalled();
+  });
+
+  it('forwards those signals once no longer muted', () => {
+    const callbacks = noopCallbacks();
+    let isMuted = true;
+    const muted = muteWhile(() => isMuted, callbacks);
+
+    isMuted = false;
+    muted.onGameState(state);
+    muted.onGameStarted('ABCDEF');
+    muted.onConnectionDropped();
+
+    expect(callbacks.onGameState).toHaveBeenCalledWith(state);
+    expect(callbacks.onGameStarted).toHaveBeenCalledWith('ABCDEF');
+    expect(callbacks.onConnectionDropped).toHaveBeenCalledOnce();
+  });
+
+  it('always forwards Bet readiness and rejections', () => {
+    const callbacks = noopCallbacks();
+    const muted = muteWhile(() => true, callbacks);
+
+    muted.onPlaceBetReady(null);
+    muted.onBetRejected('not-open' as never);
+
+    expect(callbacks.onPlaceBetReady).toHaveBeenCalledWith(null);
+    expect(callbacks.onBetRejected).toHaveBeenCalledWith('not-open');
   });
 });

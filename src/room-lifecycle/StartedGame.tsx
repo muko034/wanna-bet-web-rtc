@@ -7,7 +7,8 @@ import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
-import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
+import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
+import { resolveRosterNotices } from './roster-notice';
 import { resolveChallengeCard } from './challenge-card';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
 import { isChallengeRedrawn } from './challenge-change';
@@ -73,6 +74,8 @@ type Props = {
   onHostLeave: () => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
   createGuestTransport: () => PeerJsTransport;
+  /** Whether this Guest has sat out or left, so signals from the connection they closed must be ignored. */
+  isSatOut: () => boolean;
 };
 
 /**
@@ -105,6 +108,7 @@ export function StartedGame({
   onSitOut,
   onHostLeave,
   createGuestTransport,
+  isSatOut,
 }: Props) {
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
@@ -129,7 +133,7 @@ export function StartedGame({
     setReconnectPhase('pending');
     const transport = createGuestTransport();
     let pending = true;
-    const callbacks: ReconnectCallbacks = {
+    const callbacks: ReconnectCallbacks = muteWhile(isSatOut, {
       onGameState: (state) => callbacksRef.current.onGameState(state),
       onGameStarted: (startedCode) => callbacksRef.current.onGameStarted(startedCode),
       // A drop is never a dead end: hand it to App-level state, which resets
@@ -143,7 +147,7 @@ export function StartedGame({
       },
       onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
       onBetRejected: (reason) => callbacksRef.current.onBetRejected(reason),
-    };
+    });
     attemptReconnect(transport, roomRegistry, localStorage, code, callbacks).then((result) => {
       if (!pending) return;
       pending = false;
@@ -213,6 +217,9 @@ export function StartedGame({
         onBetRejected={onBetRejected}
         onConnectionLost={onConnectionLost}
         createGuestTransport={createGuestTransport}
+        isSatOut={isSatOut}
+        onLeave={onLeave}
+        onSitOut={onSitOut}
       />
     );
   }
@@ -251,9 +258,14 @@ export function StartedGame({
   // it announced, so it never replays once the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
+  const [rosterNotice, setRosterNotice] = useState<{ text: string; key: number } | null>(null);
   useEffect(() => {
     const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
+    const notices = gameState ? resolveRosterNotices(previousGameStateRef.current, gameState, localPlayerId ?? null) : [];
     previousGameStateRef.current = gameState;
+    if (notices.length > 0) {
+      setRosterNotice((current) => ({ text: notices.join(', '), key: (current?.key ?? 0) + 1 }));
+    }
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
   const chrome = resolveChallengeChrome({ code, room, gameState, notice: challengeNotice });
@@ -358,7 +370,7 @@ export function StartedGame({
 
   return (
     <PhoneShell
-      background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
+      background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
       topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
@@ -369,7 +381,15 @@ export function StartedGame({
         </>
       }
     >
-      {gameState?.round && roundControls.kind === 'judge-round' ? (
+      {roundControls.kind === 'no-active-guests' ? (
+        <>
+          <div class="vb-giant-title vb-title-small">No active players</div>
+          <div class="vb-giant-sub">Everyone sat out. The game continues when someone returns.</div>
+          <button class="vb-cta" type="button" onClick={onHostLeave}>
+            End game
+          </button>
+        </>
+      ) : gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
           <div class="vb-giant-title vb-title-small">Did {roundControls.challengerName} pull it off?</div>
           <div class="vb-giant-sub">Every bet is already locked in.</div>
@@ -384,6 +404,11 @@ export function StartedGame({
         </>
       ) : gameState?.round ? (
         <>
+          {rosterNotice && (
+            <div class="vb-change-banner" role="status" key={`roster-${rosterNotice.key}`}>
+              {rosterNotice.text}
+            </div>
+          )}
           {chrome.noticeCount !== null && (
             <div class="vb-change-banner" role="status" key={`banner-${chrome.noticeCount}`}>
               Challenge changed

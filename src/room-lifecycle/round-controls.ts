@@ -6,7 +6,9 @@ import { isHostRoom } from './room-role';
 export type RoundControls =
   | { kind: 'hidden' }
   /** The Host's judging screen: shown only once every Bettor has bet. */
-  | { kind: 'judge-round'; challengerName: string; background: 'vb-bg-judge' };
+  | { kind: 'judge-round'; challengerName: string; background: 'vb-bg-judge' }
+  /** Every Guest sat out, so there is nobody to bet or judge: the Host can only end the game. */
+  | { kind: 'no-active-guests'; background: 'vb-bg-wait' };
 
 type Params = {
   code: string | undefined;
@@ -15,7 +17,16 @@ type Params = {
 };
 
 export function resolveRoundControls({ code, room, gameState }: Params): RoundControls {
-  if (!isHostRoom(code, room) || !gameState?.round) {
+  if (!room || !isHostRoom(code, room) || !gameState) {
+    return { kind: 'hidden' };
+  }
+
+  const guests = gameState.players.filter((player) => player.playerId !== room.hostPlayerId && player.status !== 'removed');
+  if (gameState.status === 'active' && guests.length > 0 && guests.every((guest) => guest.status === 'paused')) {
+    return { kind: 'no-active-guests', background: 'vb-bg-wait' };
+  }
+
+  if (!gameState.round) {
     return { kind: 'hidden' };
   }
 
