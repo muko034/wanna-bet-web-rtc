@@ -1,5 +1,8 @@
 import type { GameState } from '../protocol/messages';
 
+/** How long a roster notice stays up; equals the banner's CSS animation length. */
+export const ROSTER_NOTICE_DURATION_MS = 3_500;
+
 /**
  * The toasts to show when `next` replaces `previous`: one per other player who sat out or left
  * in between. Silent without a previous snapshot (a view just opened), outside a running game,

@@ -8,7 +8,7 @@ import type { PeerJsTransport } from '../transport/peerjs-transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
-import { resolveRosterNotices } from './roster-notice';
+import { ROSTER_NOTICE_DURATION_MS, resolveRosterNotices } from './roster-notice';
 import { resolveChallengeCard } from './challenge-card';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
 import { isChallengeRedrawn } from './challenge-change';
@@ -268,6 +268,12 @@ export function StartedGame({
     }
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
+  // Matches the banner's CSS animation, so a remounted banner (the Round rotating) never replays it.
+  useEffect(() => {
+    if (rosterNotice === null) return;
+    const timer = setTimeout(() => setRosterNotice(null), ROSTER_NOTICE_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [rosterNotice?.key]);
   const chrome = resolveChallengeChrome({ code, room, gameState, notice: challengeNotice });
   const redrawButton = chrome.showRedraw && (
     <button class="vb-home-fab vb-redraw" type="button" aria-label="Redraw Challenge" onClick={onRedraw}>
