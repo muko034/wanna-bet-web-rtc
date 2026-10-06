@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { useT } from '../i18n/LanguageContext';
-import type { Message } from '../i18n/dictionaries';
+import type { Message, MessageKey } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
@@ -36,8 +36,8 @@ import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
-const RECONNECT_ERROR_MESSAGES: Record<'unreachable', string> = {
-  unreachable: "Couldn't reach the Host — check the link and try again.",
+const RECONNECT_ERROR_MESSAGES: Record<'unreachable', MessageKey> = {
+  unreachable: 'joinRoom.error.unreachable',
 };
 
 type Props = {
@@ -235,11 +235,11 @@ export function StartedGame({
     return (
       <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
         <div class="vb-giant-title" style="font-size:24px">
-          Can't reach the Host
+          {t('joinRoom.unreachableTitle')}
         </div>
-        <div class="vb-giant-sub">{view.message}</div>
+        <div class="vb-giant-sub">{t(view.message)}</div>
         <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
-          Retry
+          {t('joinRoom.retry')}
         </button>
       </PhoneShell>
     );
