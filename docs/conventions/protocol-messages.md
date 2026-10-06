@@ -27,3 +27,7 @@ export function watchForBetRejection(transport: Transport, onBetRejected: (reaso
   });
 }
 ```
+
+## Update the wire protocol doc in the same commit as a wire-shape change
+
+When a message, payload, or `Player`/`GameState` field is added or changed in `src/protocol/messages.ts`, update `docs/message-protocol.md` in that same commit: the message tables, the type listing, and any notes on behaviour. The doc is the reference Guests and Hosts are built against, so a wire change that lands without it leaves the two out of step.
