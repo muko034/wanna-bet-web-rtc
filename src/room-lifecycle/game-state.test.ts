@@ -77,6 +77,7 @@ describe('applyRoundEngineState', () => {
       playerOrder: ['p2', 'host-1', 'p1'],
       points: { 'host-1': 115, p1: 120, p2: 85 },
       challengeHistory: ['c1'],
+      pausedPlayerIds: [],
       round: null,
     };
 

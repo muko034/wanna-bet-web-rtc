@@ -66,6 +66,7 @@ export function buildInitialRoundEngineState(room: Room): RoundEngineState {
       ...room.players.map((player) => [player.playerId, STARTING_POINTS]),
     ]),
     challengeHistory: [],
+    pausedPlayerIds: [],
     round: null,
   };
 }

@@ -30,7 +30,7 @@ export type RoundEngineState = {
   challengeHistory: string[];
   round: Round | null;
   /** Players the engine skips when rotating the Challenger; a Host Pause and a Sit Out both land here. */
-  pausedPlayerIds?: string[];
+  pausedPlayerIds: string[];
 };
 
 export type ChallengeBankEntry = { id: string };
@@ -254,7 +254,7 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
       ...state,
       points,
       round: null,
-      playerOrder: rotate(state.playerOrder, round.challengerId, state.pausedPlayerIds ?? []),
+      playerOrder: rotate(state.playerOrder, round.challengerId, state.pausedPlayerIds),
     },
     payouts: appliedPayouts,
   };
@@ -275,8 +275,8 @@ function rotate(playerOrder: string[], challengerId: string, pausedPlayerIds: st
  * discarded and the rotation moves on to the next unpaused player.
  */
 function pausePlayer(state: RoundEngineState, action: PausePlayerAction): RoundEngineResult {
-  if (state.pausedPlayerIds?.includes(action.playerId)) return { state, payouts: [] };
-  const pausedPlayerIds = [...(state.pausedPlayerIds ?? []), action.playerId];
+  if (state.pausedPlayerIds.includes(action.playerId)) return { state, payouts: [] };
+  const pausedPlayerIds = [...state.pausedPlayerIds, action.playerId];
   const isChallenger = state.round?.challengerId === action.playerId;
   return {
     state: {
@@ -290,9 +290,9 @@ function pausePlayer(state: RoundEngineState, action: PausePlayerAction): RoundE
 }
 
 function resumePlayer(state: RoundEngineState, action: ResumePlayerAction): RoundEngineResult {
-  if (!state.pausedPlayerIds?.includes(action.playerId)) return { state, payouts: [] };
+  if (!state.pausedPlayerIds.includes(action.playerId)) return { state, payouts: [] };
   return {
-    state: { ...state, pausedPlayerIds: (state.pausedPlayerIds ?? []).filter((id) => id !== action.playerId) },
+    state: { ...state, pausedPlayerIds: state.pausedPlayerIds.filter((id) => id !== action.playerId) },
     payouts: [],
   };
 }

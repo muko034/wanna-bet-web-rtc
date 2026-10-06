@@ -7,6 +7,7 @@ function stateWith(overrides: Partial<RoundEngineState> = {}): RoundEngineState 
     playerOrder: ['p1', 'p2', 'p3'],
     points: { p1: 100, p2: 100, p3: 100 },
     challengeHistory: [],
+    pausedPlayerIds: [],
     round: null,
     ...overrides,
   };
