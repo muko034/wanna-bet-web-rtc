@@ -1,3 +1,4 @@
+import type { Message } from '../i18n/dictionaries';
 import type { GameState, Player, ResolutionState } from '../protocol/messages';
 
 /** How long the Result Screen stays before it leaves by itself. */
@@ -51,10 +52,10 @@ export function deriveResultMemory(
 export type ResultRow = {
   playerId: string;
   rank: number;
-  /** Name, suffixed with "(you)" on the local player's own row. */
-  nameLabel: string;
+  /** The player's name, marked as the local player's own on their row. */
+  nameLabel: Message;
   /** "Challenger" on the Challenger's row, otherwise `null`. */
-  roleLabel: string | null;
+  roleLabel: Message | null;
   points: number;
   deltaLabel: string;
   deltaClass: 'pos' | 'neg';
@@ -62,7 +63,7 @@ export type ResultRow = {
 
 export type ResultScreen = {
   background: 'vb-bg-success' | 'vb-bg-fail';
-  title: string;
+  title: Message;
   rows: ResultRow[];
 };
 
@@ -130,14 +131,14 @@ export function resolveResultScreen({
 
   return {
     background: succeeded ? 'vb-bg-success' : 'vb-bg-fail',
-    title: `${challengerName} ${succeeded ? 'succeeded 🎉' : 'failed 💥'}`,
+    title: { key: succeeded ? 'result.succeeded' : 'result.failed', params: { name: challengerName } },
     rows: ranked.map((player) => {
       const delta = resolution.payouts.find((payout) => payout.playerId === player.playerId)?.amount ?? 0;
       return {
         playerId: player.playerId,
         rank: ranked.findIndex((other) => other.points === player.points) + 1,
-        nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
-        roleLabel: player.playerId === resolution.challengerId ? 'Challenger' : null,
+        nameLabel: { key: player.playerId === localPlayerId ? 'player.you' : 'player.named', params: { name: player.name } },
+        roleLabel: player.playerId === resolution.challengerId ? { key: 'result.challenger' } : null,
         points: player.points,
         ...resolveDelta(delta),
       };

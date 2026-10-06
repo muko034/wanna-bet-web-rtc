@@ -1,3 +1,4 @@
+import type { Message } from '../i18n/dictionaries';
 import type { Player } from '../protocol/messages';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -7,15 +8,15 @@ export type LeaderboardRow = {
   rank: number;
   /** Medal for ranks 1 to 3, otherwise `null`. */
   medal: string | null;
-  /** Name, suffixed with "(you)" on the local player's own row. */
-  nameLabel: string;
+  /** The player's name, marked as the local player's own on their row. */
+  nameLabel: Message;
   points: number;
   paused: boolean;
   isLocal: boolean;
 };
 
 export type LeaderboardBadge = {
-  text: string;
+  message: Message;
   medal: string | null;
 };
 
@@ -53,7 +54,7 @@ export function resolveLeaderboard({
       playerId: player.playerId,
       rank,
       medal: medalFor(rank),
-      nameLabel: isLocal ? `${player.name} (you)` : player.name,
+      nameLabel: { key: isLocal ? 'player.you' : 'player.named', params: { name: player.name } },
       points: player.points,
       paused: player.status === 'paused',
       isLocal,
@@ -62,7 +63,7 @@ export function resolveLeaderboard({
 
   const own = rows.find((row) => row.isLocal);
   return {
-    badge: own ? { text: `#${own.rank} · ${own.points} pts`, medal: own.medal } : null,
+    badge: own ? { message: { key: 'leaderboard.badge', params: { rank: own.rank, points: own.points } }, medal: own.medal } : null,
     rows,
   };
 }

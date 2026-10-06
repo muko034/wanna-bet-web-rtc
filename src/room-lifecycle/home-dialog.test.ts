@@ -9,9 +9,9 @@ describe('resolveHomeDialog', () => {
     const result = resolveHomeDialog({ code: 'ABCDEF', room: null });
 
     expect(result.options).toEqual([
-      { action: 'leave', label: 'Leave', style: 'destructive' },
-      { action: 'sit-out', label: 'Sit out', style: 'primary' },
-      { action: 'cancel', label: 'Cancel', style: 'link' },
+      { action: 'leave', label: 'homeDialog.leave', style: 'destructive' },
+      { action: 'sit-out', label: 'homeDialog.sitOut', style: 'primary' },
+      { action: 'cancel', label: 'homeDialog.cancel', style: 'link' },
     ]);
   });
 
@@ -19,9 +19,9 @@ describe('resolveHomeDialog', () => {
     const result = resolveHomeDialog({ code: 'ABCDEF', room: hostRoom });
 
     expect(result.options).toEqual([
-      { action: 'leave', label: 'Leave', style: 'destructive' },
-      { action: 'go-home', label: 'Go Home', style: 'primary' },
-      { action: 'cancel', label: 'Cancel', style: 'link' },
+      { action: 'leave', label: 'homeDialog.leave', style: 'destructive' },
+      { action: 'go-home', label: 'homeDialog.goHome', style: 'primary' },
+      { action: 'cancel', label: 'homeDialog.cancel', style: 'link' },
     ]);
   });
 

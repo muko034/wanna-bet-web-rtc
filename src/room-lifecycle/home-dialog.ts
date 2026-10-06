@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/dictionaries';
 import type { Room } from './room';
 import { isHostRoom } from './room-role';
 
@@ -5,7 +6,7 @@ export type HomeDialogAction = 'leave' | 'sit-out' | 'go-home' | 'cancel';
 
 export type HomeDialogOption = {
   action: HomeDialogAction;
-  label: string;
+  label: MessageKey;
   style: 'destructive' | 'primary' | 'link';
 };
 
@@ -18,17 +19,17 @@ type Params = {
   room: Room | null;
 };
 
-const CANCEL: HomeDialogOption = { action: 'cancel', label: 'Cancel', style: 'link' };
+const CANCEL: HomeDialogOption = { action: 'cancel', label: 'homeDialog.cancel', style: 'link' };
 
 /** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave or Sit out; the Host may Leave (ending the Room) or Go Home (the Room stays open). */
 export function resolveHomeDialog({ code, room }: Params): HomeDialog {
   const isHost = isHostRoom(code, room);
   return {
     options: [
-      { action: 'leave', label: 'Leave', style: 'destructive' },
+      { action: 'leave', label: 'homeDialog.leave', style: 'destructive' },
       isHost
-        ? { action: 'go-home', label: 'Go Home', style: 'primary' }
-        : { action: 'sit-out', label: 'Sit out', style: 'primary' },
+        ? { action: 'go-home', label: 'homeDialog.goHome', style: 'primary' }
+        : { action: 'sit-out', label: 'homeDialog.sitOut', style: 'primary' },
       CANCEL,
     ],
   };

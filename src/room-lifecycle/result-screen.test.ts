@@ -43,11 +43,11 @@ describe('resolveResultScreen', () => {
   it('ranks every player by Points, labels the local player and the Challenger, and signs each Payout delta', () => {
     expect(screenFor(stateWith())).toEqual({
       background: 'vb-bg-success',
-      title: 'Host succeeded 🎉',
+      title: { key: 'result.succeeded', params: { name: 'Host' } },
       rows: [
-        { playerId: 'guest-1', rank: 1, nameLabel: 'Alex', roleLabel: null, points: 120, deltaLabel: '+20', deltaClass: 'pos' },
-        { playerId: 'host-1', rank: 2, nameLabel: 'Host', roleLabel: 'Challenger', points: 115, deltaLabel: '+15', deltaClass: 'pos' },
-        { playerId: 'guest-2', rank: 3, nameLabel: 'Sam (you)', roleLabel: null, points: 85, deltaLabel: '-15', deltaClass: 'neg' },
+        { playerId: 'guest-1', rank: 1, nameLabel: { key: 'player.named', params: { name: 'Alex' } }, roleLabel: null, points: 120, deltaLabel: '+20', deltaClass: 'pos' },
+        { playerId: 'host-1', rank: 2, nameLabel: { key: 'player.named', params: { name: 'Host' } }, roleLabel: { key: 'result.challenger' }, points: 115, deltaLabel: '+15', deltaClass: 'pos' },
+        { playerId: 'guest-2', rank: 3, nameLabel: { key: 'player.you', params: { name: 'Sam' } }, roleLabel: null, points: 85, deltaLabel: '-15', deltaClass: 'neg' },
       ],
     });
   });
@@ -58,7 +58,7 @@ describe('resolveResultScreen', () => {
     );
 
     expect(screen?.background).toBe('vb-bg-fail');
-    expect(screen?.title).toBe('Host failed 💥');
+    expect(screen?.title).toEqual({ key: 'result.failed', params: { name: 'Host' } });
     expect(screen?.rows.find((row) => row.playerId === 'host-1')).toMatchObject({ deltaLabel: '+0', deltaClass: 'pos' });
   });
 
@@ -74,14 +74,14 @@ describe('resolveResultScreen', () => {
     );
 
     expect(screen?.rows.map((row) => [row.nameLabel, row.rank])).toEqual([
-      ['Alex', 1],
-      ['Host', 2],
-      ['Sam (you)', 2],
+      [{ key: 'player.named', params: { name: 'Alex' } }, 1],
+      [{ key: 'player.named', params: { name: 'Host' } }, 2],
+      [{ key: 'player.you', params: { name: 'Sam' } }, 2],
     ]);
   });
 
   it('marks no row as the local player when the local identity is unknown', () => {
-    expect(screenFor(stateWith(), null)?.rows.some((row) => row.nameLabel.includes('(you)'))).toBe(false);
+    expect(screenFor(stateWith(), null)?.rows.some((row) => row.nameLabel.key === 'player.you')).toBe(false);
   });
 
   it('exposes no Bet amount or Prediction on any row', () => {
@@ -108,7 +108,7 @@ describe('result screen memory', () => {
     const shown = observeResolution(initialResultMemory, stateWith());
     const afterNextRoundStarts = observeResolution(shown, nextRoundOpen);
 
-    expect(resolveResultScreen({ memory: afterNextRoundStarts, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
+    expect(resolveResultScreen({ memory: afterNextRoundStarts, localPlayerId: 'guest-2' })?.title).toEqual({ key: 'result.succeeded', params: { name: 'Host' } });
   });
 
   it('keeps the Points as they were when the Resolution was observed', () => {
@@ -152,7 +152,7 @@ describe('result screen memory', () => {
       stateWith({ resolution: { challengerId: 'guest-1', outcome: 'NO', payouts: [] } }),
     );
 
-    expect(resolveResultScreen({ memory: newer, localPlayerId: 'guest-2' })?.title).toBe('Alex failed 💥');
+    expect(resolveResultScreen({ memory: newer, localPlayerId: 'guest-2' })?.title).toEqual({ key: 'result.failed', params: { name: 'Alex' } });
   });
 
   it('treats a Resolution already broadcast when the view opens as seen — e.g. after the Host resumes mid-game', () => {
@@ -165,7 +165,7 @@ describe('result screen memory', () => {
     const roundStarted = observeResolution(resultMemoryOpenedOn(stateWith()), nextRoundOpen);
     const resolvedAgain = observeResolution(roundStarted, stateWith());
 
-    expect(resolveResultScreen({ memory: resolvedAgain, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
+    expect(resolveResultScreen({ memory: resolvedAgain, localPlayerId: 'guest-2' })?.title).toEqual({ key: 'result.succeeded', params: { name: 'Host' } });
   });
 
   it('shows the first Resolution for a view opened before any Game State arrived', () => {
@@ -196,7 +196,7 @@ describe('deriveResultMemory', () => {
     const opened = deriveResultMemory(null, stateWith({ resolution: null }));
     const resolved = deriveResultMemory(opened, stateWith());
 
-    expect(resolveResultScreen({ memory: resolved, localPlayerId: 'guest-2' })?.title).toBe('Host succeeded 🎉');
+    expect(resolveResultScreen({ memory: resolved, localPlayerId: 'guest-2' })?.title).toEqual({ key: 'result.succeeded', params: { name: 'Host' } });
   });
 });
 
