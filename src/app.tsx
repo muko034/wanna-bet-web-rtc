@@ -230,12 +230,12 @@ export function App() {
     return transport;
   }, []);
 
-  /** A Guest's Leave: tells the Host, closes the connection, forgets the identity, and drops every trace of the Game before going Home. */
-  const handleGuestLeave = useCallback((code: string) => {
+  /** Ends this device's Guest session: runs `exit` on the live transport, drops every trace of the Game and goes Home. */
+  const exitGuestGame = useCallback((exit: (transport: PeerJsTransport) => void) => {
     const transport = guestTransportRef.current;
     guestTransportRef.current = null;
     if (transport) {
-      leaveRoom(transport, localStorage, code);
+      exit(transport);
     }
     handlePlaceBetReady(null);
     setGuestGameStartedCode(null);
@@ -243,18 +243,15 @@ export function App() {
     route(withBase('/'));
   }, [handlePlaceBetReady]);
 
+  /** A Guest's Leave: tells the Host, closes the connection and forgets the identity. */
+  const handleGuestLeave = useCallback((code: string) => {
+    exitGuestGame((transport) => leaveRoom(transport, localStorage, code));
+  }, [exitGuestGame]);
+
   /** A Guest's Sit out: tells the Host and closes the connection but keeps the identity, so the play URL rejoins later. */
   const handleGuestSitOut = useCallback(() => {
-    const transport = guestTransportRef.current;
-    guestTransportRef.current = null;
-    if (transport) {
-      sitOutOfRoom(transport);
-    }
-    handlePlaceBetReady(null);
-    setGuestGameStartedCode(null);
-    setGuestGameState(null);
-    route(withBase('/'));
-  }, [handlePlaceBetReady]);
+    exitGuestGame(sitOutOfRoom);
+  }, [exitGuestGame]);
 
   if (reopening) {
     return (
