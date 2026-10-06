@@ -2,6 +2,8 @@ import { route } from 'preact-router';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
+import { useT } from '../i18n/LanguageContext';
+import type { Message } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
@@ -110,6 +112,7 @@ export function StartedGame({
   createGuestTransport,
   isSatOut,
 }: Props) {
+  const t = useT();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
@@ -258,13 +261,13 @@ export function StartedGame({
   // it announced, so it never replays once the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
-  const [rosterNotice, setRosterNotice] = useState<{ text: string; key: number } | null>(null);
+  const [rosterNotice, setRosterNotice] = useState<{ messages: Message[]; key: number } | null>(null);
   useEffect(() => {
     const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
     const notices = gameState ? resolveRosterNotices(previousGameStateRef.current, gameState, localPlayerId ?? null) : [];
     previousGameStateRef.current = gameState;
     if (notices.length > 0) {
-      setRosterNotice((current) => ({ text: notices.join(', '), key: (current?.key ?? 0) + 1 }));
+      setRosterNotice((current) => ({ messages: notices, key: (current?.key ?? 0) + 1 }));
     }
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
@@ -412,7 +415,7 @@ export function StartedGame({
         <>
           {rosterNotice && (
             <div class="vb-change-banner" role="status" key={`roster-${rosterNotice.key}`}>
-              {rosterNotice.text}
+              {rosterNotice.messages.map((message) => t(message.key, message.params)).join(', ')}
             </div>
           )}
           {chrome.noticeCount !== null && (

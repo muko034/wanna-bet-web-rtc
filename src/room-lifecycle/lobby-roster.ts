@@ -1,9 +1,10 @@
+import type { Message } from '../i18n/dictionaries';
 import type { Player } from '../protocol/messages';
 
 export type LobbyRosterEntry = {
   playerId: string;
-  /** Name, suffixed with "(you)" on the local player's own row. */
-  nameLabel: string;
+  /** Name, marked as "you" on the local player's own row. */
+  nameLabel: Message;
 };
 
 /**
@@ -23,6 +24,6 @@ export function resolveLobbyRoster({
 }): LobbyRosterEntry[] {
   return (players ?? []).map((player) => ({
     playerId: player.playerId,
-    nameLabel: player.playerId === localPlayerId ? `${player.name} (you)` : player.name,
+    nameLabel: { key: player.playerId === localPlayerId ? 'player.you' : 'player.named', params: { name: player.name } },
   }));
 }

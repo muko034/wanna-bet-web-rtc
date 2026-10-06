@@ -1,4 +1,5 @@
 import { PhoneShell } from '../PhoneShell';
+import { useT } from '../i18n/LanguageContext';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
 import { CopyInviteButton } from './CopyInviteButton';
@@ -20,6 +21,7 @@ type Props = {
  * marked "(you)"), and the (initially disabled) "Start game" action.
  */
 export function Lobby({ room, gameState, code, onStart }: Props) {
+  const t = useT();
   if (!room || room.code !== code) {
     return <NotFound />;
   }
@@ -30,25 +32,25 @@ export function Lobby({ room, gameState, code, onStart }: Props) {
 
   return (
     <PhoneShell background="vb-bg-lobby" roomCode={room.code}>
-      <div class="vb-eyebrow2">Room code</div>
+      <div class="vb-eyebrow2">{t('lobby.roomCode')}</div>
       <div class="vb-code-giant">
         <span>{room.code}</span>
         <CopyInviteButton link={link} />
       </div>
       <div class="vb-avatar-row">
         {roster.length === 0 ? (
-          <div class="vb-avatar">Waiting for players…</div>
+          <div class="vb-avatar">{t('lobby.waitingForPlayers')}</div>
         ) : (
           roster.map((entry) => (
             <div class="vb-avatar" key={entry.playerId}>
-              {entry.nameLabel}
+              {t(entry.nameLabel.key, entry.nameLabel.params)}
             </div>
           ))
         )}
       </div>
-      <div class="vb-status-pill">The game has not started yet.</div>
+      <div class="vb-status-pill">{t('lobby.notStarted')}</div>
       <button class="vb-cta" type="button" disabled={!hasGuests} onClick={onStart}>
-        Start game
+        {t('lobby.start')}
       </button>
     </PhoneShell>
   );

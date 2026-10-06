@@ -19,7 +19,7 @@ describe('resolveLobbyRoster', () => {
     expect(roster.map((entry) => entry.playerId)).toEqual(['host-1', 'p1', 'p2']);
   });
 
-  it('suffixes only the local player\'s own entry with "(you)"', () => {
+  it('marks only the local player\'s own entry as "you"', () => {
     const players = [
       playerWith({ playerId: 'host-1', name: 'Host' }),
       playerWith({ playerId: 'p1', name: 'Alex' }),
@@ -28,17 +28,17 @@ describe('resolveLobbyRoster', () => {
     const roster = resolveLobbyRoster({ players, localPlayerId: 'host-1' });
 
     expect(roster).toEqual([
-      { playerId: 'host-1', nameLabel: 'Host (you)' },
-      { playerId: 'p1', nameLabel: 'Alex' },
+      { playerId: 'host-1', nameLabel: { key: 'player.you', params: { name: 'Host' } } },
+      { playerId: 'p1', nameLabel: { key: 'player.named', params: { name: 'Alex' } } },
     ]);
   });
 
-  it('suffixes nobody\'s entry when localPlayerId is null (identity not known yet)', () => {
+  it('marks nobody\'s entry when localPlayerId is null (identity not known yet)', () => {
     const players = [playerWith({ playerId: 'p1', name: 'Alex' })];
 
     const roster = resolveLobbyRoster({ players, localPlayerId: null });
 
-    expect(roster).toEqual([{ playerId: 'p1', nameLabel: 'Alex' }]);
+    expect(roster).toEqual([{ playerId: 'p1', nameLabel: { key: 'player.named', params: { name: 'Alex' } } }]);
   });
 
   it('returns an empty roster for an empty player list', () => {
