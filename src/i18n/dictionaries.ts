@@ -68,6 +68,21 @@ export const en = {
   'noActive.title': 'No active players',
   'noActive.subtitle': 'Everyone sat out. The game continues when someone returns.',
   'noActive.endGame': 'End game',
+  'leaderboard.title': 'Leaderboard',
+  'leaderboard.badge': '#{rank} · {points} pts',
+  'leaderboard.points': '{points} pts',
+  'leaderboard.paused': 'paused',
+  'gameResult.title': 'Game over',
+  'gameResult.winner': 'Winner 🏆',
+  'gameResult.home': 'Home',
+  'result.succeeded': '{name} succeeded 🎉',
+  'result.failed': '{name} failed 💥',
+  'result.challenger': 'Challenger',
+  'result.nextRound': 'Next round',
+  'homeDialog.leave': 'Leave',
+  'homeDialog.sitOut': 'Sit out',
+  'homeDialog.goHome': 'Go Home',
+  'homeDialog.cancel': 'Cancel',
 };
 
 export type MessageKey = keyof typeof en;
@@ -143,6 +158,21 @@ export const pl: Record<MessageKey, string> = {
   'noActive.title': 'Brak aktywnych graczy',
   'noActive.subtitle': 'Wszyscy zrobili przerwę. Gra toczy się dalej, gdy ktoś wróci.',
   'noActive.endGame': 'Zakończ grę',
+  'leaderboard.title': 'Ranking',
+  'leaderboard.badge': '#{rank} · {points} pkt',
+  'leaderboard.points': '{points} pkt',
+  'leaderboard.paused': 'przerwa',
+  'gameResult.title': 'Koniec gry',
+  'gameResult.winner': 'Zwycięzca 🏆',
+  'gameResult.home': 'Strona główna',
+  'result.succeeded': '{name} dał(a) radę 🎉',
+  'result.failed': '{name} nie dał(a) rady 💥',
+  'result.challenger': 'Wyzywający',
+  'result.nextRound': 'Następna runda',
+  'homeDialog.leave': 'Wyjdź',
+  'homeDialog.sitOut': 'Zrób przerwę',
+  'homeDialog.goHome': 'Strona główna',
+  'homeDialog.cancel': 'Anuluj',
 };
 
 export const dictionaries: Record<DisplayLanguage, Record<MessageKey, string>> = { pl, en };

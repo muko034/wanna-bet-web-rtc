@@ -340,20 +340,20 @@ export function StartedGame({
   if (view.view === 'game-result' && gameResult) {
     return (
       <PhoneShell background={gameResult.background} roomCode={view.roomCode}>
-        <div class="vb-giant-title">{gameResult.title}</div>
+        <div class="vb-giant-title">{t(gameResult.title.key, gameResult.title.params)}</div>
         <div class="vb-score-list">
           {gameResult.rows.map((row) => (
             <div class="vb-score-row" key={row.playerId}>
               <span class="vb-score-name">
-                #{row.rank} {row.nameLabel}
-                {row.isWinner && <span class="vb-score-sub">Winner 🏆</span>}
+                #{row.rank} {t(row.nameLabel.key, row.nameLabel.params)}
+                {row.isWinner && <span class="vb-score-sub">{t('gameResult.winner')}</span>}
               </span>
               <span>{row.points}</span>
             </div>
           ))}
         </div>
         <a class="vb-cta" href={withBase('/')}>
-          Home
+          {t('gameResult.home')}
         </a>
       </PhoneShell>
     );
@@ -362,13 +362,13 @@ export function StartedGame({
   if (resultScreen) {
     return (
       <PhoneShell background={resultScreen.background} roomCode={view.roomCode} onHome={() => setHomeDialogOpen(true)} overlay={dialogOverlay}>
-        <div class="vb-giant-title">{resultScreen.title}</div>
+        <div class="vb-giant-title">{t(resultScreen.title.key, resultScreen.title.params)}</div>
         <div class="vb-score-list">
           {resultScreen.rows.map((row) => (
             <div class="vb-score-row" key={row.playerId}>
               <span class="vb-score-name">
-                #{row.rank} {row.nameLabel}
-                {row.roleLabel && <span class="vb-score-sub">{row.roleLabel}</span>}
+                #{row.rank} {t(row.nameLabel.key, row.nameLabel.params)}
+                {row.roleLabel && <span class="vb-score-sub">{t(row.roleLabel.key, row.roleLabel.params)}</span>}
               </span>
               <span>
                 {row.points} <span class={`vb-delta ${row.deltaClass}`}>{row.deltaLabel}</span>
@@ -377,7 +377,7 @@ export function StartedGame({
           ))}
         </div>
         <button class="vb-cta" type="button" onClick={() => setStoredResultMemory(dismissResult(resultMemory))}>
-          Next round
+          {t('result.nextRound')}
         </button>
       </PhoneShell>
     );

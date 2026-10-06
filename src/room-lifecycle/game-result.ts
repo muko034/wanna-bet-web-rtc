@@ -1,3 +1,4 @@
+import type { Message } from '../i18n/dictionaries';
 import type { GameState } from '../protocol/messages';
 import { resolveLeaderboard, type LeaderboardRow } from './leaderboard';
 
@@ -7,7 +8,7 @@ export type GameResultRow = LeaderboardRow & {
 };
 
 export type GameResult = {
-  title: string;
+  title: Message;
   rows: GameResultRow[];
   background: 'vb-bg-success';
 };
@@ -25,7 +26,7 @@ export function resolveGameResult({
   }
   const { rows } = resolveLeaderboard({ players: gameState.players, localPlayerId });
   return {
-    title: 'Game over',
+    title: { key: 'gameResult.title' },
     rows: rows.map((row) => ({ ...row, isWinner: row.rank === 1 })),
     background: 'vb-bg-success',
   };

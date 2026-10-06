@@ -28,9 +28,10 @@ describe('resolveGameResult', () => {
       localPlayerId: 'a',
     });
 
+    expect(result?.title).toEqual({ key: 'gameResult.title' });
     expect(result?.rows).toEqual([
-      expect.objectContaining({ playerId: 'b', rank: 1, nameLabel: 'Bob', points: 120 }),
-      expect.objectContaining({ playerId: 'a', rank: 2, nameLabel: 'Ann (you)', points: 80 }),
+      expect.objectContaining({ playerId: 'b', rank: 1, nameLabel: { key: 'player.named', params: { name: 'Bob' } }, points: 120 }),
+      expect.objectContaining({ playerId: 'a', rank: 2, nameLabel: { key: 'player.you', params: { name: 'Ann' } }, points: 80 }),
     ]);
   });
 

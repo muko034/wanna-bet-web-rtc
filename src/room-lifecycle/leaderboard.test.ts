@@ -17,9 +17,9 @@ describe('resolveLeaderboard', () => {
     const { rows } = resolveLeaderboard({ players, localPlayerId: 'c' });
 
     expect(rows.map((row) => [row.playerId, row.nameLabel, row.points])).toEqual([
-      ['b', 'Bob', 150],
-      ['c', 'Cy (you)', 120],
-      ['a', 'Ann', 80],
+      ['b', { key: 'player.named', params: { name: 'Bob' } }, 150],
+      ['c', { key: 'player.you', params: { name: 'Cy' } }, 120],
+      ['a', { key: 'player.named', params: { name: 'Ann' } }, 80],
     ]);
   });
 
@@ -46,7 +46,7 @@ describe('resolveLeaderboard', () => {
 
     const { badge } = resolveLeaderboard({ players, localPlayerId: 'c' });
 
-    expect(badge).toEqual({ text: '#2 · 120 pts', medal: '🥈' });
+    expect(badge).toEqual({ message: { key: 'leaderboard.badge', params: { rank: 2, points: 120 } }, medal: '🥈' });
   });
 
   it('gives medals to ranks 1 to 3 only', () => {
@@ -70,7 +70,7 @@ describe('resolveLeaderboard', () => {
       playerWith({ playerId: 'd', points: 100 }),
     ];
 
-    expect(resolveLeaderboard({ players, localPlayerId: 'd' }).badge).toEqual({ text: '#4 · 100 pts', medal: null });
+    expect(resolveLeaderboard({ players, localPlayerId: 'd' }).badge).toEqual({ message: { key: 'leaderboard.badge', params: { rank: 4, points: 100 } }, medal: null });
   });
 
   it('gives players with equal Points one shared rank and medal (1, 1, 3)', () => {
@@ -83,7 +83,7 @@ describe('resolveLeaderboard', () => {
     const { rows, badge } = resolveLeaderboard({ players, localPlayerId: 'b' });
 
     expect(rows.map((row) => [row.rank, row.medal])).toEqual([[1, '🥇'], [1, '🥇'], [3, '🥉']]);
-    expect(badge).toEqual({ text: '#1 · 150 pts', medal: '🥇' });
+    expect(badge).toEqual({ message: { key: 'leaderboard.badge', params: { rank: 1, points: 150 } }, medal: '🥇' });
   });
 
   it('ranks a paused player and flags the row as paused', () => {
@@ -109,7 +109,7 @@ describe('resolveLeaderboard', () => {
     const { rows, badge } = resolveLeaderboard({ players, localPlayerId: 'a' });
 
     expect(rows.map((row) => row.playerId)).toEqual(['a']);
-    expect(badge).toEqual({ text: '#1 · 100 pts', medal: '🥇' });
+    expect(badge).toEqual({ message: { key: 'leaderboard.badge', params: { rank: 1, points: 100 } }, medal: '🥇' });
   });
 
   it('gives a removed local player no badge', () => {
@@ -133,7 +133,7 @@ describe('resolveLeaderboard', () => {
   it('ranks a single player first', () => {
     const { badge, rows } = resolveLeaderboard({ players: [playerWith({ playerId: 'a' })], localPlayerId: 'a' });
 
-    expect(badge).toEqual({ text: '#1 · 100 pts', medal: '🥇' });
+    expect(badge).toEqual({ message: { key: 'leaderboard.badge', params: { rank: 1, points: 100 } }, medal: '🥇' });
     expect(rows).toHaveLength(1);
   });
 
