@@ -462,10 +462,13 @@ describe('a Guest leaving mid-game', () => {
   it('keeps the Host as Challenger with a fresh Round when the last Guest leaves as Challenger', async () => {
     const { manager, guest, playerId } = await startedGameWithGuest((ids) => ids.find((id) => id !== 'host-1')!);
     expect(manager.gameState?.round?.challengerId).toBe(playerId);
+    const discardedChallengeId = manager.gameState!.round!.challengeId;
 
     guest.send({ type: 'leave', payload: {} });
 
     expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
     expect(manager.gameState?.round?.challengerId).toBe('host-1');
+    expect(manager.gameState?.round?.challengeId).not.toBe(discardedChallengeId);
+    expect(manager.gameState?.round?.bets).toEqual([]);
   });
 });

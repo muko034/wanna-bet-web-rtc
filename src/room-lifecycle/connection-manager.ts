@@ -378,10 +378,12 @@ export class ConnectionManager {
       this.refreshLobby();
       return;
     }
-    this.removeFromGame(playerId, this.roundEngineState, this.gameState);
+    this.removeFromGame(playerId);
   }
 
-  private removeFromGame(playerId: string, roundEngineState: RoundEngineState, gameState: GameState): void {
+  private removeFromGame(playerId: string): void {
+    const { roundEngineState, gameState } = this;
+    if (roundEngineState === null || gameState === null) return;
     const wasChallenger = roundEngineState.round?.challengerId === playerId;
     const { state: removed } = roundEngineReducer(roundEngineState, { type: 'REMOVE_PLAYER', playerId });
     this.roundEngineState = wasChallenger ? this.advanceRound(removed) : removed;

@@ -1,5 +1,5 @@
 import type { Room } from './room';
-import { isHostRoom } from './round-controls';
+import { isHostRoom } from './room-role';
 
 export type HomeDialogAction = 'leave' | 'go-home' | 'cancel';
 
