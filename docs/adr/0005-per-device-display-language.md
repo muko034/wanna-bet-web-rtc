@@ -2,8 +2,9 @@
 
 We considered making language a Room-wide setting synced through the Host-authoritative Game State (consistent with
 how every other piece of state is broadcast — see ADR 0001/0003), but chose to keep Display Language entirely local to
-each player's own device instead: it's never part of `GameState`, has no wire message of its own, and defaults to
-Polish in `localStorage` until the player changes it. This lets each player see their own language independent of
+each player's own device instead: it's never part of `GameState`, has no wire message of its own, and starts from the
+browser's language (Polish or English, Polish if neither) until the player picks one, which is then kept in
+`localStorage`. A detected-but-unchosen language is never saved, so a stored value always means a deliberate choice. This lets each player see their own language independent of
 what Room they're in or what anyone else picked, without adding a new synced field or a translation round-trip.
 
 A direct consequence: the wire protocol's `RoundState.challengeId` carries only a Challenge Bank id, never rendered

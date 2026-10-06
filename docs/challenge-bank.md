@@ -8,7 +8,7 @@ type ChallengeBankEntry = {
   id: string;                              // stable identifier; referenced as RoundState.challengeId (message-protocol.md)
   type: 'PHYSICAL' | 'MENTAL';
   content: {
-    pl: string;                            // Polish wording — Display Language default
+    pl: string;                            // Polish wording
     en: string;                            // English wording
   };
   timeLimit: 'NONE' | 'QUARTER_MINUTE' | 'HALF_MINUTE' | 'ONE_MINUTE'; // informational only, not enforced (ADR 0004)

@@ -79,7 +79,8 @@ Challenger under the same rule as Challenge text. _Avoid_: Image, picture
 
 **Display Language**:
 A player's own choice of Polish or English for everything their client renders, set independently per player/device
-and never synced as part of the Room's Game State. _Avoid_: Locale, language setting
+and never synced as part of the Room's Game State. Until the player chooses, it follows their browser's language,
+Polish if that is neither. _Avoid_: Locale, language setting
 
 **Bet**:
 A Bettor's wager for a Round: an amount of Points and a Prediction. Capped at `floor(current Points / 2)`, minimum 1.
