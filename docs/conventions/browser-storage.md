@@ -10,6 +10,10 @@ browser and makes every place that touches real device storage easy to find.
 Namespace every key as `wanna-bet:<area>:` followed by the Room Code, held in a module-level `KEY_PREFIX` constant, and
 store values as JSON. Scoping by Room Code keeps data for different Rooms on the same device from overwriting each other.
 
+Exception: device-wide preferences that belong to the player, not a Room, use a key without a Room Code and may store a
+plain string instead of JSON. Today that is `wanna-bet:language` (the Display Language, `pl` or `en`), which is saved
+only on an explicit toggle.
+
 ```ts
 const KEY_PREFIX = 'wanna-bet:identity:';
 

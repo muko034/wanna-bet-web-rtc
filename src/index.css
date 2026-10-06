@@ -82,6 +82,65 @@ input {
   font-weight: 700;
   opacity: 0.75;
 }
+.vb-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+}
+.vb-lang-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.vb-lang-toggle::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s ease;
+}
+.vb-lang-toggle:has(button:last-child[aria-pressed='true'])::before {
+  transform: translateX(100%);
+}
+.vb-lang-toggle button {
+  position: relative;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  min-width: 34px;
+  min-height: 28px;
+  padding: 0 8px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.vb-lang-toggle button[aria-pressed='true'] {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vb-lang-toggle::before {
+    transition: none;
+  }
+}
+.vb-room-footer {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.75;
+  padding: 0 20px 14px;
+}
 .vb-home-fab {
   width: 34px;
   height: 34px;
@@ -113,6 +172,7 @@ input {
   margin-bottom: 10px;
 }
 .vb-giant-title {
+  white-space: pre-line;
   font-size: 30px;
   font-weight: 900;
   letter-spacing: -0.02em;
