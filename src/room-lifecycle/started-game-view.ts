@@ -1,3 +1,4 @@
+import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
 
 export type StartedGameView =
@@ -35,8 +36,8 @@ type Params = {
   reconnectPhase: ReconnectPhase;
   /** This Guest already has a game state to show, so a dropped link keeps that screen up instead of a full-screen reconnect. */
   hasGameState?: boolean;
-  /** The Host ended the Room: the last `state` has `status: 'ended'`. It needs no live connection. */
-  gameEnded?: boolean;
+  /** The latest `state`, if any. One with `status: 'ended'` for this Room means the Host ended it; that needs no live connection. */
+  gameState?: GameState | null;
 };
 
 /**
@@ -46,12 +47,12 @@ type Params = {
  * signal yet — who drives the shared reconnect implementation in place, rather than bouncing
  * through the Lobby route or a "Page not found" dead end.
  */
-export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState = false, gameEnded = false }: Params): StartedGameView {
+export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState = false, gameState = null }: Params): StartedGameView {
   if (code === undefined) {
     return { view: 'not-found' };
   }
 
-  if (gameEnded) {
+  if (gameState?.status === 'ended' && gameState.roomId === code) {
     return { view: 'game-result', roomCode: code };
   }
 

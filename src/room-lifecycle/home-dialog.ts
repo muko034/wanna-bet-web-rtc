@@ -34,12 +34,15 @@ export function resolveHomeDialog({ code, room }: Params): HomeDialog {
   };
 }
 
-export type HomeChoiceEffect = { kind: 'leave'; code: string } | { kind: 'sit-out'; code: string } | { kind: 'go-home' } | { kind: 'none' };
+export type HomeChoiceEffect = { kind: 'leave'; code: string } | { kind: 'host-leave' } | { kind: 'sit-out'; code: string } | { kind: 'go-home' } | { kind: 'none' };
 
-/** What happens once a dialog option is chosen: Cancel changes nothing, Leave needs the Room code. */
-export function resolveHomeChoice(action: HomeDialogAction, code: string | undefined): HomeChoiceEffect {
+/** What happens once a dialog option is chosen: Cancel changes nothing, a Guest's Leave needs the Room code, the Host's Leave ends the Room. */
+export function resolveHomeChoice(action: HomeDialogAction, code: string | undefined, room: Room | null): HomeChoiceEffect {
   if (action === 'go-home') {
     return { kind: 'go-home' };
+  }
+  if (action === 'leave' && isHostRoom(code, room)) {
+    return { kind: 'host-leave' };
   }
   if (action === 'leave' && code) {
     return { kind: 'leave', code };

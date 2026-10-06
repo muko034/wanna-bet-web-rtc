@@ -34,26 +34,30 @@ describe('resolveHomeDialog', () => {
 
 describe('resolveHomeChoice', () => {
   it('Leave carries the Room code', () => {
-    expect(resolveHomeChoice('leave', 'ABCDEF')).toEqual({ kind: 'leave', code: 'ABCDEF' });
+    expect(resolveHomeChoice('leave', 'ABCDEF', null)).toEqual({ kind: 'leave', code: 'ABCDEF' });
   });
 
   it('Leave without a Room code changes nothing', () => {
-    expect(resolveHomeChoice('leave', undefined)).toEqual({ kind: 'none' });
+    expect(resolveHomeChoice('leave', undefined, null)).toEqual({ kind: 'none' });
+  });
+
+  it("the Host's Leave ends the Room", () => {
+    expect(resolveHomeChoice('leave', 'ABCDEF', hostRoom)).toEqual({ kind: 'host-leave' });
   });
 
   it('Sit out carries the Room code', () => {
-    expect(resolveHomeChoice('sit-out', 'ABCDEF')).toEqual({ kind: 'sit-out', code: 'ABCDEF' });
+    expect(resolveHomeChoice('sit-out', 'ABCDEF', null)).toEqual({ kind: 'sit-out', code: 'ABCDEF' });
   });
 
   it('Sit out without a Room code changes nothing', () => {
-    expect(resolveHomeChoice('sit-out', undefined)).toEqual({ kind: 'none' });
+    expect(resolveHomeChoice('sit-out', undefined, null)).toEqual({ kind: 'none' });
   });
 
   it('Go Home goes Home', () => {
-    expect(resolveHomeChoice('go-home', 'ABCDEF')).toEqual({ kind: 'go-home' });
+    expect(resolveHomeChoice('go-home', 'ABCDEF', null)).toEqual({ kind: 'go-home' });
   });
 
   it('Cancel changes nothing', () => {
-    expect(resolveHomeChoice('cancel', 'ABCDEF')).toEqual({ kind: 'none' });
+    expect(resolveHomeChoice('cancel', 'ABCDEF', null)).toEqual({ kind: 'none' });
   });
 });

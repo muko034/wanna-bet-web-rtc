@@ -167,7 +167,7 @@ export function StartedGame({
     };
   }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameEnded: gameState?.status === 'ended' && gameState.roomId === code });
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameState });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [amount, setAmount] = useState(1);
@@ -278,13 +278,11 @@ export function StartedGame({
   const homeDialog = resolveHomeDialog({ code, room });
   const chooseHomeOption = (action: HomeDialogAction) => {
     setHomeDialogOpen(false);
-    const effect = resolveHomeChoice(action, code);
-    if (effect.kind === 'leave') {
-      if (isHostRoom(code, room)) {
-        onHostLeave();
-      } else {
-        onLeave(effect.code);
-      }
+    const effect = resolveHomeChoice(action, code, room);
+    if (effect.kind === 'host-leave') {
+      onHostLeave();
+    } else if (effect.kind === 'leave') {
+      onLeave(effect.code);
     } else if (effect.kind === 'sit-out') {
       onSitOut(effect.code);
     } else if (effect.kind === 'go-home') {
