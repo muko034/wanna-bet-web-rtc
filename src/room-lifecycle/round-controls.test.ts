@@ -127,4 +127,44 @@ describe('resolveRoundControls', () => {
       kind: 'hidden',
     });
   });
+  describe('when no Guest is active', () => {
+    const players = (guestStatuses: Array<'active' | 'paused'>): GameState['players'] => [
+      { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+      ...guestStatuses.map((status, index) => ({
+        playerId: `p${index + 1}`,
+        name: `Guest ${index + 1}`,
+        points: 100,
+        status,
+        connected: status === 'active',
+      })),
+    ];
+
+    it.each([
+      ['mid-Round, instead of the judging screen', roundWith('host-1', [])],
+      ['in the gap between Rounds', null],
+    ])('offers only End game when every Guest sat out %s', (_label, round) => {
+      expect(resolveRoundControls({
+        code: 'ABCDEF',
+        room: roomWith(),
+        gameState: stateWith({ players: players(['paused', 'paused']), round }),
+      })).toEqual({ kind: 'no-active-guests', background: 'vb-bg-wait' });
+    });
+
+    it('keeps the usual controls while at least one Guest is still active', () => {
+      expect(resolveRoundControls({
+        code: 'ABCDEF',
+        room: roomWith(),
+        gameState: stateWith({ players: players(['paused', 'active']), round: roundWith('host-1', ['p2']) }),
+      })).toEqual({ kind: 'judge-round', challengerName: 'Host', background: 'vb-bg-judge' });
+    });
+
+    it('never shows it on a Guest device or after the game ended', () => {
+      expect(resolveRoundControls({ code: 'ABCDEF', room: null, gameState: stateWith({ players: players(['paused']) }) })).toEqual({ kind: 'hidden' });
+      expect(resolveRoundControls({
+        code: 'ABCDEF',
+        room: roomWith(),
+        gameState: stateWith({ status: 'ended', players: players(['paused']) }),
+      })).toEqual({ kind: 'hidden' });
+    });
+  });
 });

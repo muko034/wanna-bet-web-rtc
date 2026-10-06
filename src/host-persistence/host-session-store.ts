@@ -34,7 +34,7 @@ export const TTL_MS = 24 * 60 * 60 * 1000;
 const KEY_PREFIX = 'wanna-bet:host-session:';
 
 /** Best-effort removal of a Room's stored snapshot — a failed remove is swallowed like a failed save. */
-function discard(storage: Storage, code: string): void {
+export function deleteHostSession(storage: Storage, code: string): void {
   try {
     storage.removeItem(KEY_PREFIX + code);
   } catch (error) {
@@ -76,7 +76,7 @@ export function loadHostSession(storage: Storage, code: string, now: number = Da
     const snapshot = JSON.parse(raw) as HostSessionSnapshot;
     if (snapshot.schemaVersion !== HOST_SESSION_SCHEMA_VERSION) return null;
     if (snapshot.ttl <= now) {
-      discard(storage, code);
+      deleteHostSession(storage, code);
       return null;
     }
     return snapshot.state;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FakeStorage } from '../fake-storage';
-import { HOST_SESSION_SCHEMA_VERSION, TTL_MS, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
+import { HOST_SESSION_SCHEMA_VERSION, TTL_MS, deleteHostSession, loadHostSession, saveHostSession, type HostSession } from './host-session-store';
 
 function sessionFor(code: string, hostPoints = 100): HostSession {
   return {
@@ -108,5 +108,16 @@ describe('host-session-store', () => {
     // Past the first save's original ttl, but within TTL_MS of the second save's refreshed ttl.
     const afterOriginalTtl = firstSave + TTL_MS + 1;
     expect(loadHostSession(storage, 'ABCDEF', afterOriginalTtl)).not.toBeNull();
+  });
+
+  it("deletes a Room's session without touching another Room's", () => {
+    const storage = new FakeStorage();
+    saveHostSession(storage, sessionFor('AAAAAA'));
+    saveHostSession(storage, sessionFor('BBBBBB'));
+
+    deleteHostSession(storage, 'AAAAAA');
+
+    expect(loadHostSession(storage, 'AAAAAA')).toBeNull();
+    expect(loadHostSession(storage, 'BBBBBB')).not.toBeNull();
   });
 });

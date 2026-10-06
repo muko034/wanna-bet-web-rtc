@@ -10,6 +10,9 @@ import type { HostSession } from '../host-persistence/host-session-store';
 /** How often the Host re-sends the current `state` so Guests can tell a quiet game from a dead link. */
 export const HEARTBEAT_INTERVAL_MS = 3_000;
 
+/** Lets the last `state` broadcast leave the Host before its connections close. */
+const LEAVE_CLOSE_DELAY_MS = 200;
+
 function randomId(): string {
   return Math.random().toString(36).slice(2);
 }
@@ -54,6 +57,8 @@ export class ConnectionManager {
   private readonly onGameStateChange: (gameState: GameState) => void;
   /** Notified with the full Host session after every GameState change, Lobby snapshots included, for autosave. */
   private readonly onSessionChange: (session: HostSession) => void;
+  /** Called with the Room Code when the Host Leaves, so its persisted session is deleted. */
+  private readonly onRoomEnded: (code: string) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
   /** Picks the very first Challenger at random; every Round after that follows the fixed order it establishes. */
   private readonly pickChallenger: (candidateIds: string[]) => string;
@@ -62,6 +67,8 @@ export class ConnectionManager {
   /** Private reconnect registry: which player a `reconnectToken` belongs to, used only to match a `rejoin`. */
   private readonly playerIdByReconnectToken = new Map<string, string>();
   private firstRoundStarted = false;
+  /** Guests who sat out in the Lobby; `startGame` begins them paused. */
+  private readonly lobbySatOut = new Set<string>();
   private readonly heartbeatTimer: ReturnType<typeof setInterval>;
 
   constructor(
@@ -72,11 +79,13 @@ export class ConnectionManager {
     pickChallenger: (candidateIds: string[]) => string = randomPlayer,
     onGameStateChange: (gameState: GameState) => void = () => {},
     onSessionChange: (session: HostSession) => void = () => {},
+    onRoomEnded: (code: string) => void = () => {},
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.onGameStateChange = onGameStateChange;
     this.onSessionChange = onSessionChange;
+    this.onRoomEnded = onRoomEnded;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
     this.pickChallenger = pickChallenger;
@@ -94,6 +103,20 @@ export class ConnectionManager {
   /** Stops the heartbeat; call when the Room closes. */
   close(): void {
     clearInterval(this.heartbeatTimer);
+  }
+
+  /**
+   * The Host Leaves: broadcasts one last `state` with `status: 'ended'`, deletes the saved
+   * session (so the Room cannot be reopened) and closes the Room's connections.
+   */
+  leave(): void {
+    this.close();
+    const base = this.gameState ?? buildLobbyGameState(this.room);
+    this.gameState = { ...base, status: 'ended', round: null, resolution: null };
+    this.protocol.broadcastState(this.gameState);
+    this.onGameStateChange(this.gameState);
+    this.onRoomEnded(this.room.code);
+    setTimeout(() => this.transport.close(), LEAVE_CLOSE_DELAY_MS);
   }
 
   /** Broadcasts the current snapshot to connected Guests at once, e.g. after the Host's link was confirmed or restored. */
@@ -152,6 +175,10 @@ export class ConnectionManager {
   startGame(): GameState {
     this.gameState = buildInitialGameState(this.room);
     this.roundEngineState = buildInitialRoundEngineState(this.room);
+    for (const playerId of this.lobbySatOut) {
+      this.pausePlayer(playerId, 'self');
+    }
+    this.lobbySatOut.clear();
     this.emitGameState(this.gameState);
     return this.gameState;
   }
@@ -165,7 +192,7 @@ export class ConnectionManager {
   private advanceRound(roundEngineState: RoundEngineState): RoundEngineState {
     const challengerId = this.firstRoundStarted
       ? roundEngineState.playerOrder[0]
-      : this.pickChallenger(roundEngineState.playerOrder);
+      : this.pickChallenger(roundEngineState.playerOrder.filter((id) => !roundEngineState.pausedPlayerIds.includes(id)));
 
     const orderedState = this.firstRoundStarted
       ? roundEngineState
@@ -333,6 +360,7 @@ export class ConnectionManager {
       players: this.room.players.map((p) => (p.playerId === playerId ? { ...p, connected: true } : p)),
     };
 
+    this.lobbySatOut.delete(playerId);
     this.resumeSelfSitOut(playerId);
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
@@ -368,6 +396,10 @@ export class ConnectionManager {
   private handleSitOut(_payload: SitOutMessage['payload'], peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
+      return;
+    }
+    if (this.gameState === null || this.gameState.status === 'lobby') {
+      this.lobbySatOut.add(playerId);
       return;
     }
     this.pausePlayer(playerId, 'self');
@@ -417,6 +449,7 @@ export class ConnectionManager {
     }
 
     this.playerIdByPeerId.delete(peerId);
+    this.lobbySatOut.delete(playerId);
     for (const [reconnectToken, id] of this.playerIdByReconnectToken) {
       if (id === playerId) this.playerIdByReconnectToken.delete(reconnectToken);
     }
@@ -445,6 +478,9 @@ export class ConnectionManager {
       players: gameState.players.filter((p) => p.playerId !== playerId),
     };
     this.emitGameState(this.gameState);
+    if (this.gameState.players.every((p) => p.playerId === this.room.hostPlayerId)) {
+      this.leave();
+    }
   }
 
   private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {

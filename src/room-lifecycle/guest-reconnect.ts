@@ -1,7 +1,8 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import type { Transport } from '../transport/transport';
-import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameStart, watchForHostSilence, watchGameState } from './join-room';
+import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameEnd, watchForGameStart, watchForHostSilence, watchGameState } from './join-room';
+import { closeEndedGame } from './guest-leave';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
 import type { BetRejection } from '../round-engine/round-engine';
@@ -27,6 +28,26 @@ export type ReconnectCallbacks = {
   /** The Host explicitly refused this Guest's Bet, for the given reason code. */
   onBetRejected: (reason: BetRejection) => void;
 };
+
+/**
+ * Wraps `callbacks` so the signals a stale connection can still deliver after the Guest sat out
+ * (a late `state` broadcast, the game-started cue, the drop its own close causes) do nothing
+ * while `isMuted` holds. Bet readiness and rejections pass through: they only ever clear state.
+ */
+export function muteWhile(isMuted: () => boolean, callbacks: ReconnectCallbacks): ReconnectCallbacks {
+  return {
+    ...callbacks,
+    onGameState: (state) => {
+      if (!isMuted()) callbacks.onGameState(state);
+    },
+    onGameStarted: (code) => {
+      if (!isMuted()) callbacks.onGameStarted(code);
+    },
+    onConnectionDropped: () => {
+      if (!isMuted()) callbacks.onConnectionDropped();
+    },
+  };
+}
 
 /** Delay before the first automatic retry attempt. */
 const RECONNECT_INITIAL_DELAY_MS = 2_000;
@@ -74,6 +95,7 @@ export function completeGuestConnection(
   armHostSilence: () => void,
 ): void {
   saveIdentity(storage, code, { playerId, reconnectToken });
+  watchForGameEnd(transport, () => closeEndedGame(transport, storage, code));
   const protocol = new GuestProtocol(transport);
   callbacks.onPlaceBetReady((payload) => protocol.placeBet(payload));
   armHostSilence();

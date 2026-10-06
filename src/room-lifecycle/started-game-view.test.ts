@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveStartedGameView } from './started-game-view';
+import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
 
 function roomWith(overrides: Partial<Room> = {}): Room {
@@ -126,5 +127,31 @@ describe('resolveStartedGameView', () => {
     });
 
     expect(result).toEqual({ view: 'reconnect-failed', roomCode: 'ABCDEF', message: 'gave up' });
+  });
+});
+
+function endedState(roomId: string): GameState {
+  return { roomId, status: 'ended', challengerId: null, resolution: null, round: null, players: [] };
+}
+
+describe('resolveStartedGameView once the Game has ended', () => {
+  it.each([
+    ['the Host', roomWith({ started: true }), false],
+    ['a Guest with no stored identity left', null, false],
+    ['a Guest whose connection is gone', null, true],
+  ])('shows the Game Result Screen to %s', (_name, room, hasGameState) => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF', room, guestGameStartedCode: null, hasStoredIdentity: false, reconnectPhase: null, hasGameState, gameState: endedState('ABCDEF'),
+    });
+
+    expect(result).toEqual({ view: 'game-result', roomCode: 'ABCDEF' });
+  });
+
+  it('ignores an ended state that belongs to another Room', () => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF', room: null, guestGameStartedCode: null, hasStoredIdentity: false, reconnectPhase: null, gameState: endedState('OTHERR'),
+    });
+
+    expect(result).toEqual({ view: 'join-form' });
   });
 });

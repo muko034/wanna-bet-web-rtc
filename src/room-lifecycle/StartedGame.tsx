@@ -7,7 +7,8 @@ import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
-import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
+import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
+import { ROSTER_NOTICE_DURATION_MS, resolveRosterNotices } from './roster-notice';
 import { resolveChallengeCard } from './challenge-card';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
 import { isChallengeRedrawn } from './challenge-change';
@@ -15,6 +16,7 @@ import { nextChallengeNotice, resolveChallengeChrome, type ChallengeNotice } fro
 import { resolveLockIn } from './lock-in';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
+import { resolveGameResult } from './game-result';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -68,8 +70,12 @@ type Props = {
   /** Guest only: Leave the Room for good and go Home. */
   onLeave: (code: string) => void;
   onSitOut: (code: string) => void;
+  /** Host only: Leave ends the Room for everyone. */
+  onHostLeave: () => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
   createGuestTransport: () => PeerJsTransport;
+  /** Whether this Guest has sat out or left, so signals from the connection they closed must be ignored. */
+  isSatOut: () => boolean;
 };
 
 /**
@@ -100,7 +106,9 @@ export function StartedGame({
   onConnectionLost,
   onLeave,
   onSitOut,
+  onHostLeave,
   createGuestTransport,
+  isSatOut,
 }: Props) {
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
@@ -125,7 +133,7 @@ export function StartedGame({
     setReconnectPhase('pending');
     const transport = createGuestTransport();
     let pending = true;
-    const callbacks: ReconnectCallbacks = {
+    const callbacks: ReconnectCallbacks = muteWhile(isSatOut, {
       onGameState: (state) => callbacksRef.current.onGameState(state),
       onGameStarted: (startedCode) => callbacksRef.current.onGameStarted(startedCode),
       // A drop is never a dead end: hand it to App-level state, which resets
@@ -139,7 +147,7 @@ export function StartedGame({
       },
       onPlaceBetReady: (placeBet) => callbacksRef.current.onPlaceBetReady(placeBet),
       onBetRejected: (reason) => callbacksRef.current.onBetRejected(reason),
-    };
+    });
     attemptReconnect(transport, roomRegistry, localStorage, code, callbacks).then((result) => {
       if (!pending) return;
       pending = false;
@@ -163,7 +171,7 @@ export function StartedGame({
     };
   }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null });
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameState });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [amount, setAmount] = useState(1);
@@ -209,6 +217,9 @@ export function StartedGame({
         onBetRejected={onBetRejected}
         onConnectionLost={onConnectionLost}
         createGuestTransport={createGuestTransport}
+        isSatOut={isSatOut}
+        onLeave={onLeave}
+        onSitOut={onSitOut}
       />
     );
   }
@@ -247,11 +258,22 @@ export function StartedGame({
   // it announced, so it never replays once the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
+  const [rosterNotice, setRosterNotice] = useState<{ text: string; key: number } | null>(null);
   useEffect(() => {
     const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
+    const notices = gameState ? resolveRosterNotices(previousGameStateRef.current, gameState, localPlayerId ?? null) : [];
     previousGameStateRef.current = gameState;
+    if (notices.length > 0) {
+      setRosterNotice((current) => ({ text: notices.join(', '), key: (current?.key ?? 0) + 1 }));
+    }
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
+  // Matches the banner's CSS animation, so a remounted banner (the Round rotating) never replays it.
+  useEffect(() => {
+    if (rosterNotice === null) return;
+    const timer = setTimeout(() => setRosterNotice(null), ROSTER_NOTICE_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [rosterNotice?.key]);
   const chrome = resolveChallengeChrome({ code, room, gameState, notice: challengeNotice });
   const redrawButton = chrome.showRedraw && (
     <button class="vb-home-fab vb-redraw" type="button" aria-label="Redraw Challenge" onClick={onRedraw}>
@@ -274,8 +296,10 @@ export function StartedGame({
   const homeDialog = resolveHomeDialog({ code, room });
   const chooseHomeOption = (action: HomeDialogAction) => {
     setHomeDialogOpen(false);
-    const effect = resolveHomeChoice(action, code);
-    if (effect.kind === 'leave') {
+    const effect = resolveHomeChoice(action, code, room);
+    if (effect.kind === 'host-leave') {
+      onHostLeave();
+    } else if (effect.kind === 'leave') {
       onLeave(effect.code);
     } else if (effect.kind === 'sit-out') {
       onSitOut(effect.code);
@@ -303,6 +327,29 @@ export function StartedGame({
     setSubmittedBet({ roundKey: lockIn.roundKey, bet: lockIn.bet });
   };
 
+  const gameResult = resolveGameResult({ gameState, localPlayerId: localPlayerId ?? null });
+  if (view.view === 'game-result' && gameResult) {
+    return (
+      <PhoneShell background={gameResult.background} roomCode={view.roomCode}>
+        <div class="vb-giant-title">{gameResult.title}</div>
+        <div class="vb-score-list">
+          {gameResult.rows.map((row) => (
+            <div class="vb-score-row" key={row.playerId}>
+              <span class="vb-score-name">
+                #{row.rank} {row.nameLabel}
+                {row.isWinner && <span class="vb-score-sub">Winner 🏆</span>}
+              </span>
+              <span>{row.points}</span>
+            </div>
+          ))}
+        </div>
+        <a class="vb-cta" href={withBase('/')}>
+          Home
+        </a>
+      </PhoneShell>
+    );
+  }
+
   if (resultScreen) {
     return (
       <PhoneShell background={resultScreen.background} roomCode={view.roomCode} onHome={() => setHomeDialogOpen(true)} overlay={dialogOverlay}>
@@ -329,7 +376,7 @@ export function StartedGame({
 
   return (
     <PhoneShell
-      background={roundControls.kind === 'judge-round' ? roundControls.background : bettingPanel.background}
+      background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
       topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
@@ -340,7 +387,15 @@ export function StartedGame({
         </>
       }
     >
-      {gameState?.round && roundControls.kind === 'judge-round' ? (
+      {roundControls.kind === 'no-active-guests' ? (
+        <>
+          <div class="vb-giant-title vb-title-small">No active players</div>
+          <div class="vb-giant-sub">Everyone sat out. The game continues when someone returns.</div>
+          <button class="vb-cta" type="button" onClick={onHostLeave}>
+            End game
+          </button>
+        </>
+      ) : gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
           <div class="vb-giant-title vb-title-small">Did {roundControls.challengerName} pull it off?</div>
           <div class="vb-giant-sub">Every bet is already locked in.</div>
@@ -355,6 +410,11 @@ export function StartedGame({
         </>
       ) : gameState?.round ? (
         <>
+          {rosterNotice && (
+            <div class="vb-change-banner" role="status" key={`roster-${rosterNotice.key}`}>
+              {rosterNotice.text}
+            </div>
+          )}
           {chrome.noticeCount !== null && (
             <div class="vb-change-banner" role="status" key={`banner-${chrome.noticeCount}`}>
               Challenge changed

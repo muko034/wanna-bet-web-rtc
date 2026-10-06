@@ -143,6 +143,11 @@ Notes:
   leaves its waiting screen on a `status: 'active'` broadcast (see `watchForGameStart` in `room-lifecycle`) — a Lobby
   snapshot never starts the game. Lobby snapshots are not written to the Host's persisted `localStorage` snapshot (see
   host-persistence spec).
+- `status: 'ended'`: the Host Left. It broadcasts one last `state` with `status: 'ended'` (`round` and `resolution` are
+  `null`, `players` keep their final Points), deletes its saved session and closes its connections, so the Room cannot be
+  reopened. A client that receives it shows the Game Result Screen (final Leaderboard, every Winner on the top Points
+  marked). A Guest deletes its stored identity for the Room, closes its transport and keeps the final `GameState` in
+  memory only; a reload shows "Can't reach the Host".
 - `challengerId` tracks the current (or, right after a Resolution, the next) Challenger; `null` before the first
   Round starts.
 - `resolution` carries the most recently completed Round's outcome and Payouts, so a Guest can render the result

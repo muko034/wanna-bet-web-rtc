@@ -137,6 +137,16 @@ export function watchForGameStart(transport: Transport, onGameStarted: () => voi
   });
 }
 
+/** Calls `onGameEnded` when the Host's `state` broadcast has `status: 'ended'`, i.e. the Host Left. */
+export function watchForGameEnd(transport: Transport, onGameEnded: () => void): void {
+  const protocol = new GuestProtocol(transport);
+  protocol.on('state', (payload) => {
+    if (payload.snapshot.status === 'ended') {
+      onGameEnded();
+    }
+  });
+}
+
 /**
  * Watches a Guest's own `transport` for `state` messages, handing `onGameState` each snapshot
  * unless its `epoch` and `version` both equal the last pair seen — the Host's periodic
