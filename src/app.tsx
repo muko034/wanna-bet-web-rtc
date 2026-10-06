@@ -10,7 +10,7 @@ import { NotFound } from './NotFound';
 import { withBase } from './base-path';
 import { reopenRoom, startGame, type Room } from './room-lifecycle/room';
 import { roomRegistry } from './room-lifecycle/room-registry-instance';
-import { saveHostSession, type HostSession } from './host-persistence/host-session-store';
+import { deleteHostSession, saveHostSession, type HostSession } from './host-persistence/host-session-store';
 import { resolveAutoResume, type AutoResume } from './host-persistence/auto-resume';
 import { ReopeningRoom } from './host-persistence/ReopeningRoom';
 import { PeerJsTransport } from './transport/peerjs-transport';
@@ -61,6 +61,11 @@ function autosave(session: HostSession): void {
   setTimeout(() => saveHostSession(localStorage, session), 0);
 }
 
+/** Deferred like `autosave`, so it runs after any save still queued. */
+function forgetSession(code: string): void {
+  setTimeout(() => deleteHostSession(localStorage, code), 0);
+}
+
 type Reopening = Extract<AutoResume, { kind: 'resume' }> & { failed: boolean };
 
 /** Checked once, against the URL the app was opened on — later in-app navigation never resumes a Room. */
@@ -98,6 +103,7 @@ export function App() {
       undefined,
       setHostGameState,
       autosave,
+      forgetSession,
     );
     connectionManagerRef.current = manager;
     hostTransportRef.current = transport;
@@ -158,6 +164,12 @@ export function App() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
+
+  /** The Host's Leave: ends the Room for everyone; the Host stays on the Game Result Screen. */
+  const handleHostLeave = () => {
+    connectionManagerRef.current?.leave();
+    hostTransportRef.current = null;
+  };
 
   const handleStart = () => {
     if (!room) return;
@@ -300,6 +312,7 @@ export function App() {
           onConnectionLost={handleGuestConnectionLost}
           onLeave={handleGuestLeave}
           onSitOut={handleGuestSitOut}
+          onHostLeave={handleHostLeave}
           createGuestTransport={createGuestTransport}
         />
         <NotFound default />

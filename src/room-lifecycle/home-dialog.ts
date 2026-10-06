@@ -20,15 +20,15 @@ type Params = {
 
 const CANCEL: HomeDialogOption = { action: 'cancel', label: 'Cancel', style: 'link' };
 
-/** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave or Sit out, the Host may Go Home (the Room stays open). */
+/** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave or Sit out; the Host may Leave (ending the Room) or Go Home (the Room stays open). */
 export function resolveHomeDialog({ code, room }: Params): HomeDialog {
   const isHost = isHostRoom(code, room);
   return {
     options: [
+      { action: 'leave', label: 'Leave', style: 'destructive' },
       isHost
         ? { action: 'go-home', label: 'Go Home', style: 'primary' }
-        : { action: 'leave', label: 'Leave', style: 'destructive' },
-      ...(isHost ? [] : [{ action: 'sit-out', label: 'Sit out', style: 'primary' } as const]),
+        : { action: 'sit-out', label: 'Sit out', style: 'primary' },
       CANCEL,
     ],
   };

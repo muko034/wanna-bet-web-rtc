@@ -15,10 +15,11 @@ describe('resolveHomeDialog', () => {
     ]);
   });
 
-  it('offers the Host a primary Go Home and a plain Cancel', () => {
+  it('offers the Host a destructive Leave, a primary Go Home and a plain Cancel', () => {
     const result = resolveHomeDialog({ code: 'ABCDEF', room: hostRoom });
 
     expect(result.options).toEqual([
+      { action: 'leave', label: 'Leave', style: 'destructive' },
       { action: 'go-home', label: 'Go Home', style: 'primary' },
       { action: 'cancel', label: 'Cancel', style: 'link' },
     ]);

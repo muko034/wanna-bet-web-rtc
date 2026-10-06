@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { ConnectionManager } from './connection-manager';
+import type { GameState } from '../protocol/messages';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -556,5 +557,52 @@ describe('a Guest sitting out mid-game', () => {
     manager.resolveRound('YES');
 
     expect(manager.gameState?.round?.challengerId).toBe('host-1');
+  });
+});
+
+describe('the Host leaving', () => {
+  async function startedGameWithGuest(onRoomEnded: (code: string) => void = () => {}) {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const hostStates: GameState[] = [];
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, () => 'host-1', (s) => hostStates.push(s), () => {}, onRoomEnded);
+    const guest = await connectGuest(hostId);
+    const received: unknown[] = [];
+    guest.onMessage((message) => received.push(message));
+    guest.send({ type: 'join', payload: { name: 'Sam' } });
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, guest, received, hostStates };
+  }
+
+  const lastState = (received: unknown[]) =>
+    (received.filter((m) => (m as { type?: unknown }).type === 'state').at(-1) as { payload: { snapshot: GameState } }).payload.snapshot;
+
+  it('broadcasts a last state with status ended to every Guest and to the Host UI', async () => {
+    const { manager, received, hostStates } = await startedGameWithGuest();
+
+    manager.leave();
+
+    expect(lastState(received).status).toBe('ended');
+    expect(hostStates.at(-1)?.status).toBe('ended');
+    expect(manager.gameState?.status).toBe('ended');
+  });
+
+  it("keeps the Leaderboard's Points in the last state", async () => {
+    const { manager, received } = await startedGameWithGuest();
+
+    manager.leave();
+
+    expect(lastState(received).players.map((p) => p.points)).toEqual([100, 100]);
+  });
+
+  it('deletes the persisted session of the Room', async () => {
+    const ended: string[] = [];
+    const { manager } = await startedGameWithGuest((code) => ended.push(code));
+
+    manager.leave();
+
+    expect(ended).toEqual(['ABCDEF']);
   });
 });

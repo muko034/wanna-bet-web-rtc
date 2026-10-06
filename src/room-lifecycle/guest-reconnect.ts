@@ -1,7 +1,8 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import type { Transport } from '../transport/transport';
-import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameStart, watchForHostSilence, watchGameState } from './join-room';
+import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameEnd, watchForGameStart, watchForHostSilence, watchGameState } from './join-room';
+import { closeEndedGame } from './guest-leave';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
 import type { BetRejection } from '../round-engine/round-engine';
@@ -74,6 +75,7 @@ export function completeGuestConnection(
   armHostSilence: () => void,
 ): void {
   saveIdentity(storage, code, { playerId, reconnectToken });
+  watchForGameEnd(transport, () => closeEndedGame(transport, storage, code));
   const protocol = new GuestProtocol(transport);
   callbacks.onPlaceBetReady((payload) => protocol.placeBet(payload));
   armHostSilence();

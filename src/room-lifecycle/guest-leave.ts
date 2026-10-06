@@ -24,3 +24,12 @@ export function sitOutOfRoom(transport: Transport): void {
   new GuestProtocol(transport).sitOut();
   setTimeout(() => transport.close(), SIT_OUT_CLOSE_DELAY_MS);
 }
+
+/**
+ * The Host ended the Room: forgets this device's identity for `code`'s Room and closes
+ * `transport`, so a reload does not resume the Room. The final `GameState` lives in memory only.
+ */
+export function closeEndedGame(transport: Transport, storage: Storage, code: string): void {
+  deleteIdentity(storage, code);
+  transport.close();
+}

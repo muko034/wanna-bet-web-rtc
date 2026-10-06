@@ -15,6 +15,7 @@ import { nextChallengeNotice, resolveChallengeChrome, type ChallengeNotice } fro
 import { resolveLockIn } from './lock-in';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
+import { resolveGameResult } from './game-result';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -68,6 +69,8 @@ type Props = {
   /** Guest only: Leave the Room for good and go Home. */
   onLeave: (code: string) => void;
   onSitOut: (code: string) => void;
+  /** Host only: Leave ends the Room for everyone. */
+  onHostLeave: () => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
   createGuestTransport: () => PeerJsTransport;
 };
@@ -100,6 +103,7 @@ export function StartedGame({
   onConnectionLost,
   onLeave,
   onSitOut,
+  onHostLeave,
   createGuestTransport,
 }: Props) {
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
@@ -163,7 +167,7 @@ export function StartedGame({
     };
   }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null });
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameEnded: gameState?.status === 'ended' && gameState.roomId === code });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [amount, setAmount] = useState(1);
@@ -276,7 +280,11 @@ export function StartedGame({
     setHomeDialogOpen(false);
     const effect = resolveHomeChoice(action, code);
     if (effect.kind === 'leave') {
-      onLeave(effect.code);
+      if (isHostRoom(code, room)) {
+        onHostLeave();
+      } else {
+        onLeave(effect.code);
+      }
     } else if (effect.kind === 'sit-out') {
       onSitOut(effect.code);
     } else if (effect.kind === 'go-home') {
@@ -302,6 +310,29 @@ export function StartedGame({
     onPlaceBet(lockIn.bet, { roundKey: lockIn.roundKey, playerId: lockIn.playerId });
     setSubmittedBet({ roundKey: lockIn.roundKey, bet: lockIn.bet });
   };
+
+  const gameResult = resolveGameResult({ gameState, localPlayerId: localPlayerId ?? null });
+  if (view.view === 'game-result' && gameResult) {
+    return (
+      <PhoneShell background={gameResult.background} roomCode={view.roomCode}>
+        <div class="vb-giant-title">{gameResult.title}</div>
+        <div class="vb-score-list">
+          {gameResult.rows.map((row) => (
+            <div class="vb-score-row" key={row.playerId}>
+              <span class="vb-score-name">
+                #{row.rank} {row.nameLabel}
+                {row.isWinner && <span class="vb-score-sub">Winner 🏆</span>}
+              </span>
+              <span>{row.points}</span>
+            </div>
+          ))}
+        </div>
+        <a class="vb-cta" href={withBase('/')}>
+          Home
+        </a>
+      </PhoneShell>
+    );
+  }
 
   if (resultScreen) {
     return (

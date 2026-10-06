@@ -361,3 +361,34 @@ describe('leaveRoom', () => {
     expect(manager.room.players.map((p) => p.playerId)).not.toContain(playerId);
   });
 });
+
+describe('the Host leaving the Room', () => {
+  async function connectedGuestInStartedGame() {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const callbacks = noopCallbacks();
+    await attemptReconnect(new FakeTransport(), registry, storage, code, callbacks);
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { code, manager, storage, callbacks };
+  }
+
+  it('hands the Guest the ended state and deletes its stored identity for the Room', async () => {
+    const { code, manager, storage, callbacks } = await connectedGuestInStartedGame();
+
+    manager.leave();
+
+    expect(callbacks.onGameState).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'ended' }));
+    expect(loadIdentity(storage, code)).toBeNull();
+  });
+
+  it('keeps the identity while the Game is still on', async () => {
+    const { code, storage } = await connectedGuestInStartedGame();
+
+    expect(loadIdentity(storage, code)).not.toBeNull();
+  });
+});

@@ -10,6 +10,9 @@ import type { HostSession } from '../host-persistence/host-session-store';
 /** How often the Host re-sends the current `state` so Guests can tell a quiet game from a dead link. */
 export const HEARTBEAT_INTERVAL_MS = 3_000;
 
+/** Lets the last `state` broadcast leave the Host before its connections close. */
+const LEAVE_CLOSE_DELAY_MS = 200;
+
 function randomId(): string {
   return Math.random().toString(36).slice(2);
 }
@@ -54,6 +57,8 @@ export class ConnectionManager {
   private readonly onGameStateChange: (gameState: GameState) => void;
   /** Notified with the full Host session after every GameState change, Lobby snapshots included, for autosave. */
   private readonly onSessionChange: (session: HostSession) => void;
+  /** Called with the Room Code when the Host Leaves, so its persisted session is deleted. */
+  private readonly onRoomEnded: (code: string) => void;
   private readonly pickChallenge: (candidateIds: string[]) => string;
   /** Picks the very first Challenger at random; every Round after that follows the fixed order it establishes. */
   private readonly pickChallenger: (candidateIds: string[]) => string;
@@ -72,11 +77,13 @@ export class ConnectionManager {
     pickChallenger: (candidateIds: string[]) => string = randomPlayer,
     onGameStateChange: (gameState: GameState) => void = () => {},
     onSessionChange: (session: HostSession) => void = () => {},
+    onRoomEnded: (code: string) => void = () => {},
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.onGameStateChange = onGameStateChange;
     this.onSessionChange = onSessionChange;
+    this.onRoomEnded = onRoomEnded;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
     this.pickChallenger = pickChallenger;
@@ -94,6 +101,20 @@ export class ConnectionManager {
   /** Stops the heartbeat; call when the Room closes. */
   close(): void {
     clearInterval(this.heartbeatTimer);
+  }
+
+  /**
+   * The Host Leaves: broadcasts one last `state` with `status: 'ended'`, deletes the saved
+   * session (so the Room cannot be reopened) and closes the Room's connections.
+   */
+  leave(): void {
+    this.close();
+    const base = this.gameState ?? buildLobbyGameState(this.room);
+    this.gameState = { ...base, status: 'ended', round: null, resolution: null };
+    this.protocol.broadcastState(this.gameState);
+    this.onGameStateChange(this.gameState);
+    this.onRoomEnded(this.room.code);
+    setTimeout(() => this.transport.close(), LEAVE_CLOSE_DELAY_MS);
   }
 
   /** Broadcasts the current snapshot to connected Guests at once, e.g. after the Host's link was confirmed or restored. */

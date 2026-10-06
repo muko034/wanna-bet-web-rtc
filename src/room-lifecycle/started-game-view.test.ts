@@ -128,3 +128,17 @@ describe('resolveStartedGameView', () => {
     expect(result).toEqual({ view: 'reconnect-failed', roomCode: 'ABCDEF', message: 'gave up' });
   });
 });
+
+describe('resolveStartedGameView once the Game has ended', () => {
+  it.each([
+    ['the Host', roomWith({ started: true }), false],
+    ['a Guest with no stored identity left', null, false],
+    ['a Guest whose connection is gone', null, true],
+  ])('shows the Game Result Screen to %s', (_name, room, hasGameState) => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF', room, guestGameStartedCode: null, hasStoredIdentity: false, reconnectPhase: null, hasGameState, gameEnded: true,
+    });
+
+    expect(result).toEqual({ view: 'game-result', roomCode: 'ABCDEF' });
+  });
+});
