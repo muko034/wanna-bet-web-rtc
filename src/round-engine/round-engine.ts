@@ -29,6 +29,8 @@ export type RoundEngineState = {
   points: Record<string, number>;
   challengeHistory: string[];
   round: Round | null;
+  /** Players the engine skips when rotating the Challenger; a Host Pause and a Sit Out both land here. */
+  pausedPlayerIds?: string[];
 };
 
 export type ChallengeBankEntry = { id: string };
@@ -67,7 +69,19 @@ export type RemovePlayerAction = {
   playerId: string;
 };
 
+export type PausePlayerAction = {
+  type: 'PAUSE_PLAYER';
+  playerId: string;
+};
+
+export type ResumePlayerAction = {
+  type: 'RESUME_PLAYER';
+  playerId: string;
+};
+
 export type RoundEngineAction =
+  | PausePlayerAction
+  | ResumePlayerAction
   | StartRoundAction
   | RedrawChallengeAction
   | PlaceBetAction
@@ -113,6 +127,10 @@ export function roundEngineReducer(
       return resolveRound(state, action);
     case 'REMOVE_PLAYER':
       return removePlayer(state, action);
+    case 'PAUSE_PLAYER':
+      return pausePlayer(state, action);
+    case 'RESUME_PLAYER':
+      return resumePlayer(state, action);
   }
 }
 
@@ -236,16 +254,45 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
       ...state,
       points,
       round: null,
-      playerOrder: rotate(state.playerOrder, round.challengerId),
+      playerOrder: rotate(state.playerOrder, round.challengerId, state.pausedPlayerIds ?? []),
     },
     payouts: appliedPayouts,
   };
 }
 
-function rotate(playerOrder: string[], challengerId: string): string[] {
+/** Moves the next unpaused player after `challengerId` to the front; falls back to the plain next player when all are paused. */
+function rotate(playerOrder: string[], challengerId: string, pausedPlayerIds: string[]): string[] {
   const index = playerOrder.indexOf(challengerId);
-  const nextIndex = (index + 1) % playerOrder.length;
+  const offsets = playerOrder.map((_, step) => step + 1);
+  const nextOffset =
+    offsets.find((offset) => !pausedPlayerIds.includes(playerOrder[(index + offset) % playerOrder.length])) ?? 1;
+  const nextIndex = (index + nextOffset) % playerOrder.length;
   return [...playerOrder.slice(nextIndex), ...playerOrder.slice(0, nextIndex)];
+}
+
+/**
+ * Marks a player paused. Their placed Bet stays in the Round; a Round whose Challenger pauses is
+ * discarded and the rotation moves on to the next unpaused player.
+ */
+function pausePlayer(state: RoundEngineState, action: PausePlayerAction): RoundEngineResult {
+  const pausedPlayerIds = [...new Set([...(state.pausedPlayerIds ?? []), action.playerId])];
+  const isChallenger = state.round?.challengerId === action.playerId;
+  return {
+    state: {
+      ...state,
+      pausedPlayerIds,
+      round: isChallenger ? null : state.round,
+      playerOrder: isChallenger ? rotate(state.playerOrder, action.playerId, pausedPlayerIds) : state.playerOrder,
+    },
+    payouts: [],
+  };
+}
+
+function resumePlayer(state: RoundEngineState, action: ResumePlayerAction): RoundEngineResult {
+  return {
+    state: { ...state, pausedPlayerIds: (state.pausedPlayerIds ?? []).filter((id) => id !== action.playerId) },
+    payouts: [],
+  };
 }
 
 /**

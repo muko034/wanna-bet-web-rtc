@@ -1,5 +1,5 @@
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { GameState, LeaveMessage, PlaceBetPayload } from '../protocol/messages';
+import type { GameState, LeaveMessage, PlaceBetPayload, Player as GamePlayer, SitOutMessage } from '../protocol/messages';
 import { HostProtocol } from '../protocol/host-protocol';
 import { roundEngineReducer, type BetRejection, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
@@ -85,6 +85,7 @@ export class ConnectionManager {
     this.protocol.on('placeBet', (payload, peerId) => this.handlePlaceBet(payload, peerId));
     this.protocol.on('rejoin', (payload, peerId) => this.handleRejoin(payload, peerId));
     this.protocol.on('leave', (payload, peerId) => this.handleLeave(payload, peerId));
+    this.protocol.on('sitOut', (payload, peerId) => this.handleSitOut(payload, peerId));
     this.transport.onConnectionChange((peerId, connected) => this.handleConnectionChange(peerId, connected));
     this.refreshLobby();
     this.heartbeatTimer = setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL_MS);
@@ -332,10 +333,62 @@ export class ConnectionManager {
       players: this.room.players.map((p) => (p.playerId === playerId ? { ...p, connected: true } : p)),
     };
 
+    this.resumeSelfSitOut(playerId);
     this.protocol.welcome(peerId, { playerId, reconnectToken });
     this.onRoomChange(this.room);
     this.refreshLobby();
     this.resendInProgressState();
+  }
+
+  /** Puts a player who sat out back to `active`; a Host Pause stays in force. */
+  private resumeSelfSitOut(playerId: string): void {
+    const { roundEngineState, gameState } = this;
+    if (roundEngineState === null || gameState === null) return;
+    const player = gameState.players.find((p) => p.playerId === playerId);
+    if (player?.status !== 'paused' || player.pausedBy !== 'self') return;
+
+    this.roundEngineState = roundEngineReducer(roundEngineState, { type: 'RESUME_PLAYER', playerId }).state;
+    this.gameState = this.withPlayer(gameState, playerId, (p) => {
+      const { pausedBy: _pausedBy, ...rest } = p;
+      return { ...rest, status: 'active' };
+    });
+  }
+
+  private withPlayer(gameState: GameState, playerId: string, update: (player: GamePlayer) => GamePlayer): GameState {
+    return { ...gameState, players: gameState.players.map((p) => (p.playerId === playerId ? update(p) : p)) };
+  }
+
+  /** The Host pauses a Guest; the Guest's own `rejoin` does not undo it. */
+  pauseGuest(playerId: string): GameState {
+    this.pausePlayer(playerId, 'host');
+    return this.gameState!;
+  }
+
+  /** A Guest steps away: paused with `pausedBy: 'self'`, still in the Room and the Game. */
+  private handleSitOut(_payload: SitOutMessage['payload'], peerId: string): void {
+    const playerId = this.playerIdByPeerId.get(peerId);
+    if (playerId === undefined) {
+      return;
+    }
+    this.pausePlayer(playerId, 'self');
+  }
+
+  /**
+   * Pauses a player in the Round Engine and the broadcast state. A Challenger's Round is
+   * discarded in favor of one for the next Challenger.
+   */
+  private pausePlayer(playerId: string, pausedBy: 'self' | 'host'): void {
+    const { roundEngineState, gameState } = this;
+    if (roundEngineState === null || gameState === null) return;
+    const wasChallenger = roundEngineState.round?.challengerId === playerId;
+    const { state: paused } = roundEngineReducer(roundEngineState, { type: 'PAUSE_PLAYER', playerId });
+    this.roundEngineState = wasChallenger ? this.advanceRound(paused) : paused;
+    this.gameState = this.withPlayer(
+      applyRoundEngineState(gameState, this.roundEngineState, gameState.resolution),
+      playerId,
+      (p) => ({ ...p, status: 'paused', pausedBy }),
+    );
+    this.emitGameState(this.gameState);
   }
 
   /**

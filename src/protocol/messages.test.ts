@@ -60,6 +60,11 @@ describe('parseGuestToHostMessage', () => {
     expect(parseGuestToHostMessage(message)).toEqual(message);
   });
 
+  it('accepts a valid sitOut message', () => {
+    const message = { type: 'sitOut', payload: {} };
+    expect(parseGuestToHostMessage(message)).toEqual(message);
+  });
+
   it('rejects a non-object input', () => {
     expect(parseGuestToHostMessage('not a message')).toBeUndefined();
     expect(parseGuestToHostMessage(null)).toBeUndefined();
@@ -78,6 +83,19 @@ describe('parseGuestToHostMessage', () => {
 });
 
 describe('parseHostToGuestMessage', () => {
+  it.each(['self', 'host'] as const)('accepts a state whose paused player has pausedBy %s', (pausedBy) => {
+    const message = {
+      type: 'state',
+      seq: 1,
+      payload: {
+        epoch: 'e',
+        version: 1,
+        snapshot: { ...gameState, players: [{ ...gameState.players[0], status: 'paused', pausedBy }] },
+      },
+    };
+    expect(parseHostToGuestMessage(message)).toEqual(message);
+  });
+
   it('accepts a valid welcome message', () => {
     const message = { type: 'welcome', seq: 1, payload: { playerId: 'p1', reconnectToken: 'tok-1' } };
     expect(parseHostToGuestMessage(message)).toEqual(message);

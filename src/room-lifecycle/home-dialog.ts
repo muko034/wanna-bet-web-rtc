@@ -1,7 +1,7 @@
 import type { Room } from './room';
 import { isHostRoom } from './room-role';
 
-export type HomeDialogAction = 'leave' | 'go-home' | 'cancel';
+export type HomeDialogAction = 'leave' | 'sit-out' | 'go-home' | 'cancel';
 
 export type HomeDialogOption = {
   action: HomeDialogAction;
@@ -20,7 +20,7 @@ type Params = {
 
 const CANCEL: HomeDialogOption = { action: 'cancel', label: 'Cancel', style: 'link' };
 
-/** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave, the Host may Go Home (the Room stays open). */
+/** Options of the confirmation dialog the Home button opens during a Game, by role: a Guest may Leave or Sit out, the Host may Go Home (the Room stays open). */
 export function resolveHomeDialog({ code, room }: Params): HomeDialog {
   const isHost = isHostRoom(code, room);
   return {
@@ -28,12 +28,13 @@ export function resolveHomeDialog({ code, room }: Params): HomeDialog {
       isHost
         ? { action: 'go-home', label: 'Go Home', style: 'primary' }
         : { action: 'leave', label: 'Leave', style: 'destructive' },
+      ...(isHost ? [] : [{ action: 'sit-out', label: 'Sit out', style: 'primary' } as const]),
       CANCEL,
     ],
   };
 }
 
-export type HomeChoiceEffect = { kind: 'leave'; code: string } | { kind: 'go-home' } | { kind: 'none' };
+export type HomeChoiceEffect = { kind: 'leave'; code: string } | { kind: 'sit-out'; code: string } | { kind: 'go-home' } | { kind: 'none' };
 
 /** What happens once a dialog option is chosen: Cancel changes nothing, Leave needs the Room code. */
 export function resolveHomeChoice(action: HomeDialogAction, code: string | undefined): HomeChoiceEffect {
@@ -42,6 +43,9 @@ export function resolveHomeChoice(action: HomeDialogAction, code: string | undef
   }
   if (action === 'leave' && code) {
     return { kind: 'leave', code };
+  }
+  if (action === 'sit-out' && code) {
+    return { kind: 'sit-out', code };
   }
   return { kind: 'none' };
 }

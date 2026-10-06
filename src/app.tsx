@@ -20,7 +20,7 @@ import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBan
 import type { GameState, PlaceBetPayload } from './protocol/messages';
 import { BetDelivery, type PlaceBetContext } from './room-lifecycle/bet-delivery';
 import type { BetRejection } from './round-engine/round-engine';
-import { leaveRoom } from './room-lifecycle/guest-leave';
+import { leaveRoom, sitOutOfRoom } from './room-lifecycle/guest-leave';
 
 type RoomRouteProps = {
   path?: string;
@@ -243,6 +243,19 @@ export function App() {
     route(withBase('/'));
   }, [handlePlaceBetReady]);
 
+  /** A Guest's Sit out: tells the Host and closes the connection but keeps the identity, so the play URL rejoins later. */
+  const handleGuestSitOut = useCallback(() => {
+    const transport = guestTransportRef.current;
+    guestTransportRef.current = null;
+    if (transport) {
+      sitOutOfRoom(transport);
+    }
+    handlePlaceBetReady(null);
+    setGuestGameStartedCode(null);
+    setGuestGameState(null);
+    route(withBase('/'));
+  }, [handlePlaceBetReady]);
+
   if (reopening) {
     return (
       <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} onHome={cancelReopen} />
@@ -289,6 +302,7 @@ export function App() {
           onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
           onLeave={handleGuestLeave}
+          onSitOut={handleGuestSitOut}
           createGuestTransport={createGuestTransport}
         />
         <NotFound default />

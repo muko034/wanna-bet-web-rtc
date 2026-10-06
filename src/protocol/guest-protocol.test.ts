@@ -115,4 +115,15 @@ describe('GuestProtocol', () => {
 
     expect(received).toEqual([{ type: 'leave', payload: {} }]);
   });
+
+  it('sitOut sends a correctly-shaped sitOut message with no seq field', async () => {
+    const { hostTransport, guestTransport } = await connectedPair();
+    const protocol = new GuestProtocol(guestTransport);
+    const received: unknown[] = [];
+    hostTransport.onMessage((message) => received.push(message));
+
+    protocol.sitOut();
+
+    expect(received).toEqual([{ type: 'sitOut', payload: {} }]);
+  });
 });

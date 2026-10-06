@@ -53,6 +53,67 @@ describe('roundEngineReducer', () => {
     });
   });
 
+  describe('paused players', () => {
+    const bet = (playerId: string): Bet => ({ playerId, amount: 10, prediction: 'YES' });
+    const round = (challengerId: string, bets: Bet[]) => ({ challengerId, challengeId: 'c1', bets, outcome: null });
+    const pause = (state: RoundEngineState, playerId: string) => roundEngineReducer(state, { type: 'PAUSE_PLAYER', playerId });
+    const resolve = (state: RoundEngineState) => roundEngineReducer(state, { type: 'RESOLVE_ROUND', outcome: 'YES' }).state;
+
+    it.each([
+      { name: 'the next player is paused', paused: ['p2'], challenger: 'p1', expectedOrder: ['p3', 'p1', 'p2'] },
+      { name: 'two players in a row are paused', paused: ['p2', 'p3'], challenger: 'p1', expectedOrder: ['p1', 'p2', 'p3'] },
+      { name: 'nobody is paused', paused: [], challenger: 'p1', expectedOrder: ['p2', 'p3', 'p1'] },
+    ])('rotation skips paused players when $name', ({ paused, challenger, expectedOrder }) => {
+      const state = stateWith({ pausedPlayerIds: paused, round: round(challenger, []) });
+
+      expect(resolve(state).playerOrder).toEqual(expectedOrder);
+    });
+
+    it('keeps a Bet already placed by a Bettor who then pauses', () => {
+      const state = stateWith({ round: round('p1', [bet('p2'), bet('p3')]) });
+
+      const { state: next } = pause(state, 'p2');
+
+      expect(next.round?.bets).toEqual([bet('p2'), bet('p3')]);
+      expect(next.pausedPlayerIds).toEqual(['p2']);
+    });
+
+    it('counts the kept Bet of a paused Bettor at Resolution', () => {
+      const state = stateWith({ round: round('p1', [bet('p2')]) });
+
+      const { state: paused } = pause(state, 'p2');
+      const { payouts } = roundEngineReducer(paused, { type: 'RESOLVE_ROUND', outcome: 'YES' });
+
+      expect(payouts).toEqual([{ playerId: 'p2', amount: 10 }]);
+    });
+
+    it.each([
+      { name: 'the next player', paused: [], expectedOrder: ['p2', 'p3', 'p1'] },
+      { name: 'the player after, when the next is paused', paused: ['p2'], expectedOrder: ['p3', 'p1', 'p2'] },
+    ])('discards the Round, with its Bets, when the Challenger pauses and rotates to $name', ({ paused, expectedOrder }) => {
+      const state = stateWith({ pausedPlayerIds: paused, round: round('p1', [bet('p2'), bet('p3')]) });
+
+      const { state: next } = pause(state, 'p1');
+
+      expect(next.round).toBeNull();
+      expect(next.playerOrder).toEqual(expectedOrder);
+    });
+
+    it('keeps the Challenge History when the Challenger pauses', () => {
+      const state = stateWith({ challengeHistory: ['c1'], round: round('p1', []) });
+
+      expect(pause(state, 'p1').state.challengeHistory).toEqual(['c1']);
+    });
+
+    it('resumes a paused player', () => {
+      const state = stateWith({ pausedPlayerIds: ['p2', 'p3'] });
+
+      const { state: next } = roundEngineReducer(state, { type: 'RESUME_PLAYER', playerId: 'p2' });
+
+      expect(next.pausedPlayerIds).toEqual(['p3']);
+    });
+  });
+
   describe('REDRAW_CHALLENGE', () => {
     const bank = [{ id: 'c1' }, { id: 'c2' }, { id: 'c3' }];
     const roundWith = (challengeId: string, bets: Bet[] = []) => ({ challengerId: 'p1', challengeId, bets, outcome: null });

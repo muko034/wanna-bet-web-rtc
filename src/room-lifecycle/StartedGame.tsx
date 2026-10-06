@@ -67,6 +67,7 @@ type Props = {
   onConnectionLost: () => void;
   /** Guest only: Leave the Room for good and go Home. */
   onLeave: (code: string) => void;
+  onSitOut: (code: string) => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
   createGuestTransport: () => PeerJsTransport;
 };
@@ -98,6 +99,7 @@ export function StartedGame({
   onBetRejected,
   onConnectionLost,
   onLeave,
+  onSitOut,
   createGuestTransport,
 }: Props) {
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
@@ -275,6 +277,8 @@ export function StartedGame({
     const effect = resolveHomeChoice(action, code);
     if (effect.kind === 'leave') {
       onLeave(effect.code);
+    } else if (effect.kind === 'sit-out') {
+      onSitOut(effect.code);
     } else if (effect.kind === 'go-home') {
       route(withBase('/'));
     }

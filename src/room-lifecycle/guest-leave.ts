@@ -12,3 +12,12 @@ export function leaveRoom(transport: Transport, storage: Storage, code: string):
   deleteIdentity(storage, code);
   transport.close();
 }
+
+/**
+ * A Guest's Sit out: tells the Host and closes `transport`, keeping this device's identity so
+ * opening the Room's play URL again rejoins the Guest.
+ */
+export function sitOutOfRoom(transport: Transport): void {
+  new GuestProtocol(transport).sitOut();
+  transport.close();
+}
