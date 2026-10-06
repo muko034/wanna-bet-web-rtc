@@ -82,6 +82,40 @@ input {
   font-weight: 700;
   opacity: 0.75;
 }
+.vb-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+}
+.vb-lang-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+.vb-lang-toggle button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 8px 10px;
+  min-height: 34px;
+  cursor: pointer;
+}
+.vb-lang-toggle button[aria-pressed='true'] {
+  background: rgba(255, 255, 255, 0.35);
+}
+.vb-room-footer {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.75;
+  padding: 0 20px 14px;
+}
 .vb-home-fab {
   width: 34px;
   height: 34px;
@@ -113,6 +147,7 @@ input {
   margin-bottom: 10px;
 }
 .vb-giant-title {
+  white-space: pre-line;
   font-size: 30px;
   font-weight: 900;
   letter-spacing: -0.02em;
