@@ -14,11 +14,11 @@ describe('resolveRosterNotices', () => {
   it('announces a player who just sat out', () => {
     const next = stateWith([host, { ...alex, status: 'paused', pausedBy: 'self', connected: false }, sam]);
 
-    expect(resolveRosterNotices(stateWith([host, alex, sam]), next, 'guest-2')).toEqual(['Alex sat out']);
+    expect(resolveRosterNotices(stateWith([host, alex, sam]), next, 'guest-2')).toEqual([{ key: 'notice.satOut', params: { name: 'Alex' } }]);
   });
 
   it('announces a player who just left', () => {
-    expect(resolveRosterNotices(stateWith([host, alex, sam]), stateWith([host, sam]), 'guest-2')).toEqual(['Alex left']);
+    expect(resolveRosterNotices(stateWith([host, alex, sam]), stateWith([host, sam]), 'guest-2')).toEqual([{ key: 'notice.left', params: { name: 'Alex' } }]);
   });
 
   it('stays silent for a Host Pause, a return, an unchanged roster and the local player', () => {

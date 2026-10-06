@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/dictionaries';
 import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
 
@@ -8,7 +9,7 @@ export type StartedGameView =
   | { view: 'not-found' }
   | { view: 'join-form' }
   | { view: 'reconnecting'; roomCode: string }
-  | { view: 'reconnect-failed'; roomCode: string; message: string };
+  | { view: 'reconnect-failed'; roomCode: string; message: MessageKey };
 
 /**
  * This device's own in-flight/settled attempt to rejoin `code` via its stored identity (see
@@ -18,7 +19,7 @@ export type StartedGameView =
  * separate terminal "session ended" state for a Guest-side dropped connection; a drop always
  * resolves through this same automatic-retry-then-manual-fallback phase.
  */
-export type ReconnectPhase = 'pending' | 'unknown-player' | { kind: 'error'; message: string } | null;
+export type ReconnectPhase = 'pending' | 'unknown-player' | { kind: 'error'; message: MessageKey } | null;
 
 type Params = {
   /** The `:code` route param at `/room/<code>/play`. */

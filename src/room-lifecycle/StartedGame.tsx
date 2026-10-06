@@ -2,6 +2,8 @@ import { route } from 'preact-router';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
+import { useT } from '../i18n/LanguageContext';
+import type { Message, MessageKey } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
@@ -34,8 +36,8 @@ import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
-const RECONNECT_ERROR_MESSAGES: Record<'unreachable', string> = {
-  unreachable: "Couldn't reach the Host — check the link and try again.",
+const RECONNECT_ERROR_MESSAGES: Record<'unreachable', MessageKey> = {
+  unreachable: 'joinRoom.error.unreachable',
 };
 
 type Props = {
@@ -110,6 +112,7 @@ export function StartedGame({
   createGuestTransport,
   isSatOut,
 }: Props) {
+  const t = useT();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
@@ -232,11 +235,11 @@ export function StartedGame({
     return (
       <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
         <div class="vb-giant-title" style="font-size:24px">
-          Can't reach the Host
+          {t('joinRoom.unreachableTitle')}
         </div>
-        <div class="vb-giant-sub">{view.message}</div>
+        <div class="vb-giant-sub">{t(view.message)}</div>
         <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
-          Retry
+          {t('joinRoom.retry')}
         </button>
       </PhoneShell>
     );
@@ -258,13 +261,13 @@ export function StartedGame({
   // it announced, so it never replays once the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
-  const [rosterNotice, setRosterNotice] = useState<{ text: string; key: number } | null>(null);
+  const [rosterNotice, setRosterNotice] = useState<{ messages: Message[]; key: number } | null>(null);
   useEffect(() => {
     const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
     const notices = gameState ? resolveRosterNotices(previousGameStateRef.current, gameState, localPlayerId ?? null) : [];
     previousGameStateRef.current = gameState;
     if (notices.length > 0) {
-      setRosterNotice((current) => ({ text: notices.join(', '), key: (current?.key ?? 0) + 1 }));
+      setRosterNotice((current) => ({ messages: notices, key: (current?.key ?? 0) + 1 }));
     }
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
@@ -412,7 +415,7 @@ export function StartedGame({
         <>
           {rosterNotice && (
             <div class="vb-change-banner" role="status" key={`roster-${rosterNotice.key}`}>
-              {rosterNotice.text}
+              {rosterNotice.messages.map((message) => t(message.key, message.params)).join(', ')}
             </div>
           )}
           {chrome.noticeCount !== null && (

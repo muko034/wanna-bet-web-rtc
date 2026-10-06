@@ -53,11 +53,14 @@ When a resolver's variants map to a different screen background, put the `vb-bg-
 
 ## Mark the local player's row in the resolver
 
-When a resolver returns per-player rows, have it identify the local player instead of leaving that to the component. Build `nameLabel` with a "(you)" suffix for the local player's own row, and expose a boolean flag such as `isLocal` when the view needs to style or find that row. The component never compares `playerId` against the local id or matches the "(you)" text, so the rule is defined and tested in one place.
+When a resolver returns per-player rows, have it identify the local player instead of leaving that to the component. Build `nameLabel` as a `Message` (`{ key, params }`) that carries the "(you)" suffix for the local player's own row, and expose a boolean flag such as `isLocal` when the view needs to style or find that row. The component never compares `playerId` against the local id or matches the "(you)" text, so the rule is defined and tested in one place.
 
 ```ts
 const isLocal = player.playerId === localPlayerId;
-return { nameLabel: isLocal ? `${player.name} (you)` : player.name, isLocal };
+return {
+  nameLabel: { key: isLocal ? 'player.you' : 'player.named', params: { name: player.name } },
+  isLocal,
+};
 ```
 
 ## Map a closed union to display data with a `Record` lookup table
@@ -65,8 +68,8 @@ return { nameLabel: isLocal ? `${player.name} (you)` : player.name, isLocal };
 When a closed string union (a status, a time limit, a result code) maps to labels, messages, or view fragments, declare a module-level `Record<Union, ...>` table and index it, instead of an if/switch chain. The compiler then rejects the table until every member of the union is mapped, so adding a variant cannot silently fall through to missing copy. Use `Exclude<...>` in the key type to drop members that never reach the table.
 
 ```ts
-const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = {
-  'room-full': 'This Room is already full (20 players).',
+const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey> = {
+  'room-full': 'joinRoom.error.roomFull',
   // ...
 };
 ```

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
+import { useT } from '../i18n/LanguageContext';
+import type { MessageKey } from '../i18n/dictionaries';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
 import { joinRoom, makeGameStartedHandler, type JoinResult } from './join-room';
 import { attemptReconnect, completeGuestConnection, muteWhile, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
@@ -52,14 +54,15 @@ type Status =
   | { kind: 'rejoining' }
   | { kind: 'joining' }
   | { kind: 'joined'; playerId: string }
-  | { kind: 'error'; message: string }
+  | { kind: 'error'; message: MessageKey }
   | { kind: 'reconnect-failed' };
 
-const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = {
-  'invalid-room': "This room link doesn't exist or has expired.",
-  unreachable: "Couldn't reach the Host — check the link and try again.",
-  'room-full': 'This Room is already full (20 players).',
-  'game-started': 'This game has already started.',
+/** Maps each failed join result (the wire reason codes already resolved to a status) to its dictionary key. */
+const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey> = {
+  'invalid-room': 'joinRoom.error.invalidRoom',
+  unreachable: 'joinRoom.error.unreachable',
+  'room-full': 'joinRoom.error.roomFull',
+  'game-started': 'joinRoom.error.gameStarted',
 };
 
 /**
@@ -71,6 +74,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, string> = 
  * as their same existing player.
  */
 export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut }: Props) {
+  const t = useT();
   const [name, setName] = useState('');
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: 'form' });
@@ -173,13 +177,13 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
         overlay={homeDialogOpen && <HomeDialog dialog={resolveHomeDialog({ code, room: null })} onChoose={chooseHomeOption} />}
       >
         <div class="vb-giant-title" style="font-size:24px">
-          You're in!
+          {t('waiting.title')}
         </div>
-        <div class="vb-giant-sub">Waiting for the Host to start the game.</div>
+        <div class="vb-giant-sub">{t('waiting.subtitle')}</div>
         <div class="vb-avatar-row">
           {roster.map((entry) => (
             <div class="vb-avatar" key={entry.playerId}>
-              {entry.nameLabel}
+              {t(entry.nameLabel.key, entry.nameLabel.params)}
             </div>
           ))}
         </div>
@@ -195,11 +199,11 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     return (
       <PhoneShell background="vb-bg-wait" roomCode={code}>
         <div class="vb-giant-title" style="font-size:24px">
-          Can't reach the Host
+          {t('joinRoom.unreachableTitle')}
         </div>
-        <div class="vb-giant-sub">{ERROR_MESSAGES.unreachable}</div>
+        <div class="vb-giant-sub">{t(ERROR_MESSAGES.unreachable)}</div>
         <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
-          Retry
+          {t('joinRoom.retry')}
         </button>
       </PhoneShell>
     );
@@ -208,21 +212,21 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   return (
     <PhoneShell background="vb-bg-form">
       <div class="vb-giant-title" style="font-size:24px">
-        Join room {code}
+        {t('joinRoom.title', { code: code ?? '' })}
       </div>
-      <div class="vb-giant-sub">Enter your name to connect.</div>
-      {status.kind === 'error' && <div class="vb-status-pill">{status.message}</div>}
+      <div class="vb-giant-sub">{t('joinRoom.subtitle')}</div>
+      {status.kind === 'error' && <div class="vb-status-pill">{t(status.message)}</div>}
       <form onSubmit={handleSubmit} style="width: 100%">
         <input
           class="vb-input-white"
-          placeholder="Your name"
+          placeholder={t('form.namePlaceholder')}
           autofocus
           value={name}
           onInput={(event) => setName((event.target as HTMLInputElement).value)}
           required
         />
         <button class="vb-cta" type="submit" disabled={status.kind === 'joining'}>
-          {status.kind === 'joining' ? 'Joining…' : 'Join room'}
+          {status.kind === 'joining' ? t('joinRoom.submitting') : t('joinRoom.submit')}
         </button>
       </form>
     </PhoneShell>

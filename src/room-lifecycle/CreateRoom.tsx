@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
+import { useT } from '../i18n/LanguageContext';
 import { PeerJsTransport } from '../transport/peerjs-transport';
 import type { RecoverableTransport } from '../transport/transport';
 import { createRoom, type Room } from './room';
@@ -13,6 +14,7 @@ type Props = {
 
 /** `/room`: form to enter the Host's display name and create the Room. */
 export function CreateRoom({ onRoomCreated }: Props) {
+  const t = useT();
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -26,20 +28,20 @@ export function CreateRoom({ onRoomCreated }: Props) {
   return (
     <PhoneShell background="vb-bg-form">
       <div class="vb-giant-title" style="font-size:24px">
-        Create a game
+        {t('createRoom.title')}
       </div>
-      <div class="vb-giant-sub">Pick a name — you'll get a room code to share.</div>
+      <div class="vb-giant-sub">{t('createRoom.subtitle')}</div>
       <form onSubmit={handleSubmit} style="width: 100%">
         <input
           class="vb-input-white"
-          placeholder="Your name"
+          placeholder={t('form.namePlaceholder')}
           autofocus
           value={name}
           onInput={(event) => setName((event.target as HTMLInputElement).value)}
           required
         />
         <button class="vb-cta" type="submit" disabled={creating}>
-          {creating ? 'Creating…' : 'Create room'}
+          {creating ? t('createRoom.submitting') : t('createRoom.submit')}
         </button>
       </form>
     </PhoneShell>

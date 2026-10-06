@@ -90,13 +90,13 @@ describe('resolveStartedGameView', () => {
       room: null,
       guestGameStartedCode: null,
       hasStoredIdentity: true,
-      reconnectPhase: { kind: 'error', message: "Couldn't reach the Host — check the link and try again." },
+      reconnectPhase: { kind: 'error', message: 'joinRoom.error.unreachable' },
     });
 
     expect(result).toEqual({
       view: 'reconnect-failed',
       roomCode: 'ABCDEF',
-      message: "Couldn't reach the Host — check the link and try again.",
+      message: 'joinRoom.error.unreachable',
     });
   });
 
@@ -122,11 +122,11 @@ describe('resolveStartedGameView', () => {
       room: null,
       guestGameStartedCode: null,
       hasStoredIdentity: true,
-      reconnectPhase: { kind: 'error', message: 'gave up' },
+      reconnectPhase: { kind: 'error', message: 'joinRoom.error.unreachable' },
       hasGameState: true,
     });
 
-    expect(result).toEqual({ view: 'reconnect-failed', roomCode: 'ABCDEF', message: 'gave up' });
+    expect(result).toEqual({ view: 'reconnect-failed', roomCode: 'ABCDEF', message: 'joinRoom.error.unreachable' });
   });
 });
 
