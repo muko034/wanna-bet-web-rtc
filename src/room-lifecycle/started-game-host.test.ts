@@ -76,8 +76,8 @@ describe('starting a round from the Host', () => {
       kind: 'hidden',
       challengeType: challengeBank[0].type,
       timeLimit: null,
-      title: '🙈 Hidden from you',
-      detail: 'Get ready to attempt it.',
+      title: { key: 'challengeCard.hiddenTitle' },
+      detail: { key: 'challengeCard.hiddenDetail' },
     });
 
     expect(resolveChallengeCard({

@@ -43,7 +43,7 @@ describe('resolveBettingPanel', () => {
     });
 
     expect(panel.bettors.map((bettor) => bettor.playerId)).toEqual(['host-1']);
-    expect(panel.kind === 'locked' && panel.waitingLabel).toBe('Everyone has bet.');
+    expect(panel.kind === 'locked' && panel.waitingLabel).toEqual({ key: 'betting.everyoneBet' });
   });
 
   it.each([
@@ -134,7 +134,7 @@ describe('resolveBettingPanel', () => {
       kind: 'locked',
       background: 'vb-bg-wait',
       ownBet: { amount: 7, prediction: 'NO' },
-      waitingLabel: 'Waiting on 1 more player…',
+      waitingLabel: { key: 'betting.waitingFor', params: { count: 1 } },
       reconnectingNotice: null,
       bettors: [
         { playerId: 'host-1', name: 'Host', hasBet: false, isLocalPlayer: false },
@@ -146,8 +146,8 @@ describe('resolveBettingPanel', () => {
   it.each([
     ['the link is up', null, null],
     ['the link has been lost for under 10 s', RECONNECT_NOTICE_DELAY_MS - 1, null],
-    ['the link has been lost for 10 s', RECONNECT_NOTICE_DELAY_MS, 'Reconnecting…'],
-    ['the link has been lost for a minute', 60_000, 'Reconnecting…'],
+    ['the link has been lost for 10 s', RECONNECT_NOTICE_DELAY_MS, { key: 'reconnecting.plain' }],
+    ['the link has been lost for a minute', 60_000, { key: 'reconnecting.plain' }],
   ])('shows the reconnecting notice under "Locked in" only after 10 s of loss: %s', (_label, linkLostForMs, notice) => {
     const panel = resolveBettingPanel({
       gameState: stateWith(),
@@ -174,10 +174,10 @@ describe('resolveBettingPanel', () => {
       localBet: { amount: 3, prediction: 'YES' },
     });
 
-    expect(panel).toMatchObject({ kind: 'locked', ownBet: { amount: 3, prediction: 'YES' }, waitingLabel: 'Waiting on 1 more player…' });
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: { amount: 3, prediction: 'YES' }, waitingLabel: { key: 'betting.waitingFor', params: { count: 1 } } });
   });
 
-  it('pluralises the waiting label for several Bettors who have yet to bet', () => {
+  it('counts several Bettors who have yet to bet in the waiting label params', () => {
     const gameState = stateWith({
       players: [
         { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
@@ -193,7 +193,7 @@ describe('resolveBettingPanel', () => {
       localBet: { amount: 3, prediction: 'YES' },
     });
 
-    expect(panel).toMatchObject({ kind: 'locked', waitingLabel: 'Waiting on 2 more players…' });
+    expect(panel).toMatchObject({ kind: 'locked', waitingLabel: { key: 'betting.waitingFor', params: { count: 2 } } });
   });
 
   it('is hidden on the waiting background when the local player is not yet known', () => {
@@ -217,7 +217,7 @@ describe('resolveBettingPanel', () => {
       localPlayerId: 'guest-2',
     });
 
-    expect(panel).toMatchObject({ kind: 'locked', ownBet: null, waitingLabel: 'Everyone has bet.' });
+    expect(panel).toMatchObject({ kind: 'locked', ownBet: null, waitingLabel: { key: 'betting.everyoneBet' } });
   });
 
   it('derives each Bettor\'s public "has bet" status from the broadcast GameState without any amount or Prediction fields', () => {
@@ -243,7 +243,7 @@ describe('resolveBettingPanel', () => {
     const failed = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2', betFailed: true });
     const fresh = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2' });
 
-    expect(failed).toMatchObject({ kind: 'form', failureMessage: "Your Bet didn't go through — try again." });
+    expect(failed).toMatchObject({ kind: 'form', failureMessage: { key: 'betting.failed' } });
     expect(fresh).toMatchObject({ kind: 'form', failureMessage: null });
   });
 
@@ -251,7 +251,7 @@ describe('resolveBettingPanel', () => {
     const localBet = { amount: 10, prediction: 'YES' as const };
     const panel = resolveBettingPanel({ gameState: stateWith(), localPlayerId: 'guest-2', localBet, betFailed: true });
 
-    expect(panel).toMatchObject({ kind: 'form', failureMessage: "Your Bet didn't go through — try again." });
+    expect(panel).toMatchObject({ kind: 'form', failureMessage: { key: 'betting.failed' } });
     expect(panel.bettors.find((bettor) => bettor.isLocalPlayer)?.hasBet).toBe(false);
   });
 });

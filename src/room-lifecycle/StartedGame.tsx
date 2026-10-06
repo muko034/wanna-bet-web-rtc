@@ -2,7 +2,7 @@ import { route } from 'preact-router';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
-import { useT } from '../i18n/LanguageContext';
+import { useLanguage, useT } from '../i18n/LanguageContext';
 import type { Message, MessageKey } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
@@ -35,6 +35,11 @@ import { useResultScreenExpiry } from './use-result-screen-expiry';
 import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
+
+const PREDICTION_LABELS: Record<Prediction, MessageKey> = {
+  YES: 'betting.yes',
+  NO: 'betting.no',
+};
 
 const RECONNECT_ERROR_MESSAGES: Record<'unreachable', MessageKey> = {
   unreachable: 'joinRoom.error.unreachable',
@@ -113,6 +118,7 @@ export function StartedGame({
   isSatOut,
 }: Props) {
   const t = useT();
+  const { language } = useLanguage();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
@@ -291,7 +297,7 @@ export function StartedGame({
     [gameState, localBet, localPlayerId, betFailedRoundKey, roundKey, linkLostForMs],
   );
   const challengeCard = localPlayerId
-    ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: 'pl' })
+    ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: language })
     : null;
   const roundControls = resolveRoundControls({ code, room, gameState });
   const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
@@ -392,22 +398,22 @@ export function StartedGame({
     >
       {roundControls.kind === 'no-active-guests' ? (
         <>
-          <div class="vb-giant-title vb-title-small">No active players</div>
-          <div class="vb-giant-sub">Everyone sat out. The game continues when someone returns.</div>
+          <div class="vb-giant-title vb-title-small">{t('noActive.title')}</div>
+          <div class="vb-giant-sub">{t('noActive.subtitle')}</div>
           <button class="vb-cta" type="button" onClick={onHostLeave}>
-            End game
+            {t('noActive.endGame')}
           </button>
         </>
       ) : gameState?.round && roundControls.kind === 'judge-round' ? (
         <>
-          <div class="vb-giant-title vb-title-small">Did {roundControls.challengerName} pull it off?</div>
-          <div class="vb-giant-sub">Every bet is already locked in.</div>
+          <div class="vb-giant-title vb-title-small">{t(roundControls.title.key, roundControls.title.params)}</div>
+          <div class="vb-giant-sub">{t('judge.subtitle')}</div>
           <div class="vb-tapzones">
             <button class="vb-tapzone success" type="button" onClick={() => onResolveRound('YES')}>
-              ✅<br />Success
+              ✅<br />{t('judge.success')}
             </button>
             <button class="vb-tapzone fail" type="button" onClick={() => onResolveRound('NO')}>
-              ❌<br />Fail
+              ❌<br />{t('judge.fail')}
             </button>
           </div>
         </>
@@ -420,16 +426,16 @@ export function StartedGame({
           )}
           {chrome.noticeCount !== null && (
             <div class="vb-change-banner" role="status" key={`banner-${chrome.noticeCount}`}>
-              Challenge changed
-              <span class="vb-change-hint">Bet again</span>
+              {t('challengeNotice.changed')}
+              <span class="vb-change-hint">{t('challengeNotice.betAgain')}</span>
             </div>
           )}
           {challengeCard?.kind === 'hidden' ? (
             <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${chrome.noticeCount ?? 0}`}>
               {redrawButton}
               <ChallengeCardTitle card={challengeCard} />
-              <div class="vb-task-text">{challengeCard.title}</div>
-              <div class="vb-task-detail">{challengeCard.detail}</div>
+              <div class="vb-task-text">{t(challengeCard.title.key, challengeCard.title.params)}</div>
+              <div class="vb-task-detail">{t(challengeCard.detail.key, challengeCard.detail.params)}</div>
             </div>
           ) : challengeCard?.kind === 'visible' ? (
             <div class={chrome.cardClass} key={`card-${chrome.noticeCount ?? 0}`}>
@@ -440,7 +446,7 @@ export function StartedGame({
             </div>
           ) : null}
           {bettingPanel.bettors.length === 0 ? (
-            <div class="vb-status-pill">Waiting for bettors.</div>
+            <div class="vb-status-pill">{t('round.waitingForBettors')}</div>
           ) : (
             <div class="vb-bettor-pills">
               {bettingPanel.bettors.map((bettor) => (
@@ -461,11 +467,11 @@ export function StartedGame({
                     aria-pressed={prediction === choice}
                     onClick={() => setPrediction(choice)}
                   >
-                    {choice}
+                    {t(PREDICTION_LABELS[choice])}
                   </button>
                 ))}
               </div>
-              <div class="vb-amount-value">{amount} pts</div>
+              <div class="vb-amount-value">{t('betting.amount', { amount })}</div>
               <input
                 class="vb-slider-white"
                 type="range"
@@ -476,28 +482,31 @@ export function StartedGame({
                 onInput={(event) => setAmount(Number((event.target as HTMLInputElement).value))}
               />
               <div class="vb-giant-sub vb-slider-caption">
-                Max {bettingPanel.maxBet} &middot; you have {bettingPanel.points} pts
+                {t('betting.caption', { max: bettingPanel.maxBet, points: bettingPanel.points })}
               </div>
-              {bettingPanel.failureMessage && <div class="vb-giant-sub" role="alert">{bettingPanel.failureMessage}</div>}
+              {bettingPanel.failureMessage && <div class="vb-giant-sub" role="alert">{t(bettingPanel.failureMessage.key, bettingPanel.failureMessage.params)}</div>}
               <button class="vb-cta" type="button" disabled={prediction === null} onClick={handleLockIn}>
-                Lock in bet
+                {t('betting.lockIn')}
               </button>
             </div>
           ) : bettingPanel.kind === 'locked' ? (
             <>
-              <div class="vb-giant-title vb-title-small">Locked in 🔒</div>
+              <div class="vb-giant-title vb-title-small">{t('betting.lockedIn')}</div>
               {bettingPanel.ownBet && (
                 <div class="vb-status-pill">
-                  You bet {bettingPanel.ownBet.amount} pts on {bettingPanel.ownBet.prediction}
+                  {t('betting.youBet', {
+                    amount: bettingPanel.ownBet.amount,
+                    prediction: t(PREDICTION_LABELS[bettingPanel.ownBet.prediction]),
+                  })}
                 </div>
               )}
-              <div class="vb-giant-sub">{bettingPanel.waitingLabel}</div>
-              {bettingPanel.reconnectingNotice && <div class="vb-giant-sub" role="status">{bettingPanel.reconnectingNotice}</div>}
+              <div class="vb-giant-sub">{t(bettingPanel.waitingLabel.key, bettingPanel.waitingLabel.params)}</div>
+              {bettingPanel.reconnectingNotice && <div class="vb-giant-sub" role="status">{t(bettingPanel.reconnectingNotice.key, bettingPanel.reconnectingNotice.params)}</div>}
             </>
           ) : null}
         </>
       ) : (
-        <div class="vb-giant-sub">Loading…</div>
+        <div class="vb-giant-sub">{t('round.loading')}</div>
       )}
     </PhoneShell>
   );

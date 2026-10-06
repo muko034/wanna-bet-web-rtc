@@ -48,8 +48,8 @@ describe('resolveChallengeCard', () => {
       kind: 'hidden',
       challengeType: 'PHYSICAL',
       timeLimit: null,
-      title: '🙈 Hidden from you',
-      detail: 'Get ready to attempt it.',
+      title: { key: 'challengeCard.hiddenTitle' },
+      detail: { key: 'challengeCard.hiddenDetail' },
     });
   });
 
