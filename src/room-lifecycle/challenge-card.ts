@@ -1,4 +1,5 @@
 import type { ChallengeBankEntry } from '../challenge-bank/challenge-bank.schema';
+import type { Message } from '../i18n/dictionaries';
 import type { GameState } from '../protocol/messages';
 
 export type DisplayLanguage = 'pl' | 'en';
@@ -24,8 +25,8 @@ export type ChallengeCardView = ChallengeCardHeader &
   (
   | {
       kind: 'hidden';
-      title: string;
-      detail: string;
+      title: Message;
+      detail: Message;
     }
   | {
       kind: 'visible';
@@ -64,8 +65,8 @@ export function resolveChallengeCard({
     return {
       ...header,
       kind: 'hidden',
-      title: '🙈 Hidden from you',
-      detail: 'Get ready to attempt it.',
+      title: { key: 'challengeCard.hiddenTitle' },
+      detail: { key: 'challengeCard.hiddenDetail' },
     };
   }
 

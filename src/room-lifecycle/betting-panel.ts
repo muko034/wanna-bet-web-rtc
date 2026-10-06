@@ -1,3 +1,4 @@
+import type { Message } from '../i18n/dictionaries';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
 import { maxBetAmount } from '../round-engine/bet-cap';
@@ -23,9 +24,9 @@ export type BettingPanel =
       bettors: BettorStatus[];
       /** The local player's own Bet, or `null` when this device no longer remembers it. */
       ownBet: OwnBet | null;
-      waitingLabel: string;
+      waitingLabel: Message;
       /** Shown under "Locked in" once the link to the Host has been down long enough to be worth mentioning. */
-      reconnectingNotice: string | null;
+      reconnectingNotice: Message | null;
     }
   | {
       kind: 'form';
@@ -34,7 +35,7 @@ export type BettingPanel =
       points: number;
       maxBet: number;
       /** Shown when the last Bet locked in failed to reach the Host, so the Bettor can lock in again. */
-      failureMessage: string | null;
+      failureMessage: Message | null;
     };
 
 type Params = {
@@ -57,13 +58,13 @@ export function hasPlacedBet(round: GameState['round'], playerId: string): boole
   return !!round?.bets.some((bet) => bet.playerId === playerId);
 }
 
-const BET_FAILED_MESSAGE = "Your Bet didn't go through — try again.";
+const BET_FAILED_MESSAGE: Message = { key: 'betting.failed' };
 
-function waitingLabel(waitingOnCount: number): string {
+function waitingLabel(waitingOnCount: number): Message {
   if (waitingOnCount === 0) {
-    return 'Everyone has bet.';
+    return { key: 'betting.everyoneBet' };
   }
-  return `Waiting on ${waitingOnCount} more player${waitingOnCount === 1 ? '' : 's'}…`;
+  return { key: 'betting.waitingFor', params: { count: waitingOnCount } };
 }
 
 export function resolveBettingPanel({
@@ -105,7 +106,7 @@ export function resolveBettingPanel({
       bettors,
       ownBet,
       waitingLabel: waitingLabel(bettors.filter((bettor) => !bettor.hasBet).length),
-      reconnectingNotice: linkLostForMs !== null && linkLostForMs >= RECONNECT_NOTICE_DELAY_MS ? 'Reconnecting…' : null,
+      reconnectingNotice: linkLostForMs !== null && linkLostForMs >= RECONNECT_NOTICE_DELAY_MS ? { key: 'reconnecting.plain' } : null,
     };
   }
 

@@ -79,7 +79,7 @@ describe('resolveRoundControls', () => {
       code: 'ABCDEF',
       room: roomWith(),
       gameState: stateWith({ players, round: roundWith('p1', ['host-1']) }),
-    })).toEqual({ kind: 'judge-round', challengerName: 'Alex', background: 'vb-bg-judge' });
+    })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Alex' } }, background: 'vb-bg-judge' });
   });
 
   it('shows the judging screen on the Host device as soon as the last Bettor has bet', () => {
@@ -87,7 +87,7 @@ describe('resolveRoundControls', () => {
       code: 'ABCDEF',
       room: roomWith(),
       gameState: stateWith({ players: threePlayers, round: roundWith('p1', ['host-1', 'p2']) }),
-    })).toEqual({ kind: 'judge-round', challengerName: 'Alex', background: 'vb-bg-judge' });
+    })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Alex' } }, background: 'vb-bg-judge' });
   });
 
   it('shows the judging screen to a Host who is the Challenger once every other player has bet', () => {
@@ -102,7 +102,7 @@ describe('resolveRoundControls', () => {
       code: 'ABCDEF',
       room: roomWith(),
       gameState: stateWith({ challengerId: 'host-1', players: threePlayers, round: roundWith('host-1', ['p1', 'p2']) }),
-    })).toEqual({ kind: 'judge-round', challengerName: 'Host', background: 'vb-bg-judge' });
+    })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Host' } }, background: 'vb-bg-judge' });
   });
 
   it('never shows an Outcome control on a non-Host device, even once all Bets are in', () => {
@@ -155,7 +155,7 @@ describe('resolveRoundControls', () => {
         code: 'ABCDEF',
         room: roomWith(),
         gameState: stateWith({ players: players(['paused', 'active']), round: roundWith('host-1', ['p2']) }),
-      })).toEqual({ kind: 'judge-round', challengerName: 'Host', background: 'vb-bg-judge' });
+      })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Host' } }, background: 'vb-bg-judge' });
     });
 
     it('never shows it on a Guest device or after the game ended', () => {

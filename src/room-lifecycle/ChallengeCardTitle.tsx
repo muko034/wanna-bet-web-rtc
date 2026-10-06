@@ -1,11 +1,19 @@
+import { useT } from '../i18n/LanguageContext';
+import type { MessageKey } from '../i18n/dictionaries';
 import type { ChallengeCardView } from './challenge-card';
+
+const TYPE_LABELS: Record<ChallengeCardView['challengeType'], MessageKey> = {
+  PHYSICAL: 'challengeCard.typePhysical',
+  MENTAL: 'challengeCard.typeMental',
+};
 
 /** Title line of the Challenge card: the Challenge type plus a colored time-limit hourglass. */
 export function ChallengeCardTitle({ card }: { card: ChallengeCardView }) {
+  const t = useT();
   const { timeLimit } = card;
   return (
     <div class="vb-task-title">
-      <div class="vb-task-label">{card.challengeType} CHALLENGE</div>
+      <div class="vb-task-label">{t(TYPE_LABELS[card.challengeType])}</div>
       {timeLimit && (
         <svg
           class={`vb-hourglass ${timeLimit.color}`}
