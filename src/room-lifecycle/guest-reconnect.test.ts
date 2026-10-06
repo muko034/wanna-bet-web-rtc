@@ -5,8 +5,9 @@ import { FakeStorage } from '../fake-storage';
 import { RoomRegistry } from './room-registry';
 import { ConnectionManager } from './connection-manager';
 import { attemptReconnect, type ReconnectCallbacks } from './guest-reconnect';
-import { joinRoom } from './join-room';
+import { joinRoom, makeGameStartedHandler } from './join-room';
 import { saveIdentity, loadIdentity } from './player-identity';
+import { leaveRoom } from './guest-leave';
 import type { Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -272,5 +273,91 @@ describe('attemptReconnect', () => {
     placeBet({ amount: 10, prediction: 'YES', challengeId: seenChallengeId });
 
     expect(callbacks.onBetRejected).toHaveBeenCalledExactlyOnceWith('STALE_CHALLENGE');
+  });
+});
+
+describe('leaveRoom', () => {
+  async function connectedGuest() {
+    const registry = new RoomRegistry();
+    const { code, manager, hostTransport } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const transport = new FakeTransport();
+    const callbacks = noopCallbacks();
+    await attemptReconnect(transport, registry, storage, code, callbacks);
+    return { code, manager, hostTransport, transport, storage, callbacks, playerId: joined.playerId };
+  }
+
+  it('does not navigate the Guest back to the Game when the Host later broadcasts an active state', async () => {
+    const { code, manager, transport, storage, callbacks } = await connectedGuest();
+
+    leaveRoom(transport, storage, code);
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+
+    expect(callbacks.onGameStarted).not.toHaveBeenCalled();
+    expect(callbacks.onGameState).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'active' }));
+  });
+
+  it('does not navigate to the play route once the Guest has left', async () => {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const navigate = vi.fn();
+    const transport = new FakeTransport();
+    await attemptReconnect(transport, registry, storage, code, { ...noopCallbacks(), onGameStarted: makeGameStartedHandler(vi.fn(), navigate) });
+
+    leaveRoom(transport, storage, code);
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the play route when the game starts while the Guest is still in', async () => {
+    const registry = new RoomRegistry();
+    const { code, manager } = await hostRoom(registry);
+    const joined = await joinAsGuest(registry, code, 'Alex');
+    const storage = new FakeStorage();
+    saveIdentity(storage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
+    const navigate = vi.fn();
+    await attemptReconnect(new FakeTransport(), registry, storage, code, { ...noopCallbacks(), onGameStarted: makeGameStartedHandler(vi.fn(), navigate) });
+
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+
+    expect(navigate).toHaveBeenCalledWith(expect.stringContaining(`room/${code}/play`));
+  });
+
+  it("deletes the Guest's stored identity", async () => {
+    const { code, transport, storage } = await connectedGuest();
+
+    leaveRoom(transport, storage, code);
+
+    expect(loadIdentity(storage, code)).toBeNull();
+  });
+
+  it('does not report the closed connection as a drop to reconnect from', async () => {
+    const { code, transport, storage, callbacks } = await connectedGuest();
+
+    leaveRoom(transport, storage, code);
+
+    expect(callbacks.onConnectionDropped).not.toHaveBeenCalled();
+  });
+
+  it('sends `leave`, so the Host removes the Guest from the Room', async () => {
+    const { code, manager, transport, storage, playerId } = await connectedGuest();
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+
+    leaveRoom(transport, storage, code);
+
+    expect(manager.room.players.map((p) => p.playerId)).not.toContain(playerId);
   });
 });

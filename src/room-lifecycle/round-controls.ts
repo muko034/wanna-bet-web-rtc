@@ -1,6 +1,7 @@
 import type { GameState } from '../protocol/messages';
 import { hasPlacedBet } from './betting-panel';
 import type { Room } from './room';
+import { isHostRoom } from './room-role';
 
 export type RoundControls =
   | { kind: 'hidden' }
@@ -12,11 +13,6 @@ type Params = {
   room: Room | null;
   gameState: GameState | null;
 };
-
-/** Whether this device is the Host of the Room at `code`: the one rule behind every Host-only control. */
-export function isHostRoom(code: string | undefined, room: Room | null): boolean {
-  return !!code && !!room && room.code === code;
-}
 
 export function resolveRoundControls({ code, room, gameState }: Params): RoundControls {
   if (!isHostRoom(code, room) || !gameState?.round) {

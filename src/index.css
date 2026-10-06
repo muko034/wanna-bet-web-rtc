@@ -532,3 +532,38 @@ input {
 .vb-rank-sheet-name {
   flex: 1;
 }
+.vb-dialog-backdrop {
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.vb-dialog {
+  width: 100%;
+  background: #191a22;
+  border-radius: 22px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.vb-dialog-destructive {
+  display: block;
+  width: 100%;
+  padding: 18px;
+  border: none;
+  border-radius: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  background: #e5484d;
+  color: #fff;
+}
+.vb-dialog-link {
+  padding: 12px;
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+}

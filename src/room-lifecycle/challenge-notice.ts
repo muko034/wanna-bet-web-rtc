@@ -1,6 +1,6 @@
 import type { GameState } from '../protocol/messages';
 import { roundKeyOf } from './bet-delivery';
-import { isHostRoom } from './round-controls';
+import { isHostRoom } from './room-role';
 import type { Room } from './room';
 
 /** The "Challenge changed" notice a Redraw raised; it belongs to the Round key it announced. */

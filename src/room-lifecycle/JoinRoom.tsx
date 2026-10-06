@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
-import { withBase } from '../base-path';
 import type { PeerJsTransport } from '../transport/peerjs-transport';
-import { joinRoom, type JoinResult } from './join-room';
+import { joinRoom, makeGameStartedHandler, type JoinResult } from './join-room';
 import { attemptReconnect, completeGuestConnection, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
 import { loadIdentity } from './player-identity';
 import { resolveLobbyRoster } from './lobby-roster';
@@ -82,10 +81,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   /** Builds the callbacks a live connection (fresh join or rejoin) reports back to. */
   const makeCallbacks = (): ReconnectCallbacks => ({
     onGameState: (state) => callbacksRef.current.onGameState(state),
-    onGameStarted: (startedCode) => {
-      callbacksRef.current.onGameStarted(startedCode);
-      route(withBase(`room/${startedCode}/play`));
-    },
+    onGameStarted: makeGameStartedHandler((startedCode) => callbacksRef.current.onGameStarted(startedCode), route),
     // A drop is never a dead end: notify the App-level state a Guest's connection relies on
     // (in case this screen has since unmounted, e.g. after the game started) and re-run this
     // screen's own reconnect effect (in case it's still the one mounted, e.g. a drop while

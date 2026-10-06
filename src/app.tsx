@@ -20,6 +20,7 @@ import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBan
 import type { GameState, PlaceBetPayload } from './protocol/messages';
 import { BetDelivery, type PlaceBetContext } from './room-lifecycle/bet-delivery';
 import type { BetRejection } from './round-engine/round-engine';
+import { leaveRoom } from './room-lifecycle/guest-leave';
 
 type RoomRouteProps = {
   path?: string;
@@ -229,6 +230,19 @@ export function App() {
     return transport;
   }, []);
 
+  /** A Guest's Leave: tells the Host, closes the connection, forgets the identity, and drops every trace of the Game before going Home. */
+  const handleGuestLeave = useCallback((code: string) => {
+    const transport = guestTransportRef.current;
+    guestTransportRef.current = null;
+    if (transport) {
+      leaveRoom(transport, localStorage, code);
+    }
+    handlePlaceBetReady(null);
+    setGuestGameStartedCode(null);
+    setGuestGameState(null);
+    route(withBase('/'));
+  }, [handlePlaceBetReady]);
+
   if (reopening) {
     return (
       <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} onHome={cancelReopen} />
@@ -274,6 +288,7 @@ export function App() {
           onPlaceBetReady={handlePlaceBetReady}
           onBetRejected={handleBetRejected}
           onConnectionLost={handleGuestConnectionLost}
+          onLeave={handleGuestLeave}
           createGuestTransport={createGuestTransport}
         />
         <NotFound default />

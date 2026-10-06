@@ -351,26 +351,47 @@ export class ConnectionManager {
   }
 
   /**
-   * Handles a Guest's self-initiated `leave`, pre-game only: removes them from the Room
-   * entirely and broadcasts the refreshed Lobby snapshot. Once the game has started, Leave
-   * becomes an alias for Host-initiated Remove — that reducer
-   * logic belongs to the `host-admin` slice and isn't implemented yet, so a `leave` received
-   * mid-game is a no-op here.
+   * Handles a Guest's self-initiated `leave`: removes them from the Room entirely and forgets
+   * their reconnect token, so the Room never waits on them again. Before the game starts it
+   * broadcasts the refreshed Lobby snapshot; mid-game it takes them out of the Round Engine
+   * too (their Bet is dropped, and a Challenger's Round is discarded in favor of one for the
+   * next Challenger) and broadcasts the new GameState.
    */
   private handleLeave(_payload: LeaveMessage['payload'], peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
-    if (playerId === undefined || this.room.started) {
+    if (playerId === undefined) {
       return;
     }
 
     this.playerIdByPeerId.delete(peerId);
+    for (const [reconnectToken, id] of this.playerIdByReconnectToken) {
+      if (id === playerId) this.playerIdByReconnectToken.delete(reconnectToken);
+    }
     this.room = {
       ...this.room,
       players: this.room.players.filter((p) => p.playerId !== playerId),
       playerCount: this.room.playerCount - 1,
     };
     this.onRoomChange(this.room);
-    this.refreshLobby();
+
+    if (!this.room.started || this.gameState === null || this.roundEngineState === null) {
+      this.refreshLobby();
+      return;
+    }
+    this.removeFromGame(playerId);
+  }
+
+  private removeFromGame(playerId: string): void {
+    const { roundEngineState, gameState } = this;
+    if (roundEngineState === null || gameState === null) return;
+    const wasChallenger = roundEngineState.round?.challengerId === playerId;
+    const { state: removed } = roundEngineReducer(roundEngineState, { type: 'REMOVE_PLAYER', playerId });
+    this.roundEngineState = wasChallenger ? this.advanceRound(removed) : removed;
+    this.gameState = {
+      ...applyRoundEngineState(gameState, this.roundEngineState, gameState.resolution),
+      players: gameState.players.filter((p) => p.playerId !== playerId),
+    };
+    this.emitGameState(this.gameState);
   }
 
   private handlePlaceBet(payload: PlaceBetPayload, peerId: string): void {

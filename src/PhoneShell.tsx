@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { withBase } from './base-path';
+import { handleHomeClick } from './home-click';
 
 type Props = {
   /** One of the `vb-bg-*` gradient classes from `index.css`, giving each screen its own color block. */
@@ -28,13 +29,7 @@ export function PhoneShell({ background, roomCode, onHome, topRight, overlay, ch
             class="vb-home-fab"
             href={withBase('/')}
             aria-label="Home"
-            onClick={
-              onHome &&
-              ((event) => {
-                event.preventDefault();
-                onHome();
-              })
-            }
+            onClick={onHome && ((event) => handleHomeClick(event, onHome))}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
               <path d="M12 3 2 12h3v8h5v-6h4v6h5v-8h3z" />
