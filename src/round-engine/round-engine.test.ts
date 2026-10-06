@@ -112,6 +112,18 @@ describe('roundEngineReducer', () => {
 
       expect(next.pausedPlayerIds).toEqual(['p3']);
     });
+
+    it('returns the same state when pausing an already paused player', () => {
+      const state = stateWith({ pausedPlayerIds: ['p2'] });
+
+      expect(pause(state, 'p2').state).toBe(state);
+    });
+
+    it('returns the same state when resuming a player who is not paused', () => {
+      const state = stateWith({ pausedPlayerIds: ['p3'] });
+
+      expect(roundEngineReducer(state, { type: 'RESUME_PLAYER', playerId: 'p2' }).state).toBe(state);
+    });
   });
 
   describe('REDRAW_CHALLENGE', () => {
