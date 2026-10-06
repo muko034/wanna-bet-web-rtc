@@ -26,3 +26,14 @@ it.each([
   expect(extractRoomCode(input)).toBe(expected);
 });
 ```
+
+## Restore real timers in `afterEach` after faking them
+
+A test file that calls `vi.useFakeTimers()` pairs it with `vi.useRealTimers()` in `afterEach`, so a faked clock never
+leaks into the next test or file. Use `beforeEach`/`afterEach` at the top of the file or `describe` when every test needs
+fake timers, and `afterEach` alone when only some tests fake them.
+
+```ts
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
+```
