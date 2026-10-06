@@ -18,3 +18,13 @@ export function loadIdentity(storage: Storage, code: string): StoredIdentity | n
   return raw === null ? null : (JSON.parse(raw) as StoredIdentity);
 }
 ```
+
+## Defer storage writes triggered from game flow
+
+When the app wiring persists or removes stored data in response to a game event (the Host's autosave after a state change, forgetting a Room's session when the Host Leaves), wrap the call in `setTimeout(..., 0)` inside a small named function and hand that function to the game logic as a callback. Gameplay then never waits on a synchronous storage call, and a deferred delete runs after any save still queued, so a final save cannot resurrect what was just removed.
+
+```ts
+function forgetSession(code: string): void {
+  setTimeout(() => deleteHostSession(localStorage, code), 0);
+}
+```
