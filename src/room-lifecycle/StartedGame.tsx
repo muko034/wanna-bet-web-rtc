@@ -36,6 +36,11 @@ import { useLinkLostDuration } from './use-link-lost-duration';
 import { roomRegistry } from './room-registry-instance';
 import type { Room } from './room';
 
+const PREDICTION_LABELS: Record<Prediction, MessageKey> = {
+  YES: 'betting.yes',
+  NO: 'betting.no',
+};
+
 const RECONNECT_ERROR_MESSAGES: Record<'unreachable', MessageKey> = {
   unreachable: 'joinRoom.error.unreachable',
 };
@@ -462,7 +467,7 @@ export function StartedGame({
                     aria-pressed={prediction === choice}
                     onClick={() => setPrediction(choice)}
                   >
-                    {t(choice === 'YES' ? 'betting.yes' : 'betting.no')}
+                    {t(PREDICTION_LABELS[choice])}
                   </button>
                 ))}
               </div>
@@ -491,7 +496,7 @@ export function StartedGame({
                 <div class="vb-status-pill">
                   {t('betting.youBet', {
                     amount: bettingPanel.ownBet.amount,
-                    prediction: t(bettingPanel.ownBet.prediction === 'YES' ? 'betting.yes' : 'betting.no'),
+                    prediction: t(PREDICTION_LABELS[bettingPanel.ownBet.prediction]),
                   })}
                 </div>
               )}
