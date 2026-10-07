@@ -15,6 +15,11 @@ const network = new Map<string, FakeTransport>();
  * peers (a Host side with several Guests), same as the real PeerJS-backed implementation.
  */
 export class FakeTransport implements Transport {
+  /** Test-only: forgets every registered peer, so one test's peers never leak into the next. */
+  static resetNetwork(): void {
+    network.clear();
+  }
+
   private id: string | undefined;
   private peers = new Map<string, FakeTransport>();
   private messageHandlers: MessageHandler[] = [];
