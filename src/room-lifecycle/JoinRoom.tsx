@@ -4,7 +4,7 @@ import { route } from 'preact-router';
 import { PhoneShell } from '../PhoneShell';
 import { useT } from '../i18n/LanguageContext';
 import type { MessageKey } from '../i18n/dictionaries';
-import type { PeerJsTransport } from '../transport/peerjs-transport';
+import type { Transport } from '../transport/transport';
 import { joinRoom, makeGameStartedHandler, type JoinResult } from './join-room';
 import { attemptReconnect, completeGuestConnection, muteWhile, wireGuestConnection, type ReconnectCallbacks } from './guest-reconnect';
 import { loadIdentity } from './player-identity';
@@ -40,7 +40,7 @@ type Props = {
    * Opens a fresh Guest transport, closing whichever one the App handed out before — including
    * one a different route established (see `app.tsx`).
    */
-  createGuestTransport: () => PeerJsTransport;
+  createGuestTransport: () => Transport;
   /** Whether this Guest has sat out or left, so signals from the connection they closed must be ignored. */
   isSatOut: () => boolean;
   /** Leave the Room for good and go Home. */
