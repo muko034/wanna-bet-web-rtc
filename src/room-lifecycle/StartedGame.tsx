@@ -6,7 +6,7 @@ import { useLanguage, useT } from '../i18n/LanguageContext';
 import type { Message, MessageKey } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import type { PeerJsTransport } from '../transport/peerjs-transport';
+import type { Transport } from '../transport/transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
@@ -80,7 +80,7 @@ type Props = {
   /** Host only: Leave ends the Room for everyone. */
   onHostLeave: () => void;
   /** Opens a fresh Guest transport, closing whichever one the App handed out before, whichever route established it. */
-  createGuestTransport: () => PeerJsTransport;
+  createGuestTransport: () => Transport;
   /** Whether this Guest has sat out or left, so signals from the connection they closed must be ignored. */
   isSatOut: () => boolean;
 };
