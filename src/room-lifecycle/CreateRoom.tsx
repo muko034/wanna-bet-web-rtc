@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { PhoneShell } from '../PhoneShell';
 import { useT } from '../i18n/LanguageContext';
-import { PeerJsTransport } from '../transport/peerjs-transport';
+import { createPeerJsTransport } from '../transport/create-peerjs-transport';
 import type { RecoverableTransport } from '../transport/transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
@@ -21,7 +21,7 @@ export function CreateRoom({ onRoomCreated }: Props) {
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCreating(true);
-    const transport = new PeerJsTransport();
+    const transport = createPeerJsTransport();
     createRoom(transport, roomRegistry, name).then((room) => onRoomCreated(room, transport));
   };
 

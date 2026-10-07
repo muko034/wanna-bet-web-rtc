@@ -40,3 +40,9 @@ npm run generate:challenge-bank
 `npm test` fails if the committed file drifts from the YAML source, so regenerating is required
 after any content change.
 
+
+## Custom PeerJS server
+
+Optional build settings point the app at another PeerJS server: `VITE_PEERJS_HOST`,
+`VITE_PEERJS_PORT`, `VITE_PEERJS_PATH`, `VITE_PEERJS_SECURE` (`true` or `false`). With none set,
+the app uses the public PeerJS default.
