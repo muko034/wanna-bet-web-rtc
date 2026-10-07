@@ -7,7 +7,6 @@ export function Home(_props: { path?: string }) {
   const t = useT();
   return (
     <PhoneShell background="vb-bg-home">
-      <div class="vb-eyebrow2">Wanna Bet</div>
       <div class="vb-giant-title">
         {t('home.title')}
       </div>

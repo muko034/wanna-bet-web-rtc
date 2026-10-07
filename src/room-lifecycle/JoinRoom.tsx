@@ -214,7 +214,6 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       <div class="vb-giant-title" style="font-size:24px">
         {t('joinRoom.title', { code: code ?? '' })}
       </div>
-      <div class="vb-giant-sub">{t('joinRoom.subtitle')}</div>
       {status.kind === 'error' && <div class="vb-status-pill">{t(status.message)}</div>}
       <form onSubmit={handleSubmit} style="width: 100%">
         <input
