@@ -13,7 +13,8 @@ import { roomRegistry } from './room-lifecycle/room-registry-instance';
 import { deleteHostSession, saveHostSession, type HostSession } from './host-persistence/host-session-store';
 import { resolveAutoResume, type AutoResume } from './host-persistence/auto-resume';
 import { ReopeningRoom } from './host-persistence/ReopeningRoom';
-import { PeerJsTransport } from './transport/peerjs-transport';
+import { createPeerJsTransport } from './transport/create-peerjs-transport';
+import type { PeerJsTransport } from './transport/peerjs-transport';
 import type { RecoverableTransport } from './transport/transport';
 import { ConnectionManager } from './room-lifecycle/connection-manager';
 import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBanner';
@@ -127,7 +128,7 @@ export function App() {
 
   const reopen = (target: Reopening) => {
     setReopening({ ...target, failed: false });
-    const transport = new PeerJsTransport();
+    const transport = createPeerJsTransport();
     reopeningTransportRef.current = transport;
     const isCurrent = () => reopeningTransportRef.current === transport;
     reopenRoom(transport, roomRegistry, target.session.room)
@@ -247,7 +248,7 @@ export function App() {
   const createGuestTransport = useCallback((): PeerJsTransport => {
     guestTransportRef.current?.close();
     satOutRef.current = false;
-    const transport = new PeerJsTransport();
+    const transport = createPeerJsTransport();
     guestTransportRef.current = transport;
     return transport;
   }, []);
