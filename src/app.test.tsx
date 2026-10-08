@@ -60,7 +60,6 @@ function openAt(path: string, session?: HostSession): void {
 async function renderApp() {
   const view = render(<App />);
   await act(async () => {});
-  await act(async () => {}); // the landing route change renders one tick after the reopen settles
   return view;
 }
 
@@ -94,6 +93,29 @@ describe('App mount-time reopen', () => {
     expect(screen.getByText(`play ${CODE}`)).toBeTruthy();
     expect(window.location.pathname).toBe(withBase(`room/${CODE}/play`));
     expect(screenProps.StartedGame.gameState).toEqual(expect.objectContaining({ status: 'active' }));
+  });
+
+  it('moves a started game opened on its Lobby link to the play view', async () => {
+    openAt(`room/${CODE}`, hostSession(true));
+
+    await renderApp();
+
+    expect(screen.getByText(`play ${CODE}`)).toBeTruthy();
+    expect(window.location.pathname).toBe(withBase(`room/${CODE}/play`));
+  });
+
+  it('goes Home from the reopening screen and drops the half-built transport', async () => {
+    openAt(`room/${CODE}`, hostSession(false));
+    hostTransport.connect = vi.fn(() => new Promise<string>(() => {}));
+    const close = vi.spyOn(hostTransport, 'close');
+
+    await renderApp();
+    expect(screen.getByText(translate(dictionaries.pl, 'reopening.title'))).toBeTruthy();
+    await act(async () => { screen.getByLabelText('Home').click(); });
+
+    expect(window.location.pathname).toBe(withBase('/'));
+    expect(screen.queryByText(translate(dictionaries.pl, 'reopening.title'))).toBeNull();
+    expect(close).toHaveBeenCalled();
   });
 
   it('does not reopen when no session is stored for the link', async () => {
