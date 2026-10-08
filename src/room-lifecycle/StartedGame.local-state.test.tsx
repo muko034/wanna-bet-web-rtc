@@ -4,8 +4,8 @@ import { act } from 'preact/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
-import { dictionaries } from '../i18n/dictionaries';
-import { translate } from '../i18n/translate';
+import { dictionaries, type MessageKey } from '../i18n/dictionaries';
+import { type MessageParams, translate } from '../i18n/translate';
 import type { GameState } from '../protocol/messages';
 import { StartedGame } from './StartedGame';
 import { RESULT_SCREEN_DURATION_MS } from './result-screen';
@@ -69,7 +69,7 @@ function startedGame(room: Room, gameState: GameState) {
   );
 }
 
-const text = (key: Parameters<typeof translate>[1], params?: Parameters<typeof translate>[2]) => translate(dictionaries.pl, key, params);
+const text = (key: MessageKey, params?: MessageParams) => translate(dictionaries.pl, key, params);
 const yesButton = () => screen.getByRole('button', { name: text('betting.yes') });
 const lockInButton = () => screen.getByRole('button', { name: text('betting.lockIn') }) as HTMLButtonElement;
 const slider = () => screen.getByLabelText('Bet amount') as HTMLInputElement;
