@@ -56,3 +56,15 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [copied]);
 ```
+
+## Set browser state before the first render when a screen replaces the `Router`
+
+`route()` does nothing while another screen is rendered in place of the `Router`. If the app must change the URL for a
+screen that takes over the `Router` (reopening a saved Room at its own link), call `window.history.replaceState`
+before the first render, in the code that decides to show that screen. Doing it later, from an effect or after the
+screen finishes, leaves the old URL in place.
+
+```ts
+window.history.replaceState(null, '', withBase(autoResume.landingPath));
+return { ...autoResume, failed: false };
+```
