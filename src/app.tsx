@@ -78,7 +78,10 @@ type Reopening = Extract<AutoResume, { kind: 'resume' }> & { failed: boolean };
 /** Checked once, against the URL the app was opened on — later in-app navigation never resumes a Room. */
 function openedReopening(): Reopening | null {
   const autoResume = resolveAutoResume(localStorage, window.location.pathname);
-  return autoResume.kind === 'resume' ? { ...autoResume, failed: false } : null;
+  if (autoResume.kind !== 'resume') return null;
+  // Set before the first render: `route()` is a no-op while the reopening screen replaces the `Router`.
+  window.history.replaceState(null, '', withBase(autoResume.landingPath));
+  return { ...autoResume, failed: false };
 }
 
 export function App() {
@@ -137,7 +140,6 @@ export function App() {
         reopeningTransportRef.current = null;
         hostRoom(transport, target.session.room).resume(target.session);
         setReopening(null);
-        route(withBase(target.landingPath), true);
       })
       .catch(() => {
         transport.close();
@@ -150,7 +152,7 @@ export function App() {
   const cancelReopen = () => {
     reopeningTransportRef.current?.close();
     reopeningTransportRef.current = null;
-    route(withBase('/'), true);
+    window.history.replaceState(null, '', withBase('/'));
     setReopening(null);
   };
 
