@@ -234,3 +234,7 @@ vite.config.ts.timestamp-*
 
 # Vitest browser mode artifacts (failure screenshots, etc.)
 .vitest/
+
+# Playwright E2E artifacts
+test-results/
+playwright-report/

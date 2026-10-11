@@ -7,6 +7,7 @@ Turn-based social betting game. The Host owns authoritative game state; Guests c
 - Build: `npm run build`
 - Test: `npm test`
 - Smoke test (manual, requires local PeerJS server — see `README.md`): `npm run test:smoke`
+- E2E (opt-in, starts its own servers — see `README.md`): `npm run test:e2e`
 
 ## Reference
 
