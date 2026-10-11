@@ -14,6 +14,7 @@ npm run dev
 
 - `npm test` — fast unit suite (no real networking).
 - `npm run test:smoke` — manual PeerJS transport smoke tests, see below.
+- `npm run test:e2e` — Playwright browser suite, see below.
 
 ## PeerJS transport smoke tests
 
@@ -26,6 +27,19 @@ headless browser (WebRTC needs one — Node/jsdom won't do). Separate from `npm 
 Override the target host/port/path with `VITE_PEERJS_SMOKE_HOST`, `VITE_PEERJS_SMOKE_PORT`,
 `VITE_PEERJS_SMOKE_PATH`. Success means all cases pass — Host/Guest connect, exchange messages,
 report connection changes, and unreachable peers/servers reject instead of hanging.
+
+## Playwright E2E suite
+
+Drives a Host and a Guest, each in its own browser context (separate `localStorage`), through the real
+app in Chromium over real WebRTC. Opt-in, separate from `npm test`.
+
+```
+npx playwright install chromium   # once
+npm run test:e2e
+```
+
+Playwright starts the PeerJS server (`localhost:9000/wanna-bet`, the same one the smoke tests use) and
+the dev server (`localhost:5173`) itself, and reuses either if already running. Specs live in `e2e/`.
 
 ## Challenge Bank
 

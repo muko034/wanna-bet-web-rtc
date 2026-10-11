@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:e2e": "playwright test",
     "peerjs-server": "peerjs --port 9000 --path /wanna-bet",
     "generate:challenge-bank": "node --experimental-strip-types scripts/generate-challenge-bank.ts"
   },
@@ -22,6 +23,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@preact/preset-vite": "^2.10.6",
     "@testing-library/preact": "^3.2.4",
     "@types/js-yaml": "^4.0.9",
