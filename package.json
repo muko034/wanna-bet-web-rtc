@@ -11,9 +11,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
-    "peerjs-server": "peerjs --port 9000 --path /wanna-bet",
+    "peerjs-server": "node --experimental-strip-types scripts/peerjs-server.ts",
     "generate:challenge-bank": "node --experimental-strip-types scripts/generate-challenge-bank.ts"
   },
   "dependencies": {

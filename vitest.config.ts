@@ -1,11 +1,11 @@
 import { mergeConfig, defineConfig } from 'vitest/config';
 import viteConfig from './vite.config.ts';
 
-// Default unit-test run: fast, no real networking. The PeerJS smoke suite needs a real browser
+// Default unit-test run: fast, no real networking. The PeerJS integration suite needs a real browser
 // (WebRTC isn't available in Node/jsdom) and a live local server, so it's excluded here and run
 // separately with its own browser-mode config.
 // Two projects: `*.test.ts` stays in Node; `*.test.tsx` component tests run in jsdom with a shared setup.
-const exclude = ['**/node_modules/**', '**/*.smoke.test.ts'];
+const exclude = ['**/node_modules/**', '**/*.integration.test.ts'];
 
 export default mergeConfig(
   viteConfig,

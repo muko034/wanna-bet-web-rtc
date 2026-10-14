@@ -13,33 +13,36 @@ npm run dev
 ## Testing
 
 - `npm test` — fast unit suite (no real networking).
-- `npm run test:smoke` — manual PeerJS transport smoke tests, see below.
+- `npm run test:integration` — PeerJS transport integration tests, see below.
 - `npm run test:e2e` — Playwright browser suite, see below.
 
-## PeerJS transport smoke tests
+CI runs all three on every pull request and before every deploy. The two browser suites need Chromium
+once: `npx playwright install chromium`.
+
+## PeerJS transport integration tests
 
 Validates the real PeerJS-backed `Transport` adapter against a live signaling server, in a real
 headless browser (WebRTC needs one — Node/jsdom won't do). Separate from `npm test`.
 
-1. Start a local server: `npm run peerjs-server` (listens on `localhost:9000/wanna-bet`).
-2. In another terminal: `npm run test:smoke`.
+`npm run test:integration` starts the PeerJS server itself (`localhost:9000/wanna-bet`) and stops it
+afterwards. A server already running on that port is reused locally. Success means all cases pass —
+Host/Guest connect, exchange messages, report connection changes, and unreachable peers/servers
+reject instead of hanging.
 
-Override the target host/port/path with `VITE_PEERJS_SMOKE_HOST`, `VITE_PEERJS_SMOKE_PORT`,
-`VITE_PEERJS_SMOKE_PATH`. Success means all cases pass — Host/Guest connect, exchange messages,
-report connection changes, and unreachable peers/servers reject instead of hanging.
+To run the server on its own, use `npm run peerjs-server`. Its host, port and path live in
+`scripts/peerjs-server-config.ts`.
 
 ## Playwright E2E suite
 
 Drives a Host and a Guest, each in its own browser context (separate `localStorage`), through the real
-app in Chromium over real WebRTC. Opt-in, separate from `npm test`.
+app in Chromium over real WebRTC. Separate from `npm test`.
 
 ```
-npx playwright install chromium   # once
 npm run test:e2e
 ```
 
-Playwright starts the PeerJS server (`localhost:9000/wanna-bet`, the same one the smoke tests use) and
-the dev server (`localhost:5173`) itself, and reuses either if already running. Specs live in `e2e/`.
+Playwright starts the PeerJS server (`localhost:9000/wanna-bet`, the same one the integration tests use)
+and the dev server (`localhost:5173`) itself, and reuses either if already running. Specs live in `e2e/`.
 
 ## Challenge Bank
 

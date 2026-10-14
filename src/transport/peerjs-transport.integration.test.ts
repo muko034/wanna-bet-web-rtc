@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, inject, it } from 'vitest';
 import { PeerJsTransport, type PeerJsServerOptions } from './peerjs-transport';
 import { PeerUnavailableError } from './transport';
 
 /**
- * Smoke-test suite for the real PeerJS-backed `Transport` adapter, run in a real browser
+ * Integration-test suite for the real PeerJS-backed `Transport` adapter, run in a real browser
  * (WebRTC isn't available in Node/jsdom) against a live/local `peerjs-server`.
  *
  * Room/Connection Manager behavior stays covered by the fake-`Transport` unit suite — this
@@ -12,13 +12,16 @@ import { PeerUnavailableError } from './transport';
 
 const EVENT_TIMEOUT_MS = 8000;
 
+// Mirrors the `provide` call in `scripts/integration-global-setup.ts`; the two files build under different tsconfigs.
+declare module 'vitest' {
+  export interface ProvidedContext {
+    peerJsServer: PeerJsServerOptions;
+  }
+}
+
+/** The signaling server the global setup started (or found running). */
 function serverOptions(): PeerJsServerOptions {
-  const env = import.meta.env;
-  return {
-    host: env.VITE_PEERJS_SMOKE_HOST ?? 'localhost',
-    port: env.VITE_PEERJS_SMOKE_PORT ? Number(env.VITE_PEERJS_SMOKE_PORT) : 9000,
-    path: env.VITE_PEERJS_SMOKE_PATH ?? '/wanna-bet',
-  };
+  return inject('peerJsServer');
 }
 
 /** Waits for the next observable PeerJS event instead of sleeping, failing loudly if it never arrives. */
@@ -72,7 +75,7 @@ function onceMessage(transport: PeerJsTransport): Promise<{ message: unknown; pe
   );
 }
 
-describe('PeerJsTransport smoke tests', () => {
+describe('PeerJsTransport integration tests', () => {
   const openTransports: PeerJsTransport[] = [];
 
   function createTransport(options: PeerJsServerOptions = serverOptions()): PeerJsTransport {
@@ -115,9 +118,9 @@ describe('PeerJsTransport smoke tests', () => {
     await guest.connect(hostId);
 
     const hostReceived = onceMessage(host);
-    guest.send({ type: 'join', payload: { name: 'Smoke Test Guest' } });
+    guest.send({ type: 'join', payload: { name: 'Integration Test Guest' } });
     await expect(hostReceived).resolves.toMatchObject({
-      message: { type: 'join', payload: { name: 'Smoke Test Guest' } },
+      message: { type: 'join', payload: { name: 'Integration Test Guest' } },
     });
 
     const guestReceived = onceMessage(guest);
@@ -164,7 +167,7 @@ describe('PeerJsTransport smoke tests', () => {
   it('rejects connect() with PeerUnavailableError when no peer is reachable under the requested id', async () => {
     const guest = createTransport();
 
-    await expect(guest.connect('smoke-test-nobody-here')).rejects.toBeInstanceOf(PeerUnavailableError);
+    await expect(guest.connect('integration-test-nobody-here')).rejects.toBeInstanceOf(PeerUnavailableError);
   });
 
   it('fails to connect within the test timeout when the configured server is unreachable', async () => {
@@ -175,7 +178,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() restores a Host whose signaling socket dropped, preserving its still-open Guest connection', async () => {
     const host = createTransport();
-    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+    const hostId = await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
     const guest = createTransport();
     await guest.connect(hostId);
 
@@ -195,7 +198,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() rebuilds a destroyed Host Peer under the same id', async () => {
     const host = createTransport();
-    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+    const hostId = await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
 
     host.peerForTesting().destroy();
 
@@ -207,7 +210,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() re-registers a stale-but-open Host Peer under the same id', async () => {
     const host = createTransport();
-    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+    const hostId = await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
     const stalePeer = host.peerForTesting();
 
     // Simulate the server forgetting the id while the Peer's own flags stay healthy: close the
@@ -230,7 +233,7 @@ describe('PeerJsTransport smoke tests', () => {
 
   it('recover() re-registers a healthy Host Peer and keeps its Guest connection', async () => {
     const host = createTransport();
-    const hostId = await host.connect(undefined, `smoke-test-recover-${crypto.randomUUID()}`);
+    const hostId = await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
     const guest = createTransport();
     await guest.connect(hostId);
     const peer = host.peerForTesting();
