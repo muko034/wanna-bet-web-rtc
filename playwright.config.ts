@@ -1,11 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import { PEERJS_SERVER_PATH, PEERJS_SERVER_PORT } from './scripts/peerjs-server-config.ts';
 
-// Opt-in browser suite (`npm run test:e2e`). Drives a Host context and a Guest context in real
-// Chromium against the dev server and a local PeerJS server. Ports match the smoke tests'
-// `npm run peerjs-server`, so a server already running for them is reused.
+// Browser suite (`npm run test:e2e`). Drives a Host context and a Guest context in real Chromium
+// against the dev server and a local PeerJS server. The PeerJS address comes from the config the
+// integration suite shares, so a server already running for it is reused.
 const APP_PORT = 5173;
-const PEERJS_PORT = 9000;
-const PEERJS_PATH = '/wanna-bet';
+const PEERJS_PORT = PEERJS_SERVER_PORT;
+const PEERJS_PATH = PEERJS_SERVER_PATH;
 
 export default defineConfig({
   testDir: './e2e',

@@ -13,7 +13,7 @@ function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): v
 
 /**
  * Real, PeerJS-backed `Transport` implementation used by the app. Not covered by the
- * fake-transport unit suite — a distinct smoke-test suite against a live/local `peerjs-server`
+ * fake-transport unit suite — a distinct integration suite against a live/local `peerjs-server`
  * validates it instead.
  */
 export class PeerJsTransport implements RecoverableTransport {
@@ -94,14 +94,14 @@ export class PeerJsTransport implements RecoverableTransport {
   /**
    * Tears down this device's PeerJS connection and releases its resources. Not part of the
    * shared `Transport` interface — only the concrete PeerJS-backed adapter needs deterministic
-   * teardown (e.g. between smoke-test cases).
+   * teardown (e.g. between integration-test cases).
    */
   close(): void {
     this.peer?.destroy();
     this.connections.clear();
   }
 
-  /** Exposes the underlying `Peer` to the smoke tests only, to simulate stale or destroyed connections. */
+  /** Exposes the underlying `Peer` to the integration tests only, to simulate stale or destroyed connections. */
   peerForTesting(): Peer {
     if (!this.peer) {
       throw new Error('peerForTesting() called before connect()');
