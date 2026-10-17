@@ -39,12 +39,14 @@ type RoomRouteProps = {
   isSatOut: () => boolean;
   onLeave: (code: string) => void;
   onSitOut: () => void;
+  onRemoveGuest: (playerId: string) => void;
+  onRemoved: (code: string) => void;
 };
 
 /** `/room/<CODE>`: the Host sees the Lobby; an unrecognized visitor sees the Guest join form. */
-function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut }: RoomRouteProps) {
+function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut, onRemoveGuest, onRemoved }: RoomRouteProps) {
   if (room && room.code === code) {
-    return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} />;
+    return <Lobby code={code} room={room} gameState={hostGameState} onStart={onStart} onRemoveGuest={onRemoveGuest} />;
   }
   return (
     <JoinRoom
@@ -59,6 +61,7 @@ function RoomRoute({ code, room, hostGameState, guestGameState, onStart, onGameS
       isSatOut={isSatOut}
       onLeave={onLeave}
       onSitOut={onSitOut}
+      onRemoved={onRemoved}
     />
   );
 }
@@ -316,6 +319,10 @@ export function App() {
           isSatOut={isSatOut}
           onLeave={handleGuestLeave}
           onSitOut={handleGuestSitOut}
+          onRemoveGuest={(playerId) => {
+            connectionManagerRef.current?.removeGuest(playerId);
+          }}
+          onRemoved={handleGuestRemoved}
         />
         <StartedGame
           path={withBase('room/:code/play')}

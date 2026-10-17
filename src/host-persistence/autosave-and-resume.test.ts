@@ -296,3 +296,28 @@ describe('resuming a saved Lobby', () => {
     expect(loadHostSession(storage, 'ABCDEF')?.reconnectTokens).toEqual({ [alex.reconnectToken]: alex.playerId });
   });
 });
+
+describe('a Guest removed in the Lobby, across a Host reload', () => {
+  it('stays gone: not in the restored Room, and a rejoin with the old token is refused', async () => {
+    const storage = new FakeStorage();
+    const { manager, hostId } = await autosavingHost(storage);
+    const alex = await joinGuest(hostId, 'Alex');
+    manager.removeGuest(alex.playerId);
+
+    const session = loadHostSession(storage, 'ABCDEF');
+    if (!session) throw new Error('expected a saved session');
+    const resumedTransport = new FakeTransport();
+    const resumedHostId = await resumedTransport.connect();
+    const resumed = new ConnectionManager(resumedTransport, session.room, () => {});
+    resumed.resume(session);
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(resumedHostId);
+    const rejections: unknown[] = [];
+    new GuestProtocol(guestTransport).on('rejected', (payload) => rejections.push(payload));
+    new GuestProtocol(guestTransport).rejoin({ reconnectToken: alex.reconnectToken });
+
+    expect(rejections).toEqual([{ reason: 'UNKNOWN_PLAYER', action: 'rejoin' }]);
+    expect(resumed.room.players).toEqual([]);
+    expect(resumed.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
+  });
+});

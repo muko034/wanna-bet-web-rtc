@@ -55,6 +55,8 @@ Each round, players try to predict whether the challenger will succeed at a chal
   player's open bet is dropped with no points change, and if they were the challenger the round is discarded and the
   next unpaused player becomes the challenger. A removed player is not ranked on the leaderboard or the game result screen.
   Removing the last guest ends the room.
+- The host can also remove a guest in the lobby, before the game starts, after confirming by name. Nobody else is told: the
+  guest simply leaves the roster. The removed guest may join again as a new player.
 - There is no automatic skipping for a disconnected player — a round waits for them unless the host pauses or removes them.
 
 ## Game ending

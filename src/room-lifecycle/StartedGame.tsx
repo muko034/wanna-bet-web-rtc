@@ -21,6 +21,7 @@ import type { BetRejection } from '../round-engine/round-engine';
 import { resolveGameResult } from './game-result';
 import { resolveHostPausedScreen } from './host-paused-screen';
 import { isRemovedFromGame } from './removed-guest';
+import { RemovedScreen } from './RemovedScreen';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -256,6 +257,7 @@ export function StartedGame({
         isSatOut={isSatOut}
         onLeave={onLeave}
         onSitOut={onSitOut}
+        onRemoved={onRemoved}
       />
     );
   }
@@ -265,14 +267,7 @@ export function StartedGame({
   }
 
   if (view.view === 'removed') {
-    return (
-      <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
-        <div class="vb-giant-title">{t('removed.title')}</div>
-        <a class="vb-cta" href={withBase('/')}>
-          {t('gameResult.home')}
-        </a>
-      </PhoneShell>
-    );
+    return <RemovedScreen roomCode={view.roomCode} />;
   }
 
   if (view.view === 'reconnect-failed') {

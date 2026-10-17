@@ -497,10 +497,11 @@ export class ConnectionManager {
   }
 
   /**
-   * The Host removes a Guest mid-game: their row stays in the state as `removed`, broadcast to
-   * everyone, the removed Guest included. Only then is their reconnect token deleted, and their
-   * link closed once that last `state` has left, so a Guest who missed it is refused on `rejoin`.
-   * The Host and players not in the game are ignored.
+   * The Host removes a Guest. In the Game their row stays in the state as `removed`; in the
+   * Lobby one last snapshot names them `removed` and the next one no longer lists them. Either way
+   * it is broadcast to everyone, the removed Guest included. Their reconnect token is deleted at once, so
+   * a Guest who missed that `state` is refused on `rejoin`, and their link is closed once it has left.
+   * The Host and players not in the Room are ignored.
    */
   removeGuest(playerId: string): GameState | null {
     const { gameState } = this;
@@ -511,11 +512,22 @@ export class ConnectionManager {
 
     const peerIds = [...this.playerIdByPeerId].filter(([, id]) => id === playerId).map(([peerId]) => peerId);
     for (const peerId of peerIds) this.playerIdByPeerId.delete(peerId);
-    this.dropFromRoom(playerId);
-    this.removeFromGame(playerId);
+    this.lobbySatOut.delete(playerId);
     this.forgetReconnectTokens(playerId);
+    this.dropFromRoom(playerId);
+    if (this.room.started) {
+      this.removeFromGame(playerId);
+    } else {
+      this.removeFromLobby(playerId, gameState);
+    }
     setTimeout(() => peerIds.forEach((peerId) => this.transport.closeConnection(peerId)), LEAVE_CLOSE_DELAY_MS);
     return this.gameState;
+  }
+
+  /** Sends one last Lobby snapshot with the player as `removed`, then the refreshed roster without them. */
+  private removeFromLobby(playerId: string, lobbyState: GameState): void {
+    this.emitGameState(this.withPlayer(lobbyState, playerId, (p) => ({ ...p, status: 'removed' })));
+    this.refreshLobby();
   }
 
   private removeFromGame(playerId: string): void {

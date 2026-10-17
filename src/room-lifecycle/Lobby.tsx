@@ -2,7 +2,9 @@ import { PhoneShell } from '../PhoneShell';
 import { useT } from '../i18n/LanguageContext';
 import { NotFound } from '../NotFound';
 import { withBase } from '../base-path';
+import { useState } from 'preact/hooks';
 import { CopyInviteButton } from './CopyInviteButton';
+import { RemoveGuestDialog } from './RemoveGuestDialog';
 import { resolveLobbyRoster } from './lobby-roster';
 import type { GameState } from '../protocol/messages';
 import type { Room } from './room';
@@ -14,24 +16,42 @@ type Props = {
   /** The Host's own live `GameState` — a Lobby snapshot pre-game — used only for the roster. */
   gameState: GameState | null;
   onStart: () => void;
+  /** Removes the Guest `playerId` from the Room, once the Host confirmed. */
+  onRemoveGuest: (playerId: string) => void;
 };
 
 /**
  * `/room/<CODE>`: the Lobby — shows the Room Code/link, the full roster (the Host included,
- * marked "(you)"), and the (initially disabled) "Start game" action.
+ * marked "(you)"), a remove control on each Guest's row, and the (initially disabled) "Start game" action.
  */
-export function Lobby({ room, gameState, code, onStart }: Props) {
+export function Lobby({ room, gameState, code, onStart, onRemoveGuest }: Props) {
   const t = useT();
+  const [removing, setRemoving] = useState<{ playerId: string; name: string } | null>(null);
   if (!room || room.code !== code) {
     return <NotFound />;
   }
 
   const link = `${window.location.origin}${withBase(`room/${room.code}`)}`;
   const hasGuests = room.players.length > 0;
-  const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: room.hostPlayerId });
+  const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: room.hostPlayerId, canRemoveGuests: true });
 
   return (
-    <PhoneShell background="vb-bg-lobby" roomCode={room.code}>
+    <PhoneShell
+      background="vb-bg-lobby"
+      roomCode={room.code}
+      overlay={
+        removing && (
+          <RemoveGuestDialog
+            name={removing.name}
+            onConfirm={() => {
+              onRemoveGuest(removing.playerId);
+              setRemoving(null);
+            }}
+            onCancel={() => setRemoving(null)}
+          />
+        )
+      }
+    >
       <div class="vb-eyebrow2">{t('lobby.roomCode')}</div>
       <div class="vb-code-giant">
         <span>{room.code}</span>
@@ -43,7 +63,17 @@ export function Lobby({ room, gameState, code, onStart }: Props) {
         ) : (
           roster.map((entry) => (
             <div class="vb-avatar" key={entry.playerId}>
-              {t(entry.nameLabel.key, entry.nameLabel.params)}
+              <span>{t(entry.nameLabel.key, entry.nameLabel.params)}</span>
+              {entry.removable && (
+                <button
+                  class="vb-avatar-remove"
+                  type="button"
+                  aria-label={t('lobby.removeGuest', { name: entry.name })}
+                  onClick={() => setRemoving({ playerId: entry.playerId, name: entry.name })}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))
         )}

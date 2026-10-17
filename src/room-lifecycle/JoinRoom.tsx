@@ -10,6 +10,8 @@ import { attemptReconnect, completeGuestConnection, muteWhile, wireGuestConnecti
 import { loadIdentity } from './player-identity';
 import { resolveLobbyRoster } from './lobby-roster';
 import { HomeDialog } from './HomeDialog';
+import { RemovedScreen } from './RemovedScreen';
+import { isRemovedFromGame } from './removed-guest';
 import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { useForegroundRetry } from './use-foreground-retry';
@@ -47,6 +49,8 @@ type Props = {
   onLeave: (code: string) => void;
   /** Step away but keep the identity, so the Room's link rejoins later. */
   onSitOut: (code: string) => void;
+  /** The Host removed this Guest from `code`'s Room, so the device must forget it. */
+  onRemoved: (code: string) => void;
 };
 
 type Status =
@@ -54,6 +58,7 @@ type Status =
   | { kind: 'rejoining' }
   | { kind: 'joining' }
   | { kind: 'joined'; playerId: string }
+  | { kind: 'removed' }
   | { kind: 'error'; message: MessageKey }
   | { kind: 'reconnect-failed' };
 
@@ -73,7 +78,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey
  * `reconnectToken` via `rejoinRoom` instead, skipping the name prompt so the Guest resumes
  * as their same existing player.
  */
-export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut }: Props) {
+export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut, onRemoved }: Props) {
   const t = useT();
   const [name, setName] = useState('');
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
@@ -85,8 +90,8 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
   // callback per render must not re-run them, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, onRemoved });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onConnectionLost, onRemoved };
 
   // Foregrounding mid-attempt restarts the reconnect effect, skipping the current backoff.
   useForegroundRetry(status.kind === 'rejoining', () => setRetryKey((key) => key + 1));
@@ -122,8 +127,8 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       if (result.status === 'joined') {
         setStatus({ kind: 'joined', playerId: result.playerId });
       } else if (result.status === 'unknown-player') {
-        callbacksRef.current.onPlaceBetReady(null);
-        setStatus({ kind: 'form' });
+        callbacksRef.current.onRemoved(code);
+        setStatus({ kind: 'removed' });
       } else if (result.status === 'unreachable') {
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'reconnect-failed' });
@@ -139,6 +144,15 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       }
     };
   }, [code, retryKey]);
+
+  // Kept as status because the Host's next snapshot no longer lists this Guest.
+  const removedByState = status.kind === 'joined' && isRemovedFromGame({ gameState, code, localPlayerId: status.playerId });
+  useEffect(() => {
+    if (removedByState && code) {
+      callbacksRef.current.onRemoved(code);
+      setStatus({ kind: 'removed' });
+    }
+  }, [removedByState]);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -157,6 +171,10 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
       }
     });
   };
+
+  if (status.kind === 'removed') {
+    return <RemovedScreen roomCode={code} />;
+  }
 
   if (status.kind === 'joined') {
     const roster = resolveLobbyRoster({ players: gameState?.players ?? null, localPlayerId: status.playerId });

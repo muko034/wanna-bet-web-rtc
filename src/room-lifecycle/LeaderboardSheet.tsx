@@ -3,6 +3,7 @@ import { useT } from '../i18n/LanguageContext';
 import type { MessageKey } from '../i18n/dictionaries';
 import type { HostAction, Leaderboard } from './leaderboard';
 import { resolveMenuPlacement, type MenuPlacement } from './menu-placement';
+import { RemoveGuestDialog } from './RemoveGuestDialog';
 
 /** Matches the menu items' minimum height in `index.css`. */
 const MENU_ITEM_HEIGHT_PX = 44;
@@ -139,24 +140,14 @@ export function LeaderboardSheet({ rows, onClose, onHostAction, onRemoveGuest }:
         </div>
       </div>
       {removing && (
-        <div class="vb-rank-sheet-backdrop vb-dialog-backdrop" onClick={() => setRemoving(null)}>
-          <div class="vb-dialog" role="dialog" aria-label={t('removeGuest.title', { name: removing.name })} onClick={(event) => event.stopPropagation()}>
-            <div class="vb-dialog-title">{t('removeGuest.title', { name: removing.name })}</div>
-            <button
-              class="vb-dialog-destructive"
-              type="button"
-              onClick={() => {
-                onRemoveGuest?.(removing.playerId);
-                setRemoving(null);
-              }}
-            >
-              {t('hostMenu.remove')}
-            </button>
-            <button class="vb-dialog-link" type="button" onClick={() => setRemoving(null)}>
-              {t('homeDialog.cancel')}
-            </button>
-          </div>
-        </div>
+        <RemoveGuestDialog
+          name={removing.name}
+          onConfirm={() => {
+            onRemoveGuest?.(removing.playerId);
+            setRemoving(null);
+          }}
+          onCancel={() => setRemoving(null)}
+        />
       )}
     </>
   );

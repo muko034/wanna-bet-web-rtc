@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
-import { ConnectionManager } from './connection-manager';
+import { ConnectionManager, HEARTBEAT_INTERVAL_MS } from './connection-manager';
 import type { GameState } from '../protocol/messages';
 import { resolveGameResult } from './game-result';
 import { resolveRoundControls } from './round-controls';
@@ -979,6 +979,97 @@ describe('the Host removing a Guest', () => {
 
     manager.removeGuest('host-1');
     manager.removeGuest('nobody');
+
+    expect(manager.gameState).toBe(before);
+  });
+});
+
+describe('the Host removing a Guest in the Lobby', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  async function lobbyWithTwoGuests() {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+    const join = async (name: string) => {
+      const transport = await connectGuest(hostId);
+      const received: unknown[] = [];
+      let linkOpen = true;
+      transport.onMessage((message) => received.push(message));
+      transport.onConnectionChange((_peerId, connected) => {
+        if (!connected) linkOpen = false;
+      });
+      transport.send({ type: 'join', payload: { name } });
+      const welcome = (received.find((m) => (m as { type?: unknown }).type === 'welcome') as { payload: WelcomePayload }).payload;
+      return { transport, received, ...welcome, isLinkOpen: () => linkOpen };
+    };
+    const sam = await join('Sam');
+    const kim = await join('Kim');
+    return { manager, hostId, sam, kim };
+  }
+
+  const states = (received: unknown[]) =>
+    received.filter((m) => (m as { type?: unknown }).type === 'state').map((m) => (m as { payload: { snapshot: GameState } }).payload.snapshot);
+  const statusOf = (state: GameState | undefined, playerId: string) => state?.players.find((p) => p.playerId === playerId)?.status;
+  const closeLink = () => vi.advanceTimersByTime(300);
+
+  it('sends the removed Guest a Lobby snapshot naming them removed, before their link closes', async () => {
+    const { manager, sam } = await lobbyWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+
+    const sent = states(sam.received);
+    expect(sent.some((state) => state.status === 'lobby' && statusOf(state, sam.playerId) === 'removed')).toBe(true);
+    expect(sam.isLinkOpen()).toBe(true);
+    closeLink();
+    expect(sam.isLinkOpen()).toBe(false);
+  });
+
+  it('drops the player from the Room, the player count and every later snapshot', async () => {
+    const { manager, sam, kim } = await lobbyWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+    vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS);
+
+    expect(manager.room.playerCount).toBe(2);
+    expect(manager.room.players.map((p) => p.playerId)).toEqual([kim.playerId]);
+    expect(manager.gameState!.players.map((p) => p.playerId)).toEqual(['host-1', kim.playerId]);
+    const lastForKim = states(kim.received).at(-1)!;
+    expect(lastForKim.players.map((p) => p.playerId)).toEqual(['host-1', kim.playerId]);
+  });
+
+  it('leaves the other Guests connected and the Lobby open when the last Guest is removed', async () => {
+    const { manager, sam, kim } = await lobbyWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+    closeLink();
+    expect(kim.isLinkOpen()).toBe(true);
+    manager.removeGuest(kim.playerId);
+    closeLink();
+
+    expect(manager.gameState!.status).toBe('lobby');
+    expect(manager.room.playerCount).toBe(1);
+  });
+
+  it('refuses a later rejoin with the removed Guest\'s old token with UNKNOWN_PLAYER', async () => {
+    const { manager, hostId, sam } = await lobbyWithTwoGuests();
+    manager.removeGuest(sam.playerId);
+    closeLink();
+
+    const returning = await connectGuest(hostId);
+    const received: unknown[] = [];
+    returning.onMessage((message) => received.push(message));
+    returning.send({ type: 'rejoin', payload: { reconnectToken: sam.reconnectToken } });
+
+    expect(received).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
+  });
+
+  it('does not let the Host remove themself', async () => {
+    const { manager } = await lobbyWithTwoGuests();
+    const before = manager.gameState;
+
+    manager.removeGuest('host-1');
 
     expect(manager.gameState).toBe(before);
   });
