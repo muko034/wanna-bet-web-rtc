@@ -46,6 +46,8 @@ function startedGame(gameState: GameState) {
       betFailedRoundKey={null}
       onReconnectGaveUp={noop}
       onResolveRound={noop}
+      onPauseGuest={noop}
+      onResumeGuest={noop}
       onRedraw={noop}
       onGameStarted={noop}
       onGameState={noop}

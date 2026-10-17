@@ -22,6 +22,8 @@ function renderStartedGame(code: string, createGuestTransport: () => ReturnType<
     betFailedRoundKey: null,
     onReconnectGaveUp: vi.fn(),
     onResolveRound: vi.fn(),
+    onPauseGuest: vi.fn(),
+    onResumeGuest: vi.fn(),
     onRedraw: vi.fn(),
     onGameStarted: vi.fn(),
     onGameState: vi.fn(),

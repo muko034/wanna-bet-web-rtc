@@ -59,6 +59,10 @@ type Props = {
   /** The reconnect fallback ("Can't reach the Host") triggered, so any pending Bet has failed. */
   onReconnectGaveUp: () => void;
   onResolveRound: (outcome: Prediction) => void;
+  /** Host only: pauses the Guest `playerId`. */
+  onPauseGuest: (playerId: string) => void;
+  /** Host only: resumes a Guest the Host paused. */
+  onResumeGuest: (playerId: string) => void;
   /** Host only: replaces the current Challenge with a new draw. */
   onRedraw: () => void;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
@@ -105,6 +109,8 @@ export function StartedGame({
   betFailedRoundKey,
   onReconnectGaveUp,
   onResolveRound,
+  onPauseGuest,
+  onResumeGuest,
   onRedraw,
   onGameStarted,
   onGameState,
@@ -318,7 +324,7 @@ export function StartedGame({
   };
   const dialogOverlay = homeDialogOpen && <HomeDialog dialog={homeDialog} onChoose={chooseHomeOption} />;
 
-  const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null });
+  const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null, isHost: isHostRoom(code, room) });
 
   const resultShown = resultScreen !== null;
   useEffect(() => {
@@ -391,7 +397,7 @@ export function StartedGame({
       topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
       overlay={
         <>
-          {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} />}
+          {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)} />}
           {dialogOverlay}
         </>
       }

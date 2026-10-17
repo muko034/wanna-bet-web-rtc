@@ -140,4 +140,41 @@ describe('resolveLeaderboard', () => {
   it('returns no badge and no rows for a null player list', () => {
     expect(resolveLeaderboard({ players: null, localPlayerId: 'a' })).toEqual({ badge: null, rows: [] });
   });
+
+describe('Host menu', () => {
+  const host = playerWith({ playerId: 'host', name: 'Host' });
+  const rowFor = (guest: Partial<Player>, isHost: boolean, localPlayerId = 'host') =>
+    resolveLeaderboard({ players: [host, playerWith({ playerId: 'g', name: 'Gus', ...guest })], localPlayerId, isHost }).rows.find(
+      (row) => row.playerId === 'g',
+    )!;
+
+  it.each([
+    ['an active Guest', { status: 'active' }, ['pause']],
+    ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }, ['resume']],
+    ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }, []],
+  ] as const)('offers the Host the right actions on %s', (_name, guest, actions) => {
+    expect(rowFor(guest, true).hostActions).toEqual(actions);
+  });
+
+  it('offers a Guest no actions on any row', () => {
+    const states: Partial<Player>[] = [{ status: 'active' }, { status: 'paused', pausedBy: 'host' }, { status: 'paused', pausedBy: 'self' }];
+    for (const guest of states) {
+      expect(rowFor(guest, false, 'someone-else').hostActions).toEqual([]);
+    }
+  });
+
+  it("offers the Host no actions on the Host's own row", () => {
+    const { rows } = resolveLeaderboard({ players: [host, playerWith({ playerId: 'g' })], localPlayerId: 'host', isHost: true });
+
+    expect(rows.find((row) => row.playerId === 'host')!.hostActions).toEqual([]);
+  });
+
+  it.each([
+    ['an active Guest', { status: 'active' }, null],
+    ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }, 'leaderboard.paused'],
+    ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }, 'leaderboard.steppedAway'],
+  ] as const)('labels %s', (_name, guest, label) => {
+    expect(rowFor(guest, false, 'host').statusLabel).toBe(label);
+  });
+});
 });
