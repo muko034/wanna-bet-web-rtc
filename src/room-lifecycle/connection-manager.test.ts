@@ -476,6 +476,17 @@ describe('a Guest leaving mid-game', () => {
     expect(manager.gameState?.round?.bets).toEqual([]);
   });
 
+  it('changes nobody\'s Points when the Challenger leaves', async () => {
+    const { manager, guest, playerId, otherGuestIds } = await startedGameWithGuest((ids) => ids.find((id) => id !== 'host-1')!, ['Kim']);
+    manager.placeBet(otherGuestIds[0], 10, 'YES', manager.gameState!.round!.challengeId);
+    const pointsBefore = manager.gameState!.players.map((p) => [p.playerId, p.points]);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState!.players.map((p) => [p.playerId, p.points])).toEqual(pointsBefore);
+    expect(manager.gameState!.players.find((p) => p.playerId === playerId)?.status).toBe('removed');
+  });
+
   it('ends the Game for the Host when the last Guest leaves, keeping the Leaderboard', async () => {
     const { manager, guest } = await startedGameWithGuest();
 
