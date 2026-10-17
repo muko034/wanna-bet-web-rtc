@@ -36,17 +36,19 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
   const props = {
     onPauseGuest: vi.fn(),
     onResumeGuest: vi.fn(),
+    onLeave: vi.fn(),
+    onSitOut: vi.fn(),
   };
   const noop = vi.fn();
   if (role === 'guest') {
     saveIdentity(localStorage, CODE, { playerId: alex.playerId, reconnectToken: 'token' });
   }
-  render(
+  const screen = (state: GameState) => (
     <StartedGame
       code={CODE}
       room={role === 'host' ? room : null}
       guestGameStartedCode={role === 'guest' ? CODE : null}
-      gameState={gameState}
+      gameState={state}
       onPlaceBet={noop}
       betFailedRoundKey={null}
       onReconnectGaveUp={noop}
@@ -57,18 +59,18 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
       onPlaceBetReady={noop}
       onBetRejected={noop}
       onConnectionLost={noop}
-      onLeave={noop}
-      onSitOut={noop}
       onHostLeave={noop}
       createGuestTransport={() => {
         throw new Error('must not open a Guest transport');
       }}
       isSatOut={() => false}
       {...props}
-    />,
+    />
   );
-  fireEvent.click(document.querySelector('.vb-rank-badge')!);
-  return props;
+  const { rerender } = render(screen(gameState));
+  const openLeaderboard = () => fireEvent.click(document.querySelector('.vb-rank-badge')!);
+  openLeaderboard();
+  return { ...props, openLeaderboard, rerender: (state: GameState) => rerender(screen(state)) };
 }
 
 const menuButton = (name: string) => screen.queryByRole('button', { name: t('hostMenu.open', { name }) });
@@ -134,5 +136,49 @@ describe('Leaderboard row menu', () => {
     fireEvent.click(menuButton('Sam')!);
 
     expect(screen.getByRole('menu').classList.contains(placement)).toBe(true);
+  });
+});
+
+describe('a Guest the Host paused', () => {
+  const pausedState = () => stateWith([host, hostPaused(alex), sam]);
+
+  it('sees that the Host paused them, not the live Round', () => {
+    renderAs('guest', pausedState());
+
+    expect(screen.getByText(t('hostPaused.title'))).toBeTruthy();
+    expect(document.querySelector('.vb-tapzones')).toBeNull();
+  });
+
+  it('can still open the Leaderboard', () => {
+    renderAs('guest', pausedState());
+
+    expect(screen.getByRole('dialog', { name: 'Leaderboard' })).toBeTruthy();
+  });
+
+  it.each([
+    ['Leave', 'homeDialog.leave', 'onLeave'],
+    ['Sit out', 'homeDialog.sitOut', 'onSitOut'],
+  ] as const)('can still %s', (_name, label, callback) => {
+    const props = renderAs('guest', pausedState());
+
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+    fireEvent.click(screen.getByRole('button', { name: t(label) }));
+
+    expect(props[callback]).toHaveBeenCalledWith(CODE);
+  });
+
+  it('returns to the live Round the moment the Host resumes them', () => {
+    const { rerender } = renderAs('guest', pausedState());
+
+    rerender(stateWith([host, alex, sam]));
+
+    expect(screen.queryByText(t('hostPaused.title'))).toBeNull();
+    expect(document.querySelector('.vb-tapzones')).not.toBeNull();
+  });
+
+  it('is not shown the paused screen after only sitting out', () => {
+    renderAs('guest', stateWith([host, satOut(alex), sam]));
+
+    expect(screen.queryByText(t('hostPaused.title'))).toBeNull();
   });
 });

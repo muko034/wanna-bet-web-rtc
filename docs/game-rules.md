@@ -45,6 +45,12 @@ Each round, players try to predict whether the challenger will succeed at a chal
 
 ## Player status
 - The host may pause a player, skipping them from betting and rotation until resumed, or remove a player from the game entirely.
+- A paused player is not waited on: the round resolves without their bet, and a bet they already placed stays. If the
+  paused player is the challenger, the round is discarded with no points change and the next unpaused player becomes the challenger.
+- The host resumes a player they paused. The player is eligible at once, even in the middle of a round, so a round that
+  was ready to be judged goes back to waiting for their bet. A player who sat out is not the host's to resume: the host
+  has no resume for them, and only the player returning ends it.
+- A host pause outranks a sit out: the paused player cannot undo it by stepping away and returning.
 - There is no automatic skipping for a disconnected player — a round waits for them unless the host pauses or removes them.
 
 ## Game ending

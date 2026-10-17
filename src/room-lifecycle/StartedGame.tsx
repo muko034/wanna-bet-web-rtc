@@ -19,6 +19,7 @@ import { resolveLockIn } from './lock-in';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
 import { resolveGameResult } from './game-result';
+import { resolveHostPausedScreen } from './host-paused-screen';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -324,6 +325,7 @@ export function StartedGame({
   };
   const dialogOverlay = homeDialogOpen && <HomeDialog dialog={homeDialog} onChoose={chooseHomeOption} />;
 
+  const hostPausedScreen = resolveHostPausedScreen({ gameState, localPlayerId: localPlayerId ?? null });
   const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null, isHost: isHostRoom(code, room) });
 
   const resultShown = resultScreen !== null;
@@ -389,18 +391,36 @@ export function StartedGame({
     );
   }
 
+  const leaderboardBadge = leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />;
+  const leaderboardOverlay = (
+    <>
+      {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)} />}
+      {dialogOverlay}
+    </>
+  );
+
+  if (hostPausedScreen) {
+    return (
+      <PhoneShell
+        background={hostPausedScreen.background}
+        roomCode={view.roomCode}
+        onHome={() => setHomeDialogOpen(true)}
+        topRight={leaderboardBadge}
+        overlay={leaderboardOverlay}
+      >
+        <div class="vb-giant-title">{t(hostPausedScreen.title.key, hostPausedScreen.title.params)}</div>
+        <div class="vb-giant-sub">{t(hostPausedScreen.subtitle.key, hostPausedScreen.subtitle.params)}</div>
+      </PhoneShell>
+    );
+  }
+
   return (
     <PhoneShell
       background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
-      topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
-      overlay={
-        <>
-          {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)} />}
-          {dialogOverlay}
-        </>
-      }
+      topRight={leaderboardBadge}
+      overlay={leaderboardOverlay}
     >
       {roundControls.kind === 'no-active-guests' ? (
         <>
