@@ -4,6 +4,7 @@ import { Home } from './room-lifecycle/Home';
 import { CreateRoom } from './room-lifecycle/CreateRoom';
 import { JoinCode } from './room-lifecycle/JoinCode';
 import { Lobby } from './room-lifecycle/Lobby';
+import { LobbyRemovePrototype } from './room-lifecycle/prototype-lobby-remove/LobbyRemovePrototype'; // PROTOTYPE
 import { JoinRoom } from './room-lifecycle/JoinRoom';
 import { StartedGame } from './room-lifecycle/StartedGame';
 import { NotFound } from './NotFound';
@@ -301,6 +302,7 @@ export function App() {
     <>
       {hostConnectionLost && <HostConnectionLostBanner onDismiss={() => setHostConnectionLost(false)} />}
       <Router>
+        {import.meta.env.DEV && <LobbyRemovePrototype path={withBase('prototype/lobby')} />}
         <Home path={withBase('/')} />
         <CreateRoom path={withBase('room')} onRoomCreated={handleRoomCreated} />
         <JoinCode path={withBase('join')} />
