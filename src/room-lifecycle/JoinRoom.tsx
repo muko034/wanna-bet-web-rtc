@@ -49,7 +49,7 @@ type Props = {
   onLeave: (code: string) => void;
   /** Step away but keep the identity, so the Room's link rejoins later. */
   onSitOut: (code: string) => void;
-  /** The Host removed this Guest from `code`'s Room, so the device must forget it. */
+  /** Guest only: the Host removed this Guest from `code`'s Room, so the device must forget it. */
   onRemoved: (code: string) => void;
 };
 

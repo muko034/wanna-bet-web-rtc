@@ -16,7 +16,7 @@ type Props = {
   /** The Host's own live `GameState` — a Lobby snapshot pre-game — used only for the roster. */
   gameState: GameState | null;
   onStart: () => void;
-  /** Removes the Guest `playerId` from the Room, once the Host confirmed. */
+  /** Host only: removes the Guest `playerId` from the Room, once the Host confirmed. */
   onRemoveGuest: (playerId: string) => void;
 };
 
