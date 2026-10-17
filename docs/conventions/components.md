@@ -32,3 +32,11 @@ same way.
   </div>
 </div>
 ```
+
+## Render dialogs and sheets through `PhoneShell`'s `overlay` prop
+
+A dialog or sheet (the Home dialog, the Leaderboard sheet, the Remove confirmation) is passed to `PhoneShell` as `overlay`, not rendered among its children. `overlay` sits after the stage and footer inside the phone frame, so the backdrop covers the whole screen, top bar included. Gate it on the component's open state (`open && <Dialog />`), so a closed dialog renders nothing.
+
+```tsx
+<PhoneShell background="vb-bg-lobby" overlay={removing && <RemoveGuestDialog name={removing.name} onConfirm={confirm} onCancel={cancel} />}>
+```
