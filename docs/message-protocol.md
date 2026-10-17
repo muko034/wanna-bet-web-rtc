@@ -173,9 +173,9 @@ Notes:
   back to Home. A Guest that missed the `state` and sends a `rejoin` is refused with `UNKNOWN_PLAYER` and treated as
   removed too. Removing the last Guest ends the Room, and the Game Result Screen follows. A `removed` row is part of
   the persisted session, but its reconnect token is not restored after a Host reload.
-- Host Remove (in the Lobby): the Host removes any Guest from the roster with a ✕ on the Guest's row (none on its own
-  row, and Guests never see it), after the same confirm step that names the player. No notice is shown to other
-  players: the roster simply shrinks. The Host first sends one last Lobby snapshot with that player as
+- Host Remove (in the Lobby): the Host removes any Guest from the roster by tapping the Guest's row (its own
+  row is not tappable, and Guests never see this), with a hint line under the roster, after the same confirm step
+  that names the player. No notice is shown to other players: the roster simply shrinks. The Host first sends one last Lobby snapshot with that player as
   `status: 'removed'`, then deletes the player's reconnect token, drops them from the Room (the player count falls) and
   closes their link shortly after, so the snapshot can leave first. Later snapshots and heartbeats do not list the
   player, and the Lobby roster never renders a `removed` row. The removed Guest reads its own `status: 'removed'` from

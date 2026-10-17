@@ -39,7 +39,7 @@ const removeButton = (name: string) => screen.queryByRole('button', { name: t('l
 const confirmDialog = (name: string) => screen.queryByRole('dialog', { name: t('removeGuest.title', { name }) });
 
 describe('the Host\'s Lobby roster', () => {
-  it('shows a remove control on each Guest row and none on the Host\'s own row', () => {
+  it('makes each Guest row tappable to remove and the Host\'s own row inert', () => {
     renderLobby([host, alex, sam]);
 
     expect(removeButton('Alex')).not.toBeNull();
@@ -76,6 +76,15 @@ describe('the Host\'s Lobby roster', () => {
     expect(onRemoveGuest).toHaveBeenCalledTimes(1);
     expect(onRemoveGuest).toHaveBeenCalledWith('guest-2');
     expect(confirmDialog('Sam')).toBeNull();
+  });
+
+  it('hints that a Guest can be tapped to remove, only while a Guest is listed', () => {
+    const { unmount } = renderLobby([host, alex]);
+    expect(screen.queryByText(t('lobby.removeHint'))).not.toBeNull();
+    unmount();
+
+    renderLobby([host]);
+    expect(screen.queryByText(t('lobby.removeHint'))).toBeNull();
   });
 
   it('never renders a removed row', () => {

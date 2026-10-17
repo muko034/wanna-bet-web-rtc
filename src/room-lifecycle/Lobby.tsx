@@ -22,7 +22,7 @@ type Props = {
 
 /**
  * `/room/<CODE>`: the Lobby — shows the Room Code/link, the full roster (the Host included,
- * marked "(you)"), a remove control on each Guest's row, and the (initially disabled) "Start game" action.
+ * marked "(you)"), Guest rows the Host taps to remove, and the (initially disabled) "Start game" action.
  */
 export function Lobby({ room, gameState, code, onStart, onRemoveGuest }: Props) {
   const t = useT();
@@ -61,23 +61,26 @@ export function Lobby({ room, gameState, code, onStart, onRemoveGuest }: Props) 
         {roster.length === 0 ? (
           <div class="vb-avatar">{t('lobby.waitingForPlayers')}</div>
         ) : (
-          roster.map((entry) => (
-            <div class="vb-avatar" key={entry.playerId}>
-              <span>{t(entry.nameLabel.key, entry.nameLabel.params)}</span>
-              {entry.removable && (
-                <button
-                  class="vb-avatar-remove"
-                  type="button"
-                  aria-label={t('lobby.removeGuest', { name: entry.name })}
-                  onClick={() => setRemoving({ playerId: entry.playerId, name: entry.name })}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))
+          roster.map((entry) =>
+            entry.removable ? (
+              <button
+                class="vb-avatar vb-avatar-tap"
+                type="button"
+                key={entry.playerId}
+                aria-label={t('lobby.removeGuest', { name: entry.name })}
+                onClick={() => setRemoving({ playerId: entry.playerId, name: entry.name })}
+              >
+                {t(entry.nameLabel.key, entry.nameLabel.params)}
+              </button>
+            ) : (
+              <div class="vb-avatar" key={entry.playerId}>
+                {t(entry.nameLabel.key, entry.nameLabel.params)}
+              </div>
+            ),
+          )
         )}
       </div>
+      {roster.some((entry) => entry.removable) && <div class="vb-avatar-hint">{t('lobby.removeHint')}</div>}
       <div class="vb-status-pill">{t('lobby.notStarted')}</div>
       <button class="vb-cta" type="button" disabled={!hasGuests} onClick={onStart}>
         {t('lobby.start')}
