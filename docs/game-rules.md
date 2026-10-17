@@ -51,6 +51,10 @@ Each round, players try to predict whether the challenger will succeed at a chal
   was ready to be judged goes back to waiting for their bet. A player who sat out is not the host's to resume: the host
   has no resume for them, and only the player returning ends it.
 - A host pause outranks a sit out: the paused player cannot undo it by stepping away and returning.
+- The host removes a player from the game for good, a player who sat out included, after confirming by name. The
+  player's open bet is dropped with no points change, and if they were the challenger the round is discarded and the
+  next unpaused player becomes the challenger. A removed player is not ranked on the leaderboard or the game result screen.
+  Removing the last guest ends the room.
 - There is no automatic skipping for a disconnected player — a round waits for them unless the host pauses or removes them.
 
 ## Game ending

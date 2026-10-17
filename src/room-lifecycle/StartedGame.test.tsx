@@ -5,6 +5,7 @@ import { dictionaries } from '../i18n/dictionaries';
 import { translate } from '../i18n/translate';
 import { StartedGame } from './StartedGame';
 import { hostRoomWithStoredGuest, storeStaleIdentity, trackedGuestTransports } from './guest-test-harness';
+import { saveIdentity } from './player-identity';
 
 beforeEach(() => vi.useFakeTimers());
 
@@ -24,6 +25,8 @@ function renderStartedGame(code: string, createGuestTransport: () => ReturnType<
     onResolveRound: vi.fn(),
     onPauseGuest: vi.fn(),
     onResumeGuest: vi.fn(),
+    onRemoveGuest: vi.fn(),
+    onRemoved: vi.fn(),
     onRedraw: vi.fn(),
     onGameStarted: vi.fn(),
     onGameState: vi.fn(),
@@ -102,5 +105,19 @@ describe('StartedGame reconnect effect', () => {
     unmount();
 
     expect(transports.every((transport) => closedCount(transport) === 1)).toBe(true);
+  });
+});
+
+describe('StartedGame when the Host refuses the stored identity', () => {
+  it('treats the refused rejoin as the Host having removed the Guest', async () => {
+    const { createGuestTransport } = trackedGuestTransports();
+    const code = await hostRoomWithStoredGuest();
+    saveIdentity(localStorage, code, { playerId: 'removed-earlier', reconnectToken: 'a-token-the-Host-deleted' });
+    const { props } = renderStartedGame(code, createGuestTransport);
+
+    await settle();
+
+    expect(screen.getByText(translate(dictionaries.pl, 'removed.title'))).toBeTruthy();
+    expect(props.onRemoved).toHaveBeenCalledWith(code);
   });
 });

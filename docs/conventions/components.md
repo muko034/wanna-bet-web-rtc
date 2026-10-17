@@ -14,3 +14,21 @@ Every `.map()` that renders JSX elements gives each element a `key` taken from a
 A button that picks one option out of a group (the YES/NO tap zones, the PL | EN language toggle) sets
 `aria-pressed={isSelected}` on every button of the group, in addition to any visual modifier class. Assistive tech then
 announces the selection, and a stylesheet may target `[aria-pressed='true']` when no shared modifier class exists.
+
+## Build a confirmation dialog from the shared `vb-dialog` blocks
+
+An irreversible action (leaving the Game, removing a Guest) is confirmed in a dialog made of the shared blocks: a
+`vb-rank-sheet-backdrop vb-dialog-backdrop` wrapper whose click cancels, a `vb-dialog` panel with `role="dialog"` and an
+`aria-label` that stops click propagation so taps inside don't reach the backdrop, then the buttons. The action button is
+`vb-dialog-destructive`, the way out is a `vb-dialog-link` button, and a title (`vb-dialog-title`) is added when the
+buttons alone don't say what is being confirmed. Reusing the blocks keeps every confirmation looking and dismissing the
+same way.
+
+```tsx
+<div class="vb-rank-sheet-backdrop vb-dialog-backdrop" onClick={cancel}>
+  <div class="vb-dialog" role="dialog" aria-label={title} onClick={(event) => event.stopPropagation()}>
+    <button class="vb-dialog-destructive" type="button" onClick={confirm}>{t('hostMenu.remove')}</button>
+    <button class="vb-dialog-link" type="button" onClick={cancel}>{t('homeDialog.cancel')}</button>
+  </div>
+</div>
+```

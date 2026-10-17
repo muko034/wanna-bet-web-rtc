@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { ConnectionManager } from './connection-manager';
 import type { GameState } from '../protocol/messages';
@@ -837,5 +837,149 @@ describe('the Host pausing and resuming a Guest', () => {
 
     expect(manager.room.players.find((p) => p.playerId === sam.playerId)?.connected).toBe(false);
     expect(manager.gameState!.players.map((p) => [p.playerId, p.status])).toEqual(statusesBefore);
+  });
+});
+
+describe('the Host removing a Guest', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  async function joinedGuest(hostId: string, name: string) {
+    const transport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    let linkOpen = true;
+    transport.onMessage((message) => received.push(message));
+    transport.onConnectionChange((_peerId, connected) => {
+      if (!connected) linkOpen = false;
+    });
+    transport.send({ type: 'join', payload: { name } });
+    const welcome = (received.find((m) => (m as { type?: unknown }).type === 'welcome') as { payload: WelcomePayload }).payload;
+    return { transport, received, ...welcome, isLinkOpen: () => linkOpen };
+  }
+
+  async function startedGameWithTwoGuests(pickChallenger: (ids: string[]) => string = () => 'host-1') {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, pickChallenger);
+    const sam = await joinedGuest(hostId, 'Sam');
+    const kim = await joinedGuest(hostId, 'Kim');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, hostId, sam, kim };
+  }
+
+  const states = (received: unknown[]) =>
+    received.filter((m) => (m as { type?: unknown }).type === 'state').map((m) => (m as { payload: { snapshot: GameState } }).payload.snapshot);
+  const playerIn = (state: GameState | null, playerId: string) => state?.players.find((p) => p.playerId === playerId);
+  const closeLink = () => vi.advanceTimersByTime(300);
+
+  it('sends every Guest a state with the player as removed, keeping their last Points', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+
+    expect(playerIn(states(kim.received).at(-1) ?? null, sam.playerId)).toMatchObject({ status: 'removed', points: 100 });
+    expect(playerIn(manager.gameState, sam.playerId)?.status).toBe('removed');
+  });
+
+  it('sends the removed Guest the state naming them removed before their link closes', async () => {
+    const { manager, sam } = await startedGameWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+
+    expect(playerIn(states(sam.received).at(-1) ?? null, sam.playerId)?.status).toBe('removed');
+    expect(sam.isLinkOpen()).toBe(true);
+    closeLink();
+    expect(sam.isLinkOpen()).toBe(false);
+  });
+
+  it('leaves the other Guests connected', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+    closeLink();
+
+    expect(kim.isLinkOpen()).toBe(true);
+    expect(manager.room.players.map((p) => p.playerId)).toEqual([kim.playerId]);
+  });
+
+  it('refuses a later rejoin with the removed Guest\'s old token with UNKNOWN_PLAYER', async () => {
+    const { manager, hostId, sam } = await startedGameWithTwoGuests();
+    manager.removeGuest(sam.playerId);
+    closeLink();
+
+    const returning = await connectGuest(hostId);
+    const received: unknown[] = [];
+    returning.onMessage((message) => received.push(message));
+    returning.send({ type: 'rejoin', payload: { reconnectToken: sam.reconnectToken } });
+
+    expect(received).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
+  });
+
+  it('removes a Guest who stepped away', async () => {
+    const { manager, sam } = await startedGameWithTwoGuests();
+    sam.transport.send({ type: 'sitOut', payload: {} });
+    expect(playerIn(manager.gameState, sam.playerId)).toMatchObject({ status: 'paused', pausedBy: 'self' });
+
+    manager.removeGuest(sam.playerId);
+
+    expect(playerIn(manager.gameState, sam.playerId)?.status).toBe('removed');
+  });
+
+  it('removes a Guest the Host paused', async () => {
+    const { manager, sam } = await startedGameWithTwoGuests();
+    manager.pauseGuest(sam.playerId);
+
+    manager.removeGuest(sam.playerId);
+
+    expect(playerIn(manager.gameState, sam.playerId)?.status).toBe('removed');
+  });
+
+  it("drops the removed Guest's Bet with no Points change", async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+    const challengeId = manager.gameState!.round!.challengeId;
+    manager.placeBet(sam.playerId, 30, 'YES', challengeId);
+    manager.placeBet(kim.playerId, 10, 'NO', challengeId);
+    const pointsBefore = manager.gameState!.players.map((p) => [p.playerId, p.points]);
+
+    manager.removeGuest(sam.playerId);
+
+    expect(manager.gameState!.round!.bets).toEqual([{ playerId: kim.playerId }]);
+    expect(manager.gameState!.players.map((p) => [p.playerId, p.points])).toEqual(pointsBefore);
+  });
+
+  it('discards the Round and picks the next player as Challenger when the Challenger is removed', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests((ids) => ids.find((id) => id !== 'host-1')!);
+    const challenger = manager.gameState!.round!.challengerId;
+    const challengedGuest = [sam, kim].find((guest) => guest.playerId === challenger)!;
+    manager.placeBet('host-1', 10, 'YES', manager.gameState!.round!.challengeId);
+
+    manager.removeGuest(challengedGuest.playerId);
+
+    expect(manager.gameState!.round!.challengerId).not.toBe(challengedGuest.playerId);
+    expect(manager.gameState!.round!.bets).toEqual([]);
+    expect(manager.gameState!.players.every((p) => p.points === 100)).toBe(true);
+  });
+
+  it('ends the Room with the Game Result Screen when the last Guest is removed', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+
+    manager.removeGuest(sam.playerId);
+    expect(manager.gameState!.status).toBe('active');
+    manager.removeGuest(kim.playerId);
+
+    expect(manager.gameState!.status).toBe('ended');
+    expect(resolveGameResult({ gameState: manager.gameState, localPlayerId: 'host-1' })?.rows.map((row) => row.playerId)).toEqual(['host-1']);
+  });
+
+  it('does not let the Host remove themself, or a player who is not in the Room', async () => {
+    const { manager } = await startedGameWithTwoGuests();
+    const before = manager.gameState;
+
+    manager.removeGuest('host-1');
+    manager.removeGuest('nobody');
+
+    expect(manager.gameState).toBe(before);
   });
 });

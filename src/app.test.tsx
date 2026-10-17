@@ -215,6 +215,8 @@ describe('App screen wiring', () => {
         onResolveRound: expect.any(Function),
         onPauseGuest: expect.any(Function),
         onResumeGuest: expect.any(Function),
+        onRemoveGuest: expect.any(Function),
+        onRemoved: expect.any(Function),
         onRedraw: expect.any(Function),
         onHostLeave: expect.any(Function),
         onLeave: expect.any(Function),

@@ -72,16 +72,34 @@ describe('resolveStartedGameView', () => {
     expect(result).toEqual({ view: 'reconnecting', roomCode: 'ABCDEF' });
   });
 
-  it('falls back to the join form when the Host rejects the stored identity as unrecognized', () => {
+  it.each([
+    ['a stored identity', true],
+    ['no stored identity left', false],
+  ])('shows the removed view for a Guest the Host removed, with %s', (_name, hasStoredIdentity) => {
     const result = resolveStartedGameView({
       code: 'ABCDEF',
       room: null,
-      guestGameStartedCode: null,
-      hasStoredIdentity: true,
-      reconnectPhase: 'unknown-player',
+      guestGameStartedCode: 'ABCDEF',
+      hasStoredIdentity,
+      reconnectPhase: null,
+      removed: true,
     });
 
-    expect(result).toEqual({ view: 'join-form' });
+    expect(result).toEqual({ view: 'removed', roomCode: 'ABCDEF' });
+  });
+
+  it('keeps the removed view once the Room ends', () => {
+    const result = resolveStartedGameView({
+      code: 'ABCDEF',
+      room: null,
+      guestGameStartedCode: 'ABCDEF',
+      hasStoredIdentity: false,
+      reconnectPhase: null,
+      removed: true,
+      gameState: { roomId: 'ABCDEF', status: 'ended', challengerId: null, resolution: null, round: null, players: [] },
+    });
+
+    expect(result).toEqual({ view: 'removed', roomCode: 'ABCDEF' });
   });
 
   it("shows a reconnect-failed view, with the underlying error message, when the reconnect attempt itself fails", () => {

@@ -33,6 +33,9 @@ export interface Transport {
    */
   onConnectionChange(handler: (peerId: string, connected: boolean) => void): void;
 
+  /** Closes the connection to one peer, which sees it drop; every other connection stays open. A peer with no open connection is ignored. */
+  closeConnection(peerId: string): void;
+
   /** Closes this transport for good: peers see it drop, and it neither sends nor reports anything afterwards. */
   close(): void;
 }

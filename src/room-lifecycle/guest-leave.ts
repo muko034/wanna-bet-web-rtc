@@ -33,3 +33,12 @@ export function closeEndedGame(transport: Transport, storage: Storage, code: str
   deleteIdentity(storage, code);
   transport.close();
 }
+
+/**
+ * The Host removed this Guest: forgets this device's identity for `code`'s Room, so a reload does
+ * not resume it, and closes `transport` if one is still open.
+ */
+export function forgetRemovedGuest(transport: Transport | null, storage: Storage, code: string): void {
+  deleteIdentity(storage, code);
+  transport?.close();
+}

@@ -89,6 +89,19 @@ export class FakeTransport implements Transport {
     }
   }
 
+  /** Drops the link to one peer: both sides hear it go offline, and every other link stays up. */
+  closeConnection(peerId: string): void {
+    const peer = this.peers.get(peerId);
+    if (!peer) {
+      return;
+    }
+    const id = this.id!;
+    this.peers.delete(peerId);
+    peer.peers.delete(id);
+    this.notifyConnectionChange(peerId, false);
+    peer.notifyConnectionChange(id, false);
+  }
+
   private linkTo(peer: FakeTransport): void {
     this.peers.set(peer.id!, peer);
   }

@@ -149,9 +149,9 @@ describe('Host menu', () => {
     )!;
 
   it.each([
-    ['an active Guest', { status: 'active' }, ['pause']],
-    ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }, ['resume']],
-    ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }, []],
+    ['an active Guest', { status: 'active' }, ['pause', 'remove']],
+    ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }, ['resume', 'remove']],
+    ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }, ['remove']],
   ] as const)('offers the Host the right actions on %s', (_name, guest, actions) => {
     expect(rowFor(guest, true).hostActions).toEqual(actions);
   });

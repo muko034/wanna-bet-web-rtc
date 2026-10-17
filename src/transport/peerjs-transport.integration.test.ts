@@ -111,6 +111,22 @@ describe('PeerJsTransport integration tests', () => {
     expect(connectedGuestId).toBe(guestId);
   });
 
+  it('closes one Guest connection from the Host, and both sides see it drop', async () => {
+    const host = createTransport();
+    const hostId = await host.connect();
+    const guest = createTransport();
+    const hostConnected = onceConnected(host);
+    const guestId = await guest.connect(hostId);
+    await hostConnected;
+    const guestDropped = onceDisconnected(guest);
+    const hostDropped = onceDisconnected(host);
+
+    host.closeConnection(guestId);
+
+    await expect(guestDropped).resolves.toBe(hostId);
+    await expect(hostDropped).resolves.toBe(guestId);
+  });
+
   it('delivers Guest-to-Host and Host-to-Guest messages unchanged through onMessage', async () => {
     const host = createTransport();
     const hostId = await host.connect();

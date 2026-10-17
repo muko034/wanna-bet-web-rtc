@@ -160,8 +160,9 @@ export class ConnectionManager {
     this.gameState = session.gameState;
     this.roundEngineState = session.roundEngineState;
     this.firstRoundStarted = session.firstRoundStarted;
+    const removedPlayerIds = new Set(session.gameState.players.filter((p) => p.status === 'removed').map((p) => p.playerId));
     for (const [reconnectToken, playerId] of Object.entries(session.reconnectTokens)) {
-      this.playerIdByReconnectToken.set(reconnectToken, playerId);
+      if (!removedPlayerIds.has(playerId)) this.playerIdByReconnectToken.set(reconnectToken, playerId);
     }
     this.onRoomChange(this.room);
     if (this.room.started) {
@@ -470,21 +471,51 @@ export class ConnectionManager {
 
     this.playerIdByPeerId.delete(peerId);
     this.lobbySatOut.delete(playerId);
-    for (const [reconnectToken, id] of this.playerIdByReconnectToken) {
-      if (id === playerId) this.playerIdByReconnectToken.delete(reconnectToken);
-    }
-    this.room = {
-      ...this.room,
-      players: this.room.players.filter((p) => p.playerId !== playerId),
-      playerCount: this.room.playerCount - 1,
-    };
-    this.onRoomChange(this.room);
+    this.forgetReconnectTokens(playerId);
+    this.dropFromRoom(playerId);
 
     if (!this.room.started || this.gameState === null || this.roundEngineState === null) {
       this.refreshLobby();
       return;
     }
     this.removeFromGame(playerId);
+  }
+
+  private forgetReconnectTokens(playerId: string): void {
+    for (const [reconnectToken, id] of this.playerIdByReconnectToken) {
+      if (id === playerId) this.playerIdByReconnectToken.delete(reconnectToken);
+    }
+  }
+
+  private dropFromRoom(playerId: string): void {
+    this.room = {
+      ...this.room,
+      players: this.room.players.filter((p) => p.playerId !== playerId),
+      playerCount: this.room.playerCount - 1,
+    };
+    this.onRoomChange(this.room);
+  }
+
+  /**
+   * The Host removes a Guest mid-game: their row stays in the state as `removed`, broadcast to
+   * everyone, the removed Guest included. Only then is their reconnect token deleted, and their
+   * link closed once that last `state` has left, so a Guest who missed it is refused on `rejoin`.
+   * The Host and players not in the game are ignored.
+   */
+  removeGuest(playerId: string): GameState | null {
+    const { gameState } = this;
+    const target = gameState?.players.find((p) => p.playerId === playerId);
+    if (gameState === null || target === undefined || target.status === 'removed' || playerId === this.room.hostPlayerId) {
+      return this.gameState;
+    }
+
+    const peerIds = [...this.playerIdByPeerId].filter(([, id]) => id === playerId).map(([peerId]) => peerId);
+    for (const peerId of peerIds) this.playerIdByPeerId.delete(peerId);
+    this.dropFromRoom(playerId);
+    this.removeFromGame(playerId);
+    this.forgetReconnectTokens(playerId);
+    setTimeout(() => peerIds.forEach((peerId) => this.transport.closeConnection(peerId)), LEAVE_CLOSE_DELAY_MS);
+    return this.gameState;
   }
 
   private removeFromGame(playerId: string): void {

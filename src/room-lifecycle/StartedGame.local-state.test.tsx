@@ -54,6 +54,8 @@ function startedGame(room: Room, gameState: GameState) {
       onResolveRound={noop}
       onPauseGuest={noop}
       onResumeGuest={noop}
+      onRemoveGuest={noop}
+      onRemoved={noop}
       onRedraw={noop}
       onGameStarted={noop}
       onGameState={noop}

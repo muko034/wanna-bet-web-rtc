@@ -5,6 +5,7 @@ import type { Room } from './room';
 export type StartedGameView =
   | { view: 'started'; roomCode: string }
   | { view: 'game-result'; roomCode: string }
+  | { view: 'removed'; roomCode: string }
   | { view: 'redirect-to-lobby' }
   | { view: 'not-found' }
   | { view: 'join-form' }
@@ -19,7 +20,7 @@ export type StartedGameView =
  * separate terminal "session ended" state for a Guest-side dropped connection; a drop always
  * resolves through this same automatic-retry-then-manual-fallback phase.
  */
-export type ReconnectPhase = 'pending' | 'unknown-player' | { kind: 'error'; message: MessageKey } | null;
+export type ReconnectPhase = 'pending' | { kind: 'error'; message: MessageKey } | null;
 
 type Params = {
   /** The `:code` route param at `/room/<code>/play`. */
@@ -39,6 +40,8 @@ type Params = {
   hasGameState?: boolean;
   /** The latest `state`, if any. One with `status: 'ended'` for this Room means the Host ended it; that needs no live connection. */
   gameState?: GameState | null;
+  /** The Host removed this Guest: their `state` says so, or a `rejoin` was refused as an unknown player. */
+  removed?: boolean;
 };
 
 /**
@@ -48,9 +51,13 @@ type Params = {
  * signal yet — who drives the shared reconnect implementation in place, rather than bouncing
  * through the Lobby route or a "Page not found" dead end.
  */
-export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState = false, gameState = null }: Params): StartedGameView {
+export function resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState = false, gameState = null, removed = false }: Params): StartedGameView {
   if (code === undefined) {
     return { view: 'not-found' };
+  }
+
+  if (removed) {
+    return { view: 'removed', roomCode: code };
   }
 
   if (gameState?.status === 'ended' && gameState.roomId === code) {
@@ -65,7 +72,7 @@ export function resolveStartedGameView({ code, room, guestGameStartedCode, hasSt
     return { view: 'started', roomCode: code };
   }
 
-  if (!hasStoredIdentity || reconnectPhase === 'unknown-player') {
+  if (!hasStoredIdentity) {
     return { view: 'join-form' };
   }
 
