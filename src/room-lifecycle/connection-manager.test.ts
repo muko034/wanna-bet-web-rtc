@@ -671,7 +671,16 @@ describe('a Host Pause and a Guest sitting out mid-game', () => {
     expect(playerIn(lastState(received), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
   });
 
-  it('keeps the Guest paused by the Host when the Host pauses a Guest who already sat out, and they rejoin', async () => {
+  it('marks a Guest who already sat out as paused by the Host when the Host pauses them', async () => {
+    const { manager, sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
+    sam.send({ type: 'sitOut', payload: {} });
+
+    manager.pauseGuest(samJoined.playerId);
+
+    expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('keeps the Guest paused by the Host when they rejoin after the Host paused them post Sit Out', async () => {
     const { manager, hostId, sam, samJoined } = await startedGameWithTwoGuests();
     sam.send({ type: 'sitOut', payload: {} });
     manager.pauseGuest(samJoined.playerId);
@@ -681,13 +690,20 @@ describe('a Host Pause and a Guest sitting out mid-game', () => {
     expect(playerIn(lastState(received), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
   });
 
-  it('marks an active Guest who sits out as paused by themself, and a rejoin returns them to active', async () => {
-    const { hostId, sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
+  it('marks an active Guest who sits out as paused by themself', async () => {
+    const { sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
 
     sam.send({ type: 'sitOut', payload: {} });
+
     expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'self' });
+  });
+
+  it('returns a Guest who sat out on their own to active when they rejoin', async () => {
+    const { hostId, sam, samJoined } = await startedGameWithTwoGuests();
+    sam.send({ type: 'sitOut', payload: {} });
 
     const received = await rejoin(hostId, samJoined.reconnectToken);
+
     expect(playerIn(lastState(received), samJoined.playerId)?.status).toBe('active');
   });
 });
