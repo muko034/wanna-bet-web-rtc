@@ -150,7 +150,7 @@ export function LeaderboardSheet({ rows, onClose, onHostAction, onRemoveGuest }:
                 setRemoving(null);
               }}
             >
-              {t('removeGuest.confirm')}
+              {t('hostMenu.remove')}
             </button>
             <button class="vb-dialog-link" type="button" onClick={() => setRemoving(null)}>
               {t('homeDialog.cancel')}

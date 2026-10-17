@@ -248,7 +248,7 @@ describe('Removing a Guest from the Leaderboard menu', () => {
     const { onRemoveGuest } = renderAs('host', stateWith([host, alex, sam]));
     openRemoveDialog('Sam');
 
-    fireEvent.click(screen.getByRole('button', { name: t('removeGuest.confirm') }));
+    fireEvent.click(screen.getByRole('button', { name: t('hostMenu.remove') }));
 
     expect(onRemoveGuest).toHaveBeenCalledTimes(1);
     expect(onRemoveGuest).toHaveBeenCalledWith('guest-2');
