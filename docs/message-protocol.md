@@ -156,7 +156,14 @@ Notes:
   Game leaves such a row with their last Points; the next `state` already lists it. The Host drops their open Bet (and
   discards a Round whose Challenger left, with no Points change) and deletes their reconnect token. The Leaderboard and
   the Game Result Screen do not show `removed` rows.
-- Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls
+- Host Pause and Resume: the Host pauses an active Guest (`status: 'paused'`, `pausedBy: 'host'`) and resumes a
+  Host-paused Guest (back to `status: 'active'`, `pausedBy` removed) from the Leaderboard sheet. A resume takes effect at
+  once, even mid-Round: the Guest may Bet in the open Round, and a Host who was judging goes back to waiting for Bets
+  if the resumed Guest has not Bet. A Guest with `pausedBy: 'self'` (a Sit Out) is not the Host's to resume. A paused
+  Guest keeps its link and reads its own `status: 'paused'`, `pausedBy: 'host'` from the next `state` to show
+  "The Host paused you"; the next `state` showing it active returns it to the live Round. A dropped connection alone
+  never changes any `status`. A Host Pause is part of the persisted session, so it survives a Host reload.
+- Host-only actions (start round, submit outcome, Pause/Resume/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
 - **Redraw:** when the Host redraws the Challenge (see `domain-glossary.md`), the Round keeps its `challengerId` and
   gets a new `challengeId`, and `bets` is emptied. There is no extra field: a Guest detects a Redraw as a changed

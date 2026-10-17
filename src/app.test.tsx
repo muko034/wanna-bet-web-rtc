@@ -213,6 +213,8 @@ describe('App screen wiring', () => {
         gameState: expect.objectContaining({ roomId: CODE }),
         onPlaceBet: expect.any(Function),
         onResolveRound: expect.any(Function),
+        onPauseGuest: expect.any(Function),
+        onResumeGuest: expect.any(Function),
         onRedraw: expect.any(Function),
         onHostLeave: expect.any(Function),
         onLeave: expect.any(Function),

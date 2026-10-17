@@ -5,6 +5,7 @@ import { ConnectionManager } from '../room-lifecycle/connection-manager';
 import type { Room } from '../room-lifecycle/room';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import { FakeTransport } from '../transport/fake-transport';
+import type { GameState } from '../protocol/messages';
 import { loadHostSession, saveHostSession } from './host-session-store';
 
 function lobbyRoom(): Room {
@@ -161,6 +162,50 @@ describe('resuming a saved Host session', () => {
     resumed.placeBet('host-1', 5, 'NO', resumed.gameState!.round!.challengeId);
 
     expect(resumed.gameState?.round?.bets).toEqual([{ playerId: 'host-1' }]);
+  });
+});
+
+describe('resuming a saved Host Pause', () => {
+  async function hostReloadedWithAlexPaused() {
+    const storage = new FakeStorage();
+    const { manager, hostId } = await autosavingHost(storage);
+    const alex = await joinGuest(hostId, 'Alex');
+    await joinGuest(hostId, 'Kim');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    manager.pauseGuest(alex.playerId);
+
+    const session = loadHostSession(storage, 'ABCDEF');
+    if (!session) throw new Error('expected a saved session');
+    const resumedTransport = new FakeTransport();
+    const resumedHostId = await resumedTransport.connect();
+    const resumed = new ConnectionManager(resumedTransport, session.room, () => {}, undefined, (ids) => ids[0]);
+    resumed.resume(session);
+    return { resumed, resumedHostId, alex };
+  }
+
+  const alexIn = (state: GameState | null, alexId: string) => state?.players.find((p) => p.playerId === alexId);
+
+  it('keeps the Guest paused by the Host after the Host reloads, even once they rejoin', async () => {
+    const { resumed, resumedHostId, alex } = await hostReloadedWithAlexPaused();
+    expect(alexIn(resumed.gameState, alex.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(resumedHostId);
+    new GuestProtocol(guestTransport).rejoin({ reconnectToken: alex.reconnectToken });
+
+    expect(alexIn(resumed.gameState, alex.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('lets the Host resume that Guest after the reload', async () => {
+    const { resumed, alex } = await hostReloadedWithAlexPaused();
+
+    resumed.resumeGuest(alex.playerId);
+
+    expect(alexIn(resumed.gameState, alex.playerId)?.status).toBe('active');
+    resumed.placeBet(alex.playerId, 5, 'YES', resumed.gameState!.round!.challengeId);
+    expect(resumed.gameState?.round?.bets).toEqual([{ playerId: alex.playerId }]);
   });
 });
 

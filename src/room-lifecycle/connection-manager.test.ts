@@ -3,6 +3,7 @@ import { FakeTransport } from '../transport/fake-transport';
 import { ConnectionManager } from './connection-manager';
 import type { GameState } from '../protocol/messages';
 import { resolveGameResult } from './game-result';
+import { resolveRoundControls } from './round-controls';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -705,5 +706,136 @@ describe('a Host Pause and a Guest sitting out mid-game', () => {
     const received = await rejoin(hostId, samJoined.reconnectToken);
 
     expect(playerIn(lastState(received), samJoined.playerId)?.status).toBe('active');
+  });
+});
+
+describe('the Host pausing and resuming a Guest', () => {
+  async function startedGameWithTwoGuests(pickChallenger: (ids: string[]) => string = () => 'host-1') {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, pickChallenger);
+    const sam = await joinAndAwaitWelcome(hostId, 'Sam');
+    const kimTransport = await connectGuest(hostId);
+    const kimReceived: unknown[] = [];
+    kimTransport.onMessage((message) => kimReceived.push(message));
+    kimTransport.send({ type: 'join', payload: { name: 'Kim' } });
+    const kim = await kimWelcome(kimReceived);
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, hostId, sam, kim, kimReceived };
+  }
+
+  const kimWelcome = async (received: unknown[]) =>
+    (received.find((m) => (m as { type?: unknown }).type === 'welcome') as { payload: WelcomePayload }).payload;
+  const stateCount = (received: unknown[]) => received.filter((m) => (m as { type?: unknown }).type === 'state').length;
+  const playerIn = (state: GameState | null, playerId: string) => state?.players.find((p) => p.playerId === playerId);
+  const hostJudges = (manager: ConnectionManager) =>
+    resolveRoundControls({ code: 'ABCDEF', room: manager.room, gameState: manager.gameState }).kind === 'judge-round';
+
+  it('shows the Guest as paused by the Host in the next state', async () => {
+    const { manager, sam } = await startedGameWithTwoGuests();
+
+    manager.pauseGuest(sam.playerId);
+
+    expect(playerIn(manager.gameState, sam.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('stops the Round waiting for a paused Guest, and keeps a Bet they already placed', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+    const challengeId = manager.gameState!.round!.challengeId;
+    manager.placeBet(kim.playerId, 10, 'YES', challengeId);
+    expect(hostJudges(manager)).toBe(false);
+
+    manager.pauseGuest(sam.playerId);
+
+    expect(hostJudges(manager)).toBe(true);
+
+    const placed = await startedGameWithTwoGuests();
+    placed.manager.placeBet(placed.sam.playerId, 10, 'YES', placed.manager.gameState!.round!.challengeId);
+    placed.manager.pauseGuest(placed.sam.playerId);
+    expect(placed.manager.gameState!.round!.bets).toEqual([{ playerId: placed.sam.playerId }]);
+  });
+
+  it('discards the Round with no Points change when the Challenger is paused, and picks the next unpaused player', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests((ids) => ids.find((id) => id !== 'host-1')!);
+    expect(manager.gameState!.round!.challengerId).toBe(sam.playerId);
+    manager.placeBet(kim.playerId, 10, 'YES', manager.gameState!.round!.challengeId);
+    const pointsBefore = manager.gameState!.players.map((p) => [p.playerId, p.points]);
+
+    manager.pauseGuest(sam.playerId);
+
+    expect(manager.gameState!.round!.challengerId).not.toBe(sam.playerId);
+    expect(manager.gameState!.round!.bets).toEqual([]);
+    expect(manager.gameState!.players.map((p) => [p.playerId, p.points])).toEqual(pointsBefore);
+  });
+
+  it('makes a resumed Guest active again at once, with no pause marker', async () => {
+    const { manager, sam } = await startedGameWithTwoGuests();
+    manager.pauseGuest(sam.playerId);
+
+    manager.resumeGuest(sam.playerId);
+
+    const resumed = playerIn(manager.gameState, sam.playerId);
+    expect(resumed?.status).toBe('active');
+    expect(resumed).not.toHaveProperty('pausedBy');
+  });
+
+  it('lets a resumed Guest bet in the open Round', async () => {
+    const { manager, hostId, sam } = await startedGameWithTwoGuests();
+    manager.pauseGuest(sam.playerId);
+    manager.resumeGuest(sam.playerId);
+    const guest = await connectGuest(hostId);
+    guest.send({ type: 'rejoin', payload: { reconnectToken: sam.reconnectToken } });
+
+    guest.send({ type: 'placeBet', payload: { amount: 10, prediction: 'YES', challengeId: manager.gameState!.round!.challengeId } });
+
+    expect(manager.gameState!.round!.bets).toEqual([{ playerId: sam.playerId }]);
+  });
+
+  it('sends the Host back to waiting for Bets when a Guest who has not bet is resumed during judging', async () => {
+    const { manager, sam, kim } = await startedGameWithTwoGuests();
+    manager.pauseGuest(sam.playerId);
+    manager.placeBet(kim.playerId, 10, 'YES', manager.gameState!.round!.challengeId);
+    expect(hostJudges(manager)).toBe(true);
+
+    manager.resumeGuest(sam.playerId);
+
+    expect(hostJudges(manager)).toBe(false);
+  });
+
+  it('broadcasts the resume to the other Guests', async () => {
+    const { manager, sam, kimReceived } = await startedGameWithTwoGuests();
+    manager.pauseGuest(sam.playerId);
+    const statesBefore = stateCount(kimReceived);
+
+    manager.resumeGuest(sam.playerId);
+
+    const lastState = (kimReceived.filter((m) => (m as { type?: unknown }).type === 'state').at(-1) as { payload: { snapshot: GameState } }).payload.snapshot;
+    expect(stateCount(kimReceived)).toBe(statesBefore + 1);
+    expect(playerIn(lastState, sam.playerId)?.status).toBe('active');
+  });
+
+  it('leaves a Guest who sat out alone: no Resume for a Sit Out', async () => {
+    const { manager, hostId, sam } = await startedGameWithTwoGuests();
+    const guest = await connectGuest(hostId);
+    guest.send({ type: 'rejoin', payload: { reconnectToken: sam.reconnectToken } });
+    guest.send({ type: 'sitOut', payload: {} });
+
+    manager.resumeGuest(sam.playerId);
+
+    expect(playerIn(manager.gameState, sam.playerId)).toMatchObject({ status: 'paused', pausedBy: 'self' });
+  });
+
+  it('keeps every status when a Guest drops their connection', async () => {
+    const { manager, hostId, sam } = await startedGameWithTwoGuests();
+    const guest = await connectGuest(hostId);
+    guest.send({ type: 'rejoin', payload: { reconnectToken: sam.reconnectToken } });
+    const statusesBefore = manager.gameState!.players.map((p) => [p.playerId, p.status]);
+
+    guest.close();
+
+    expect(manager.room.players.find((p) => p.playerId === sam.playerId)?.connected).toBe(false);
+    expect(manager.gameState!.players.map((p) => [p.playerId, p.status])).toEqual(statusesBefore);
   });
 });

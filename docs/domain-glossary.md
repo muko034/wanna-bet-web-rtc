@@ -110,8 +110,8 @@ The ranking of players by Points, highest first. Players on equal Points share o
 removed ones; a paused player stays ranked. Reveals Points only, never Bets. _Avoid_: Scoreboard, standings
 
 **Result Screen**:
-The screen shown to every player after a Resolution, listing each player's Points and Payout for the Round. Leaves on
-its own after a short time, or earlier when the player dismisses it. _Avoid_: Results page, round summary
+The screen shown to every player except a Host-paused one after a Resolution, listing each player's Points and Payout for
+the Round. Leaves on its own after a short time, or earlier when the player dismisses it. _Avoid_: Results page, round summary
 
 **Host Admin Action**:
 A moderation action only the Host can take on another player, never on themself: **Pause** (player is skipped from

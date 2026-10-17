@@ -370,16 +370,22 @@ export class ConnectionManager {
 
   /** Puts a player who sat out back to `active`; a Host Pause stays in force. */
   private resumeSelfSitOut(playerId: string): void {
+    this.resumePausedPlayer(playerId, 'self');
+  }
+
+  /** Returns a player paused by `pausedBy` to `active` in the Round Engine and the state, without broadcasting; any other player is left alone. */
+  private resumePausedPlayer(playerId: string, pausedBy: 'self' | 'host'): boolean {
     const { roundEngineState, gameState } = this;
-    if (roundEngineState === null || gameState === null) return;
+    if (roundEngineState === null || gameState === null) return false;
     const player = gameState.players.find((p) => p.playerId === playerId);
-    if (player?.status !== 'paused' || player.pausedBy !== 'self') return;
+    if (player?.status !== 'paused' || player.pausedBy !== pausedBy) return false;
 
     this.roundEngineState = roundEngineReducer(roundEngineState, { type: 'RESUME_PLAYER', playerId }).state;
     this.gameState = this.withPlayer(gameState, playerId, (p) => {
       const { pausedBy: _pausedBy, ...rest } = p;
       return { ...rest, status: 'active' };
     });
+    return true;
   }
 
   private withPlayer(gameState: GameState, playerId: string, update: (player: GamePlayer) => GamePlayer): GameState {
@@ -389,6 +395,14 @@ export class ConnectionManager {
   /** The Host pauses a Guest; the Guest's own `rejoin` does not undo it. */
   pauseGuest(playerId: string): GameState {
     this.pausePlayer(playerId, 'host');
+    return this.gameState!;
+  }
+
+  /** The Host resumes a Guest they paused, mid-Round included; a Guest who sat out is not the Host's to resume. */
+  resumeGuest(playerId: string): GameState {
+    if (this.resumePausedPlayer(playerId, 'host')) {
+      this.emitGameState(this.gameState!);
+    }
     return this.gameState!;
   }
 

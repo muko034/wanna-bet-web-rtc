@@ -19,6 +19,7 @@ import { resolveLockIn } from './lock-in';
 import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
 import { resolveGameResult } from './game-result';
+import { resolveHostPausedScreen } from './host-paused-screen';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -59,6 +60,10 @@ type Props = {
   /** The reconnect fallback ("Can't reach the Host") triggered, so any pending Bet has failed. */
   onReconnectGaveUp: () => void;
   onResolveRound: (outcome: Prediction) => void;
+  /** Host only: pauses the Guest `playerId`. */
+  onPauseGuest: (playerId: string) => void;
+  /** Host only: resumes a Guest the Host paused. */
+  onResumeGuest: (playerId: string) => void;
   /** Host only: replaces the current Challenge with a new draw. */
   onRedraw: () => void;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
@@ -105,6 +110,8 @@ export function StartedGame({
   betFailedRoundKey,
   onReconnectGaveUp,
   onResolveRound,
+  onPauseGuest,
+  onResumeGuest,
   onRedraw,
   onGameStarted,
   onGameState,
@@ -300,7 +307,7 @@ export function StartedGame({
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: language })
     : null;
   const roundControls = resolveRoundControls({ code, room, gameState });
-  const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
+  const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null, gameState });
 
   const homeDialog = resolveHomeDialog({ code, room });
   const chooseHomeOption = (action: HomeDialogAction) => {
@@ -318,7 +325,8 @@ export function StartedGame({
   };
   const dialogOverlay = homeDialogOpen && <HomeDialog dialog={homeDialog} onChoose={chooseHomeOption} />;
 
-  const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null });
+  const hostPausedScreen = resolveHostPausedScreen({ gameState, localPlayerId: localPlayerId ?? null });
+  const leaderboard = resolveLeaderboard({ players: gameState?.players ?? null, localPlayerId: localPlayerId ?? null, isHost: isHostRoom(code, room) });
 
   const resultShown = resultScreen !== null;
   useEffect(() => {
@@ -383,18 +391,36 @@ export function StartedGame({
     );
   }
 
+  const leaderboardBadge = leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />;
+  const leaderboardOverlay = (
+    <>
+      {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)} />}
+      {dialogOverlay}
+    </>
+  );
+
+  if (hostPausedScreen) {
+    return (
+      <PhoneShell
+        background={hostPausedScreen.background}
+        roomCode={view.roomCode}
+        onHome={() => setHomeDialogOpen(true)}
+        topRight={leaderboardBadge}
+        overlay={leaderboardOverlay}
+      >
+        <div class="vb-giant-title">{t(hostPausedScreen.title.key, hostPausedScreen.title.params)}</div>
+        <div class="vb-giant-sub">{t(hostPausedScreen.subtitle.key, hostPausedScreen.subtitle.params)}</div>
+      </PhoneShell>
+    );
+  }
+
   return (
     <PhoneShell
       background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
-      topRight={leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />}
-      overlay={
-        <>
-          {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} />}
-          {dialogOverlay}
-        </>
-      }
+      topRight={leaderboardBadge}
+      overlay={leaderboardOverlay}
     >
       {roundControls.kind === 'no-active-guests' ? (
         <>

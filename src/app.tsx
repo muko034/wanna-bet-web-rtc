@@ -319,6 +319,12 @@ export function App() {
           onResolveRound={(outcome) => {
             connectionManagerRef.current?.resolveRound(outcome);
           }}
+          onPauseGuest={(playerId) => {
+            connectionManagerRef.current?.pauseGuest(playerId);
+          }}
+          onResumeGuest={(playerId) => {
+            connectionManagerRef.current?.resumeGuest(playerId);
+          }}
           onRedraw={() => {
             connectionManagerRef.current?.redrawChallenge();
           }}

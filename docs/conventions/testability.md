@@ -45,6 +45,22 @@ jsdom with a shared setup file. That setup file unmounts rendered components, cl
 `FakeTransport` network and restores real timers after every test, so a test never repeats that cleanup itself. A test
 that renders JSX must therefore be `.tsx`, and a test that needs no DOM stays `.ts`.
 
+## Split a screen's tests by topic into `<Component>.<topic>.test.tsx` files
+
+When a screen has several distinct concerns to test (Host-only controls, effects driven by a timer, a transient notice),
+give each concern its own sibling file named `<Component>.<topic>.test.tsx` in kebab-case, such as
+`StartedGame.host-admin.test.tsx` and `StartedGame.roster-notice.test.tsx`, instead of growing one file. The plain
+`<Component>.test.tsx` keeps the screen's core behaviour. Each file declares its own fixtures (room, players, state
+builder) and its own fake-timer setup, so it reads and runs on its own. A new prop that every render needs is added to
+the render helper of each file.
+
+```
+StartedGame.test.tsx
+StartedGame.local-state.test.tsx
+StartedGame.roster-notice.test.tsx
+StartedGame.host-admin.test.tsx
+```
+
 ## Test a screen against `FakeTransport`, not a mocked Transport
 
 Components and hooks that talk to a Transport accept the `Transport` interface, not a concrete class. Tests hand them a
