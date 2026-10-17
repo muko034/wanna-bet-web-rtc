@@ -36,7 +36,7 @@ function stateWith(overrides: Partial<GameState> = {}): GameState {
 }
 
 function screenFor(gameState: GameState, localPlayerId: string | null = 'guest-2') {
-  return resolveResultScreen({ memory: observeResolution(initialResultMemory, gameState), localPlayerId });
+  return resolveResultScreen({ memory: observeResolution(initialResultMemory, gameState), localPlayerId, gameState });
 }
 
 describe('resolveResultScreen', () => {
@@ -50,6 +50,18 @@ describe('resolveResultScreen', () => {
         { playerId: 'guest-2', rank: 3, nameLabel: { key: 'player.you', params: { name: 'Sam' } }, roleLabel: null, points: 85, deltaLabel: '-15', deltaClass: 'neg' },
       ],
     });
+  });
+
+  it('shows nothing to a Guest the Host has paused', () => {
+    const paused = stateWith({
+      players: [
+        { playerId: 'host-1', name: 'Host', points: 115, status: 'active', connected: true },
+        { playerId: 'guest-1', name: 'Alex', points: 120, status: 'active', connected: true },
+        { playerId: 'guest-2', name: 'Sam', points: 85, status: 'paused', pausedBy: 'host', connected: true },
+      ],
+    });
+
+    expect(screenFor(paused)).toBeNull();
   });
 
   it('leaves a removed player out of the ranking', () => {

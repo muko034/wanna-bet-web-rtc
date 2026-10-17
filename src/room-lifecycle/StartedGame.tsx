@@ -307,7 +307,7 @@ export function StartedGame({
     ? resolveChallengeCard({ gameState, localPlayerId, challengeBank, displayLanguage: language })
     : null;
   const roundControls = resolveRoundControls({ code, room, gameState });
-  const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null });
+  const resultScreen = resolveResultScreen({ memory: resultMemory, localPlayerId: localPlayerId ?? null, gameState });
 
   const homeDialog = resolveHomeDialog({ code, room });
   const chooseHomeOption = (action: HomeDialogAction) => {

@@ -176,6 +176,20 @@ describe('a Guest the Host paused', () => {
     expect(document.querySelector('.vb-tapzones')).not.toBeNull();
   });
 
+  it('stays on the paused screen when a Round resolves, instead of seeing the Result Screen', () => {
+    const { rerender } = renderAs('guest', stateWith([host, hostPaused(alex), sam]));
+    const resolved: GameState = {
+      ...stateWith([host, hostPaused(alex), sam]),
+      round: null,
+      resolution: { challengerId: 'host-1', outcome: 'YES', payouts: [{ playerId: 'guest-2', amount: 10 }] },
+    };
+
+    rerender(resolved);
+
+    expect(screen.getByText(t('hostPaused.title'))).toBeTruthy();
+    expect(screen.queryByText(t('result.succeeded', { name: 'Host' }))).toBeNull();
+  });
+
   it('is not shown the paused screen after only sitting out', () => {
     renderAs('guest', stateWith([host, satOut(alex), sam]));
 

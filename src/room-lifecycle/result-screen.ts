@@ -1,5 +1,6 @@
 import type { Message } from '../i18n/dictionaries';
 import type { GameState, Player, ResolutionState } from '../protocol/messages';
+import { resolveHostPausedScreen } from './host-paused-screen';
 
 /** How long the Result Screen stays before it leaves by itself. */
 export const RESULT_SCREEN_DURATION_MS = 5_000;
@@ -111,12 +112,14 @@ function resolveDelta(delta: number): Pick<ResultRow, 'deltaLabel' | 'deltaClass
 export function resolveResultScreen({
   memory,
   localPlayerId,
+  gameState,
 }: {
   memory: ResultMemory;
   /** `null` until this device's identity is known. */
   localPlayerId: string | null;
+  gameState: GameState | null;
 }): ResultScreen | null {
-  if (!memory.shown) {
+  if (!memory.shown || resolveHostPausedScreen({ gameState, localPlayerId })) {
     return null;
   }
 
