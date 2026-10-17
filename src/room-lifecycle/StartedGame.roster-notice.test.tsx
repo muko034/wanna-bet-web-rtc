@@ -19,6 +19,10 @@ const host = { playerId: 'host-1', name: 'Host', points: 100, status: 'active', 
 const alex = { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true } as const;
 const sam = { playerId: 'guest-2', name: 'Sam', points: 100, status: 'active', connected: true } as const;
 
+function left(player: GameState['players'][number]): GameState['players'][number] {
+  return { ...player, status: 'removed' };
+}
+
 function stateWith(players: GameState['players']): GameState {
   return {
     roomId: CODE,
@@ -66,7 +70,7 @@ describe('StartedGame roster notice timer', () => {
   it('hides the notice after its duration', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));
 
-    rerender(startedGame(stateWith([host, alex])));
+    rerender(startedGame(stateWith([host, alex, left(sam)])));
     advance(ROSTER_NOTICE_DURATION_MS - 1);
     expect(screen.getByText(leftText('Sam'))).toBeTruthy();
 
@@ -76,10 +80,10 @@ describe('StartedGame roster notice timer', () => {
 
   it('restarts the timer when a newer notice replaces the shown one', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));
-    rerender(startedGame(stateWith([host, alex])));
+    rerender(startedGame(stateWith([host, alex, left(sam)])));
     advance(ROSTER_NOTICE_DURATION_MS - 1_000);
 
-    rerender(startedGame(stateWith([host])));
+    rerender(startedGame(stateWith([host, left(alex), left(sam)])));
     advance(ROSTER_NOTICE_DURATION_MS - 1);
     expect(screen.getByText(leftText('Alex'))).toBeTruthy();
 
@@ -89,7 +93,7 @@ describe('StartedGame roster notice timer', () => {
 
   it('clears the timer on unmount', () => {
     const { rerender, unmount } = render(startedGame(stateWith([host, alex, sam])));
-    rerender(startedGame(stateWith([host, alex])));
+    rerender(startedGame(stateWith([host, alex, left(sam)])));
     const pending = vi.getTimerCount();
     expect(pending).toBeGreaterThan(0);
 

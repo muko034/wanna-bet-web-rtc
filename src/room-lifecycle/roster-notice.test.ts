@@ -17,8 +17,16 @@ describe('resolveRosterNotices', () => {
     expect(resolveRosterNotices(stateWith([host, alex, sam]), next, 'guest-2')).toEqual([{ key: 'notice.satOut', params: { name: 'Alex' } }]);
   });
 
-  it('announces a player who just left', () => {
-    expect(resolveRosterNotices(stateWith([host, alex, sam]), stateWith([host, sam]), 'guest-2')).toEqual([{ key: 'notice.left', params: { name: 'Alex' } }]);
+  it('announces a player whose row is now removed, i.e. who just left', () => {
+    const next = stateWith([host, { ...alex, status: 'removed', connected: false }, sam]);
+
+    expect(resolveRosterNotices(stateWith([host, alex, sam]), next, 'guest-2')).toEqual([{ key: 'notice.left', params: { name: 'Alex' } }]);
+  });
+
+  it('does not announce a removed player again on later snapshots', () => {
+    const removed = { ...alex, status: 'removed', connected: false } as const;
+
+    expect(resolveRosterNotices(stateWith([host, removed, sam]), stateWith([host, removed, sam]), 'guest-2')).toEqual([]);
   });
 
   it('stays silent for a Host Pause, a return, an unchanged roster and the local player', () => {

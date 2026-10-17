@@ -16,11 +16,11 @@ export function resolveRosterNotices(previous: GameState | null, next: GameState
 
   const notices: Message[] = [];
   for (const before of previous.players) {
-    if (before.playerId === localPlayerId) continue;
+    if (before.playerId === localPlayerId || before.status === 'removed') continue;
     const after = next.players.find((player) => player.playerId === before.playerId);
-    if (!after) {
+    if (after?.status === 'removed') {
       notices.push({ key: 'notice.left', params: { name: before.name } });
-    } else if (before.status !== 'paused' && after.status === 'paused' && after.pausedBy === 'self') {
+    } else if (before.status !== 'paused' && after?.status === 'paused' && after.pausedBy === 'self') {
       notices.push({ key: 'notice.satOut', params: { name: before.name } });
     }
   }

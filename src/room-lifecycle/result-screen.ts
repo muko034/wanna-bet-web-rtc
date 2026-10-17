@@ -126,7 +126,7 @@ export function resolveResultScreen({
     return null;
   }
 
-  const ranked = [...players].sort((a, b) => b.points - a.points);
+  const ranked = players.filter((player) => player.status !== 'removed').sort((a, b) => b.points - a.points);
   const succeeded = resolution.outcome === 'YES';
 
   return {

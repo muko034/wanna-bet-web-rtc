@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FakeTransport } from '../transport/fake-transport';
 import { ConnectionManager } from './connection-manager';
 import type { GameState } from '../protocol/messages';
+import { resolveGameResult } from './game-result';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
@@ -412,7 +413,7 @@ describe('a Guest leaving mid-game', () => {
       });
     });
     guest.send({ type: 'join', payload: { name: 'Sam' } });
-    const { playerId } = await welcome;
+    const { playerId, reconnectToken } = await welcome;
     const otherGuestIds: string[] = [];
     for (const name of otherGuestNames) {
       otherGuestIds.push((await joinAndAwaitWelcome(hostId, name)).playerId);
@@ -420,18 +421,39 @@ describe('a Guest leaving mid-game', () => {
     manager.room = { ...manager.room, started: true };
     manager.startGame();
     manager.startRound();
-    return { manager, guest, playerId, otherGuestIds };
+    return { manager, hostId, guest, playerId, reconnectToken, otherGuestIds };
   }
 
-  it('removes the Guest from the Room and the GameState', async () => {
+  it('removes the Guest from the Room but keeps their row in the GameState as removed, with their last Points', async () => {
     const { manager, guest, playerId, otherGuestIds } = await startedGameWithGuest(() => 'host-1', ['Kim']);
+    manager.placeBet(playerId, 30, 'YES', manager.gameState!.round!.challengeId);
+    manager.placeBet(otherGuestIds[0], 10, 'NO', manager.gameState!.round!.challengeId);
+    manager.resolveRound('YES');
+    const pointsBeforeLeaving = manager.gameState!.players.find((p) => p.playerId === playerId)!.points;
+    expect(pointsBeforeLeaving).not.toBe(100);
 
     guest.send({ type: 'leave', payload: {} });
 
     expect(manager.room.players.map((p) => p.playerId)).not.toContain(playerId);
     expect(manager.room.playerCount).toBe(2);
-    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1', ...otherGuestIds]);
+    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1', playerId, ...otherGuestIds]);
+    expect(manager.gameState?.players.find((p) => p.playerId === playerId)).toMatchObject({
+      status: 'removed',
+      points: pointsBeforeLeaving,
+    });
     expect(manager.gameState?.status).toBe('active');
+  });
+
+  it('refuses a later rejoin from the Guest who left, with UNKNOWN_PLAYER', async () => {
+    const { guest, hostId, reconnectToken } = await startedGameWithGuest(() => 'host-1', ['Kim']);
+    guest.send({ type: 'leave', payload: {} });
+
+    const returning = await connectGuest(hostId);
+    const received: unknown[] = [];
+    returning.onMessage((message) => received.push(message));
+    returning.send({ type: 'rejoin', payload: { reconnectToken } });
+
+    expect(received).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'UNKNOWN_PLAYER', action: 'rejoin' } }]);
   });
 
   it("drops the Guest's Bet from the open Round", async () => {
@@ -454,6 +476,17 @@ describe('a Guest leaving mid-game', () => {
     expect(manager.gameState?.round?.bets).toEqual([]);
   });
 
+  it('changes nobody\'s Points when the Challenger leaves', async () => {
+    const { manager, guest, playerId, otherGuestIds } = await startedGameWithGuest((ids) => ids.find((id) => id !== 'host-1')!, ['Kim']);
+    manager.placeBet(otherGuestIds[0], 10, 'YES', manager.gameState!.round!.challengeId);
+    const pointsBefore = manager.gameState!.players.map((p) => [p.playerId, p.points]);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState!.players.map((p) => [p.playerId, p.points])).toEqual(pointsBefore);
+    expect(manager.gameState!.players.find((p) => p.playerId === playerId)?.status).toBe('removed');
+  });
+
   it('ends the Game for the Host when the last Guest leaves, keeping the Leaderboard', async () => {
     const { manager, guest } = await startedGameWithGuest();
 
@@ -461,7 +494,15 @@ describe('a Guest leaving mid-game', () => {
 
     expect(manager.room.players).toEqual([]);
     expect(manager.gameState?.status).toBe('ended');
-    expect(manager.gameState?.players.map((p) => p.playerId)).toEqual(['host-1']);
+    expect(resolveGameResult({ gameState: manager.gameState, localPlayerId: 'host-1' })?.rows.map((row) => row.playerId)).toEqual(['host-1']);
+  });
+
+  it('keeps the Game running when a Guest leaves while another Guest is still active', async () => {
+    const { manager, guest } = await startedGameWithGuest(() => 'host-1', ['Kim']);
+
+    guest.send({ type: 'leave', payload: {} });
+
+    expect(manager.gameState?.status).toBe('active');
   });
 
   it('keeps the Game running when the last active Guest leaves but another Guest is paused', async () => {

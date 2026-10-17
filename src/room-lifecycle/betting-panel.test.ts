@@ -46,6 +46,28 @@ describe('resolveBettingPanel', () => {
     expect(panel.kind === 'locked' && panel.waitingLabel).toEqual({ key: 'betting.everyoneBet' });
   });
 
+  it('leaves a removed player out of the bettor pills and the waiting count', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        players: [
+          { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-1', name: 'Alex', points: 100, status: 'active', connected: true },
+          { playerId: 'guest-2', name: 'Sam', points: 100, status: 'removed', connected: false },
+        ],
+        round: {
+          challengerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: [{ playerId: 'host-1' }],
+          outcome: null,
+        },
+      }),
+      localPlayerId: 'host-1',
+    });
+
+    expect(panel.bettors.map((bettor) => bettor.playerId)).toEqual(['host-1']);
+    expect(panel.kind === 'locked' && panel.waitingLabel).toEqual({ key: 'betting.everyoneBet' });
+  });
+
   it.each([
     ['the Host when another player is active', 'host-1'],
     ['a Guest who is not the Challenger and has not bet yet', 'guest-2'],

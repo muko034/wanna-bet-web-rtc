@@ -82,6 +82,16 @@ describe('resolveRoundControls', () => {
     })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Alex' } }, background: 'vb-bg-judge' });
   });
 
+  it('shows the judging screen without waiting for a Bettor who left', () => {
+    const players = threePlayers.map((player) => (player.playerId === 'p2' ? { ...player, status: 'removed' as const } : player));
+
+    expect(resolveRoundControls({
+      code: 'ABCDEF',
+      room: roomWith(),
+      gameState: stateWith({ players, round: roundWith('p1', ['host-1']) }),
+    })).toEqual({ kind: 'judge-round', title: { key: 'judge.title', params: { name: 'Alex' } }, background: 'vb-bg-judge' });
+  });
+
   it('shows the judging screen on the Host device as soon as the last Bettor has bet', () => {
     expect(resolveRoundControls({
       code: 'ABCDEF',

@@ -73,3 +73,12 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey
   // ...
 };
 ```
+
+## Filter `removed` players out of resolver lists
+
+A player who left stays in `GameState.players` with `status: 'removed'` and their last Points, so every resolver that builds a per-player list, ranking, count or "everyone has acted" check from `players` drops those rows itself. Use `status !== 'removed'` when paused players still belong in the output (the Leaderboard, the Host's guest list), and `status === 'active'` when only players who can act count (Bettors). Components never see a removed row, and each resolver's test file pins that with a `removed` player in its input.
+
+```ts
+const ranked = players.filter((player) => player.status !== 'removed').sort((a, b) => b.points - a.points);
+const bettors = players.filter((player) => player.playerId !== round.challengerId && player.status === 'active');
+```
