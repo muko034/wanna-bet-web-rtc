@@ -65,3 +65,21 @@ vi.mock('./room-lifecycle/Lobby', async () => {
   return { Lobby: (props) => ((screenProps.Lobby = props), h('div', null, `lobby ${props.code}`)) };
 });
 ```
+
+## Build a multi-step scenario in a setup function that returns handles
+
+When several tests start from the same multi-step scenario (a started game with a joined Guest, a Host with a stored
+Guest), put the steps in a named `async` setup function such as `startedGameWithGuest`, declared inside the `describe`
+(or at file level when several `describe`s share it). It returns an object of the handles the tests need, and each test
+awaits it and destructures only what it uses. Don't spread the scenario over shared `let` variables filled in by
+`beforeEach`: that hides which test needs what and cannot take per-test options. Reserve `beforeEach` for environment
+setup such as fake timers, stubbed browser APIs and mock resets.
+
+```ts
+async function startedGameWithGuest(pickChallenger: (ids: string[]) => string = () => 'host-1') {
+  /* build manager, connect and join the Guest, start the game */
+  return { manager, hostId, guest, playerId, reconnectToken };
+}
+
+const { manager, guest, playerId } = await startedGameWithGuest();
+```

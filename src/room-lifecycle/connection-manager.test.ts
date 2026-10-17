@@ -613,3 +613,97 @@ describe('a Guest sitting out in the Lobby', () => {
     expect(manager.gameState!.players.find((p) => p.playerId === samJoined.playerId)?.status).toBe('active');
   });
 });
+
+describe('a Host Pause and a Guest sitting out mid-game', () => {
+  async function startedGameWithTwoGuests() {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {}, undefined, () => 'host-1');
+    const sam = await connectGuest(hostId);
+    const samWelcome = new Promise<WelcomePayload>((resolve) => {
+      sam.onMessage((message) => {
+        if ((message as { type?: unknown }).type === 'welcome') resolve((message as { payload: WelcomePayload }).payload);
+      });
+    });
+    sam.send({ type: 'join', payload: { name: 'Sam' } });
+    const samJoined = await samWelcome;
+    const kim = await connectGuest(hostId);
+    const kimReceived: unknown[] = [];
+    kim.onMessage((message) => kimReceived.push(message));
+    kim.send({ type: 'join', payload: { name: 'Kim' } });
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, hostId, sam, samJoined, kimReceived };
+  }
+
+  const lastState = (received: unknown[]) =>
+    (received.filter((m) => (m as { type?: unknown }).type === 'state').at(-1) as { payload: { snapshot: GameState } }).payload.snapshot;
+  const playerIn = (state: GameState, playerId: string) => state.players.find((p) => p.playerId === playerId);
+
+  async function rejoin(hostId: string, reconnectToken: string) {
+    const returning = await connectGuest(hostId);
+    const received: unknown[] = [];
+    returning.onMessage((message) => received.push(message));
+    returning.send({ type: 'rejoin', payload: { reconnectToken } });
+    return received;
+  }
+
+  it('keeps the Host Pause in the next state when the paused Guest sits out', async () => {
+    const { manager, sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
+    manager.pauseGuest(samJoined.playerId);
+    const statesBeforeSitOut = kimReceived.filter((m) => (m as { type?: unknown }).type === 'state').length;
+
+    sam.send({ type: 'sitOut', payload: {} });
+
+    const statesAfterSitOut = kimReceived.filter((m) => (m as { type?: unknown }).type === 'state').length;
+    expect(statesAfterSitOut).toBe(statesBeforeSitOut + 1);
+    expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('keeps the Guest paused by the Host when they rejoin after sitting out', async () => {
+    const { manager, hostId, sam, samJoined } = await startedGameWithTwoGuests();
+    manager.pauseGuest(samJoined.playerId);
+    sam.send({ type: 'sitOut', payload: {} });
+
+    const received = await rejoin(hostId, samJoined.reconnectToken);
+
+    expect(playerIn(lastState(received), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('marks a Guest who already sat out as paused by the Host when the Host pauses them', async () => {
+    const { manager, sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
+    sam.send({ type: 'sitOut', payload: {} });
+
+    manager.pauseGuest(samJoined.playerId);
+
+    expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('keeps the Guest paused by the Host when they rejoin after the Host paused them post Sit Out', async () => {
+    const { manager, hostId, sam, samJoined } = await startedGameWithTwoGuests();
+    sam.send({ type: 'sitOut', payload: {} });
+    manager.pauseGuest(samJoined.playerId);
+
+    const received = await rejoin(hostId, samJoined.reconnectToken);
+
+    expect(playerIn(lastState(received), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
+  });
+
+  it('marks an active Guest who sits out as paused by themself', async () => {
+    const { sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
+
+    sam.send({ type: 'sitOut', payload: {} });
+
+    expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'self' });
+  });
+
+  it('returns a Guest who sat out on their own to active when they rejoin', async () => {
+    const { hostId, sam, samJoined } = await startedGameWithTwoGuests();
+    sam.send({ type: 'sitOut', payload: {} });
+
+    const received = await rejoin(hostId, samJoined.reconnectToken);
+
+    expect(playerIn(lastState(received), samJoined.playerId)?.status).toBe('active');
+  });
+});
