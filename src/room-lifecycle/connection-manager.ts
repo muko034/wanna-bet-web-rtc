@@ -392,7 +392,7 @@ export class ConnectionManager {
     return this.gameState!;
   }
 
-  /** A Guest steps away: paused with `pausedBy: 'self'`, still in the Room and the Game. */
+  /** A Guest steps away: paused with `pausedBy: 'self'`, still in the Room and the Game. A Host Pause outranks it. */
   private handleSitOut(_payload: SitOutMessage['payload'], peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
@@ -400,6 +400,11 @@ export class ConnectionManager {
     }
     if (this.gameState === null || this.gameState.status === 'lobby') {
       this.lobbySatOut.add(playerId);
+      return;
+    }
+    const alreadyPausedByHost = this.gameState.players.some((p) => p.playerId === playerId && p.pausedBy === 'host');
+    if (alreadyPausedByHost) {
+      this.emitGameState(this.gameState);
       return;
     }
     this.pausePlayer(playerId, 'self');
