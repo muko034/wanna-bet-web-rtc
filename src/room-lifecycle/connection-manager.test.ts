@@ -652,9 +652,12 @@ describe('a Host Pause and a Guest sitting out mid-game', () => {
   it('keeps the Host Pause in the next state when the paused Guest sits out', async () => {
     const { manager, sam, samJoined, kimReceived } = await startedGameWithTwoGuests();
     manager.pauseGuest(samJoined.playerId);
+    const statesBeforeSitOut = kimReceived.filter((m) => (m as { type?: unknown }).type === 'state').length;
 
     sam.send({ type: 'sitOut', payload: {} });
 
+    const statesAfterSitOut = kimReceived.filter((m) => (m as { type?: unknown }).type === 'state').length;
+    expect(statesAfterSitOut).toBe(statesBeforeSitOut + 1);
     expect(playerIn(lastState(kimReceived), samJoined.playerId)).toMatchObject({ status: 'paused', pausedBy: 'host' });
   });
 
