@@ -163,6 +163,15 @@ Notes:
   Guest keeps its link and reads its own `status: 'paused'`, `pausedBy: 'host'` from the next `state` to show
   "The Host paused you"; the next `state` showing it active returns it to the live Round. A dropped connection alone
   never changes any `status`. A Host Pause is part of the persisted session, so it survives a Host reload.
+- Host Remove (in the Game): the Host removes any Guest, a Sit Out included, from the Leaderboard sheet after a confirm
+  step that names the player; the Host cannot remove themself. The Host handles it like a `leave`: it sets the row to
+  `status: 'removed'` with the last Points, drops the player's open Bet (and discards a Round whose Challenger was
+  removed, with no Points change), and broadcasts `state`. Only then does it delete the player's reconnect token and
+  close their link, shortly after the broadcast so the `state` can leave first. The removed Guest reads its own
+  `status: 'removed'` from that `state`, deletes its stored identity and shows "The Host removed you", with one way
+  back to Home. A Guest that missed the `state` and sends a `rejoin` is refused with `UNKNOWN_PLAYER` and treated as
+  removed too. Removing the last Guest ends the Room, and the Game Result Screen follows. A `removed` row is part of
+  the persisted session, but its reconnect token is not restored after a Host reload.
 - Host-only actions (start round, submit outcome, Pause/Resume/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
 - **Redraw:** when the Host redraws the Challenge (see `domain-glossary.md`), the Round keeps its `challengerId` and

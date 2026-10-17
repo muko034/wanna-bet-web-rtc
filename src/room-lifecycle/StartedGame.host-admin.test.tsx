@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { fireEvent, render, screen, within } from '@testing-library/preact';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import { dictionaries, type MessageKey } from '../i18n/dictionaries';
@@ -36,6 +36,8 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
   const props = {
     onPauseGuest: vi.fn(),
     onResumeGuest: vi.fn(),
+    onRemoveGuest: vi.fn(),
+    onRemoved: vi.fn(),
     onLeave: vi.fn(),
     onSitOut: vi.fn(),
   };
@@ -68,7 +70,10 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
     />
   );
   const { rerender } = render(screen(gameState));
-  const openLeaderboard = () => fireEvent.click(document.querySelector('.vb-rank-badge')!);
+  const openLeaderboard = () => {
+    const badge = document.querySelector('.vb-rank-badge');
+    if (badge) fireEvent.click(badge);
+  };
   openLeaderboard();
   return { ...props, openLeaderboard, rerender: (state: GameState) => rerender(screen(state)) };
 }
@@ -116,10 +121,12 @@ describe('Leaderboard row menu', () => {
     expect(onResumeGuest).toHaveBeenCalledWith('guest-2');
   });
 
-  it('shows a stepped away label and no menu for a Guest in Sit Out', () => {
+  it('shows a stepped away label and offers only Remove for a Guest in Sit Out', () => {
     renderAs('host', stateWith([host, alex, satOut(sam)]));
 
-    expect(menuButton('Sam')).toBeNull();
+    fireEvent.click(menuButton('Sam')!);
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([t('hostMenu.remove')]);
     expect(screen.getByText(t('leaderboard.steppedAway'))).toBeTruthy();
   });
 
@@ -194,5 +201,107 @@ describe('a Guest the Host paused', () => {
     renderAs('guest', stateWith([host, satOut(alex), sam]));
 
     expect(screen.queryByText(t('hostPaused.title'))).toBeNull();
+  });
+});
+
+describe('Removing a Guest from the Leaderboard menu', () => {
+  const openRemoveDialog = (name: string) => {
+    fireEvent.click(menuButton(name)!);
+    fireEvent.click(menuItem('hostMenu.remove')!);
+  };
+  const confirmDialog = (name: string) => screen.queryByRole('dialog', { name: t('removeGuest.title', { name }) });
+
+  it('lists Remove after Pause and Resume, in red', () => {
+    renderAs('host', stateWith([host, alex, hostPaused(sam)]));
+
+    fireEvent.click(menuButton('Alex')!);
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([t('hostMenu.pause'), t('hostMenu.remove')]);
+    expect(menuItem('hostMenu.remove')!.classList.contains('danger')).toBe(true);
+    expect(menuItem('hostMenu.pause')!.classList.contains('danger')).toBe(false);
+
+    fireEvent.click(menuButton('Alex')!);
+    fireEvent.click(menuButton('Sam')!);
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([t('hostMenu.resume'), t('hostMenu.remove')]);
+  });
+
+  it('asks for confirmation naming the player, and removes nobody yet', () => {
+    const { onRemoveGuest } = renderAs('host', stateWith([host, alex, sam]));
+
+    openRemoveDialog('Sam');
+
+    expect(confirmDialog('Sam')).not.toBeNull();
+    expect(onRemoveGuest).not.toHaveBeenCalled();
+  });
+
+  it('changes nothing when the Host cancels', () => {
+    const { onRemoveGuest } = renderAs('host', stateWith([host, alex, sam]));
+    openRemoveDialog('Sam');
+
+    fireEvent.click(screen.getByRole('button', { name: t('homeDialog.cancel') }));
+
+    expect(confirmDialog('Sam')).toBeNull();
+    expect(onRemoveGuest).not.toHaveBeenCalled();
+    expect(menuButton('Sam')).not.toBeNull();
+  });
+
+  it('removes the named Guest once the Host confirms', () => {
+    const { onRemoveGuest } = renderAs('host', stateWith([host, alex, sam]));
+    openRemoveDialog('Sam');
+
+    fireEvent.click(screen.getByRole('button', { name: t('removeGuest.confirm') }));
+
+    expect(onRemoveGuest).toHaveBeenCalledTimes(1);
+    expect(onRemoveGuest).toHaveBeenCalledWith('guest-2');
+    expect(confirmDialog('Sam')).toBeNull();
+  });
+
+  it('no longer lists the removed Guest on the Leaderboard', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex, sam]));
+
+    rerender(stateWith([host, alex, { ...sam, status: 'removed' }]));
+
+    expect(menuButton('Sam')).toBeNull();
+    expect(within(screen.getByRole('dialog', { name: 'Leaderboard' })).queryByText(/Sam/)).toBeNull();
+  });
+});
+
+describe('a Guest the Host removed', () => {
+  const removedState = () => stateWith([host, { ...alex, status: 'removed' }, sam]);
+
+  it('sees that the Host removed them, not the live Round', () => {
+    renderAs('guest', removedState());
+
+    expect(screen.getByText(t('removed.title'))).toBeTruthy();
+    expect(document.querySelector('.vb-tapzones')).toBeNull();
+  });
+
+  it('is told to forget the Room, once', () => {
+    const { onRemoved, rerender } = renderAs('guest', removedState());
+    rerender(removedState());
+
+    expect(onRemoved).toHaveBeenCalledTimes(1);
+    expect(onRemoved).toHaveBeenCalledWith(CODE);
+  });
+
+  it('has one way back to Home', () => {
+    renderAs('guest', removedState());
+
+    const home = screen.getByRole('link', { name: t('gameResult.home') });
+    expect(home.getAttribute('href')).toBe('/');
+  });
+
+  it('is not told anything while another player is removed', () => {
+    const { onRemoved } = renderAs('guest', stateWith([host, alex, { ...sam, status: 'removed' }]));
+
+    expect(onRemoved).not.toHaveBeenCalled();
+    expect(screen.queryByText(t('removed.title'))).toBeNull();
+  });
+
+  it('still sees the removed screen, not the Game Result Screen, when the Room ends right after', () => {
+    const { rerender } = renderAs('guest', removedState());
+
+    rerender({ ...removedState(), status: 'ended', round: null });
+
+    expect(screen.getByText(t('removed.title'))).toBeTruthy();
   });
 });

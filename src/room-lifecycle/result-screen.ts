@@ -112,12 +112,12 @@ function resolveDelta(delta: number): Pick<ResultRow, 'deltaLabel' | 'deltaClass
 export function resolveResultScreen({
   memory,
   localPlayerId,
-  gameState,
+  gameState = null,
 }: {
   memory: ResultMemory;
   /** `null` until this device's identity is known. */
   localPlayerId: string | null;
-  gameState: GameState | null;
+  gameState?: GameState | null;
 }): ResultScreen | null {
   if (!memory.shown || resolveHostPausedScreen({ gameState, localPlayerId })) {
     return null;

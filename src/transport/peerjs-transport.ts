@@ -91,6 +91,10 @@ export class PeerJsTransport implements RecoverableTransport {
     this.connectionChangeHandlers.push(handler);
   }
 
+  closeConnection(peerId: string): void {
+    this.connections.get(peerId)?.close();
+  }
+
   /**
    * Tears down this device's PeerJS connection and releases its resources. Not part of the
    * shared `Transport` interface — only the concrete PeerJS-backed adapter needs deterministic

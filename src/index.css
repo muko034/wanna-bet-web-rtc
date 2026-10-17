@@ -636,6 +636,14 @@ input {
   text-align: left;
   cursor: pointer;
 }
+.vb-row-menu-item.danger {
+  color: #ff6b6f;
+}
+.vb-row-menu-item.danger:not(:first-child) {
+  margin-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0 0 10px 10px;
+}
 .vb-dialog-backdrop {
   align-items: center;
   justify-content: center;
@@ -650,6 +658,13 @@ input {
   flex-direction: column;
   gap: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.vb-dialog-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  padding: 4px 0 8px;
 }
 .vb-dialog-destructive {
   display: block;

@@ -79,3 +79,24 @@ test('the two contexts keep separate localStorage', async ({ host, guest }) => {
   expect(await keys(guest)).toContain(`wanna-bet:identity:${code}`);
   expect(await keys(host)).not.toContain(`wanna-bet:identity:${code}`);
 });
+
+test('Host removes a Guest, and the Guest lands on the removed screen', async ({ host, guest }) => {
+  const code = await createRoom(host, 'Hanna');
+  await joinRoom(guest, code, 'Gus');
+  await expect(host.getByText('Gus', { exact: true })).toBeVisible();
+  await host.getByRole('button', { name: 'Start game' }).click();
+  await expect(guest.getByRole('button', { name: 'Lock in bet' })).toBeVisible();
+
+  await host.locator('.vb-rank-badge').click();
+  await host.getByRole('button', { name: 'Actions for Gus' }).click();
+  await host.getByRole('menuitem', { name: 'Remove' }).click();
+  await host.getByRole('dialog', { name: 'Remove Gus?' }).getByRole('button', { name: 'Remove' }).click();
+
+  await expect(guest.getByText('The Host removed you')).toBeVisible();
+  await expect(guest.locator('a.vb-cta', { hasText: 'Home' })).toBeVisible();
+  expect(await guest.evaluate(() => Object.keys(localStorage))).not.toContain(`wanna-bet:identity:${code}`);
+
+  await guest.reload();
+  await expect(guest.getByRole('button', { name: 'Lock in bet' })).not.toBeVisible();
+  expect(await guest.evaluate(() => Object.keys(localStorage))).not.toContain(`wanna-bet:identity:${code}`);
+});

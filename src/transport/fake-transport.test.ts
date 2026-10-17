@@ -127,6 +127,28 @@ describe('FakeTransport', () => {
     await expect(guest.connect('nobody-here')).rejects.toBeInstanceOf(PeerUnavailableError);
   });
 
+  it('closes the connection to one peer only, which sees it drop while the others stay linked', async () => {
+    const host = new FakeTransport();
+    const hostId = await host.connect();
+    const closed = new FakeTransport();
+    const closedId = await closed.connect(hostId);
+    const other = new FakeTransport();
+    await other.connect(hostId);
+    const closedChanges: boolean[] = [];
+    const closedReceived: unknown[] = [];
+    const otherReceived: unknown[] = [];
+    closed.onConnectionChange((_peerId, connected) => closedChanges.push(connected));
+    closed.onMessage((message) => closedReceived.push(message));
+    other.onMessage((message) => otherReceived.push(message));
+
+    host.closeConnection(closedId);
+    host.send({ type: 'after' });
+
+    expect(closedChanges).toEqual([false]);
+    expect(closedReceived).toEqual([]);
+    expect(otherReceived).toEqual([{ type: 'after' }]);
+  });
+
   describe('black-hole mode', () => {
     async function pair() {
       const host = new FakeTransport();

@@ -21,7 +21,7 @@ import { HostConnectionLostBanner } from './room-lifecycle/HostConnectionLostBan
 import type { GameState, PlaceBetPayload } from './protocol/messages';
 import { BetDelivery, type PlaceBetContext } from './room-lifecycle/bet-delivery';
 import type { BetRejection } from './round-engine/round-engine';
-import { leaveRoom, sitOutOfRoom } from './room-lifecycle/guest-leave';
+import { forgetRemovedGuest, leaveRoom, sitOutOfRoom } from './room-lifecycle/guest-leave';
 
 type RoomRouteProps = {
   path?: string;
@@ -279,6 +279,15 @@ export function App() {
     exitGuestGame(sitOutOfRoom);
   }, [exitGuestGame]);
 
+  /** The Host removed this Guest: forgets the identity and closes the connection, keeping the screen up so the Guest can read why. */
+  const handleGuestRemoved = useCallback((code: string) => {
+    const transport = guestTransportRef.current;
+    guestTransportRef.current = null;
+    satOutRef.current = true;
+    forgetRemovedGuest(transport, localStorage, code);
+    handlePlaceBetReady(null);
+  }, [handlePlaceBetReady]);
+
   if (reopening) {
     return (
       <ReopeningRoom roomCode={reopening.session.room.code} failed={reopening.failed} onRetry={() => reopen(reopening)} onHome={cancelReopen} />
@@ -325,6 +334,10 @@ export function App() {
           onResumeGuest={(playerId) => {
             connectionManagerRef.current?.resumeGuest(playerId);
           }}
+          onRemoveGuest={(playerId) => {
+            connectionManagerRef.current?.removeGuest(playerId);
+          }}
+          onRemoved={handleGuestRemoved}
           onRedraw={() => {
             connectionManagerRef.current?.redrawChallenge();
           }}

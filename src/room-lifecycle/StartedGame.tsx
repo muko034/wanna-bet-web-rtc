@@ -20,6 +20,7 @@ import { roundKeyOf, type PlaceBetContext } from './bet-delivery';
 import type { BetRejection } from '../round-engine/round-engine';
 import { resolveGameResult } from './game-result';
 import { resolveHostPausedScreen } from './host-paused-screen';
+import { isRemovedFromGame } from './removed-guest';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
 import { resolveBettingPanel } from './betting-panel';
@@ -64,6 +65,10 @@ type Props = {
   onPauseGuest: (playerId: string) => void;
   /** Host only: resumes a Guest the Host paused. */
   onResumeGuest: (playerId: string) => void;
+  /** Host only: removes the Guest `playerId` from the Game for good. */
+  onRemoveGuest: (playerId: string) => void;
+  /** Guest only: the Host removed this Guest from `code`'s Room, so the device must forget it. */
+  onRemoved: (code: string) => void;
   /** Host only: replaces the current Challenge with a new draw. */
   onRedraw: () => void;
   /** Notifies the caller that this Guest observed the Host's game-started broadcast for `code`. */
@@ -112,6 +117,8 @@ export function StartedGame({
   onResolveRound,
   onPauseGuest,
   onResumeGuest,
+  onRemoveGuest,
+  onRemoved,
   onRedraw,
   onGameStarted,
   onGameState,
@@ -134,11 +141,22 @@ export function StartedGame({
   // effect below from scratch (including its own automatic retry budget) rather than a
   // single bare attempt.
   const [retryKey, setRetryKey] = useState(0);
+  // Kept as state because forgetting the identity takes away the id that says who was removed.
+  const [removed, setRemoved] = useState(false);
+  const storedPlayerId = (code ? loadIdentity(localStorage, code)?.playerId : undefined) ?? null;
+  const removedByState = isRemovedFromGame({ gameState, code, localPlayerId: storedPlayerId });
+
+  useEffect(() => {
+    if (removedByState && code) {
+      callbacksRef.current.onRemoved(code);
+      setRemoved(true);
+    }
+  }, [removedByState]);
 
   // Read through a ref so the reconnect effect below depends on `code` alone: a caller
   // passing a fresh callback per render must not re-run it, since each run opens a new Peer.
-  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost });
-  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost };
+  const callbacksRef = useRef({ onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost, onRemoved });
+  callbacksRef.current = { onGameStarted, onGameState, onPlaceBetReady, onBetRejected, onReconnectGaveUp, onConnectionLost, onRemoved };
 
   // Foregrounding mid-attempt restarts the reconnect effect, skipping the current backoff.
   useForegroundRetry(reconnectPhase === 'pending', () => setRetryKey((key) => key + 1));
@@ -170,7 +188,9 @@ export function StartedGame({
       if (result.status === 'joined' || result.status === 'no-identity') {
         setReconnectPhase(null);
       } else if (result.status === 'unknown-player') {
-        setReconnectPhase('unknown-player');
+        setReconnectPhase(null);
+        callbacksRef.current.onRemoved(code);
+        setRemoved(true);
       } else {
         callbacksRef.current.onReconnectGaveUp();
         setReconnectPhase({ kind: 'error', message: RECONNECT_ERROR_MESSAGES[result.status] });
@@ -187,7 +207,7 @@ export function StartedGame({
     };
   }, [code, isGuestUnresolved, hasStoredIdentity, retryKey]);
 
-  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameState });
+  const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameState, removed });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [amount, setAmount] = useState(1);
@@ -242,6 +262,17 @@ export function StartedGame({
 
   if (view.view === 'reconnecting') {
     return <ReconnectingScreen roomCode={view.roomCode} />;
+  }
+
+  if (view.view === 'removed') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={view.roomCode}>
+        <div class="vb-giant-title">{t('removed.title')}</div>
+        <a class="vb-cta" href={withBase('/')}>
+          {t('gameResult.home')}
+        </a>
+      </PhoneShell>
+    );
   }
 
   if (view.view === 'reconnect-failed') {
@@ -394,7 +425,12 @@ export function StartedGame({
   const leaderboardBadge = leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />;
   const leaderboardOverlay = (
     <>
-      {leaderboardOpen && <LeaderboardSheet rows={leaderboard.rows} onClose={() => setLeaderboardOpen(false)} onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)} />}
+      {leaderboardOpen && <LeaderboardSheet
+          rows={leaderboard.rows}
+          onClose={() => setLeaderboardOpen(false)}
+          onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)}
+          onRemoveGuest={onRemoveGuest}
+        />}
       {dialogOverlay}
     </>
   );

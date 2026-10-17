@@ -3,7 +3,7 @@ import type { Player } from '../protocol/messages';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export type HostAction = 'pause' | 'resume';
+export type HostAction = 'pause' | 'resume' | 'remove';
 
 export type LeaderboardRow = {
   playerId: string;
@@ -33,10 +33,10 @@ export type Leaderboard = {
   rows: LeaderboardRow[];
 };
 
-/** Pause for an active Guest, Resume only for a Host Pause: a Sit Out is not the Host's to end. */
+/** Pause for an active Guest, Resume only for a Host Pause (a Sit Out is not the Host's to end), Remove for any Guest. */
 function hostActionsFor(player: Player): HostAction[] {
-  if (player.status === 'active') return ['pause'];
-  return player.status === 'paused' && player.pausedBy === 'host' ? ['resume'] : [];
+  if (player.status === 'active') return ['pause', 'remove'];
+  return player.status === 'paused' && player.pausedBy === 'host' ? ['resume', 'remove'] : ['remove'];
 }
 
 function statusLabelFor(player: Player): MessageKey | null {

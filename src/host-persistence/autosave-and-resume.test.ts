@@ -209,6 +209,46 @@ describe('resuming a saved Host Pause', () => {
   });
 });
 
+describe('resuming a saved Host Remove', () => {
+  async function hostReloadedWithAlexRemoved() {
+    const storage = new FakeStorage();
+    const { manager, hostId } = await autosavingHost(storage);
+    const alex = await joinGuest(hostId, 'Alex');
+    await joinGuest(hostId, 'Kim');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    manager.removeGuest(alex.playerId);
+
+    const session = loadHostSession(storage, 'ABCDEF');
+    if (!session) throw new Error('expected a saved session');
+    const resumedTransport = new FakeTransport();
+    const resumedHostId = await resumedTransport.connect();
+    const resumed = new ConnectionManager(resumedTransport, session.room, () => {}, undefined, (ids) => ids[0]);
+    resumed.resume(session);
+    return { resumed, resumedHostId, alex };
+  }
+
+  it('keeps the removed row after the Host reloads', async () => {
+    const { resumed, alex } = await hostReloadedWithAlexRemoved();
+
+    expect(resumed.gameState?.players.find((p) => p.playerId === alex.playerId)?.status).toBe('removed');
+  });
+
+  it("does not restore the removed Guest's token, so a rejoin with it is refused", async () => {
+    const { resumed, resumedHostId, alex } = await hostReloadedWithAlexRemoved();
+    const guestTransport = new FakeTransport();
+    await guestTransport.connect(resumedHostId);
+    const rejections: unknown[] = [];
+    new GuestProtocol(guestTransport).on('rejected', (payload) => rejections.push(payload));
+
+    new GuestProtocol(guestTransport).rejoin({ reconnectToken: alex.reconnectToken });
+
+    expect(rejections).toEqual([{ reason: 'UNKNOWN_PLAYER', action: 'rejoin' }]);
+    expect(resumed.room.players.map((p) => p.playerId)).not.toContain(alex.playerId);
+  });
+});
+
 /** Opens the Room with Alex in the Lobby, then "reloads" the Host before the game starts. */
 async function hostReloadedInLobby() {
   const storage = new FakeStorage();

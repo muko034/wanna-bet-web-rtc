@@ -79,6 +79,7 @@ describe('reopenRoom', () => {
       send: () => {},
       onMessage: () => {},
       onConnectionChange: () => {},
+      closeConnection: () => {},
       close: () => {},
     };
     return { transport, attempts: () => attempts };
