@@ -100,3 +100,21 @@ test('Host removes a Guest, and the Guest lands on the removed screen', async ({
   await expect(guest.getByRole('button', { name: 'Lock in bet' })).not.toBeVisible();
   expect(await guest.evaluate(() => Object.keys(localStorage))).not.toContain(`wanna-bet:identity:${code}`);
 });
+
+test('Host removes a Guest in the Lobby, and the Guest lands on the removed screen', async ({ host, guest }) => {
+  const code = await createRoom(host, 'Hanna');
+  await joinRoom(guest, code, 'Gus');
+  await expect(host.getByText('Gus', { exact: true })).toBeVisible();
+  await expect(host.getByRole('button', { name: 'Remove Hanna' })).toHaveCount(0);
+
+  await host.getByRole('button', { name: 'Remove Gus' }).click();
+  await host.getByRole('dialog', { name: 'Remove Gus?' }).getByRole('button', { name: 'Remove' }).click();
+
+  await expect(guest.getByText('The Host removed you')).toBeVisible();
+  await expect(guest.locator('a.vb-cta', { hasText: 'Home' })).toBeVisible();
+  await expect(host.getByText('Gus', { exact: true })).toHaveCount(0);
+  expect(await guest.evaluate(() => Object.keys(localStorage))).not.toContain(`wanna-bet:identity:${code}`);
+
+  await guest.reload();
+  await expect(guest.getByPlaceholder('Your name')).toBeVisible();
+});

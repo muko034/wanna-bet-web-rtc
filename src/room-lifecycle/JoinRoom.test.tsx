@@ -25,6 +25,7 @@ function renderJoinRoom(code: string, createGuestTransport: () => ReturnType<Ret
     isSatOut: () => false,
     onLeave: vi.fn(),
     onSitOut: vi.fn(),
+    onRemoved: vi.fn(),
   };
   return { ...render(<JoinRoom {...props} />), props };
 }

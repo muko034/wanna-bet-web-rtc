@@ -141,7 +141,8 @@ Notes:
   device's Lobby/waiting screen can render the live roster — the Host included, with "(you)" on the viewer's own
   entry. `round` and `resolution` are always `null` here, and `challengerId` is always `null`. A Guest only ever
   leaves its waiting screen on a `status: 'active'` broadcast (see `watchForGameStart` in `room-lifecycle`) — a Lobby
-  snapshot never starts the game. Lobby snapshots are not written to the Host's persisted `localStorage` snapshot (see
+  snapshot never starts the game. The only `removed` player a Lobby snapshot ever lists is the one the Host is removing
+  (see Host Remove in the Lobby, below). Lobby snapshots are not written to the Host's persisted `localStorage` snapshot (see
   host-persistence spec).
 - `status: 'ended'`: the Host Left. It broadcasts one last `state` with `status: 'ended'` (`round` and `resolution` are
   `null`, `players` keep their final Points), deletes its saved session and closes its connections, so the Room cannot be
@@ -172,6 +173,15 @@ Notes:
   back to Home. A Guest that missed the `state` and sends a `rejoin` is refused with `UNKNOWN_PLAYER` and treated as
   removed too. Removing the last Guest ends the Room, and the Game Result Screen follows. A `removed` row is part of
   the persisted session, but its reconnect token is not restored after a Host reload.
+- Host Remove (in the Lobby): the Host removes any Guest from the roster by tapping the Guest's row (its own
+  row is not tappable, and Guests never see this), with a hint line under the roster, after the same confirm step
+  that names the player. No notice is shown to other players: the roster simply shrinks. The Host first sends one last Lobby snapshot with that player as
+  `status: 'removed'`, then deletes the player's reconnect token, drops them from the Room (the player count falls) and
+  closes their link shortly after, so the snapshot can leave first. Later snapshots and heartbeats do not list the
+  player, and the Lobby roster never renders a `removed` row. The removed Guest reads its own `status: 'removed'` from
+  that snapshot, deletes its stored identity and shows "The Host removed you", with one way back to Home. A Guest that
+  missed it and sends a `rejoin` is refused with `UNKNOWN_PLAYER` and shows the same screen. Removing the last Guest
+  leaves the Lobby open with the Host alone. A Guest removed in the Lobby may join again as a new player.
 - Host-only actions (start round, submit outcome, Pause/Resume/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
 - **Redraw:** when the Host redraws the Challenge (see `domain-glossary.md`), the Round keeps its `challengerId` and

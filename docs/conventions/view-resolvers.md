@@ -82,3 +82,12 @@ A player who left stays in `GameState.players` with `status: 'removed'` and thei
 const ranked = players.filter((player) => player.status !== 'removed').sort((a, b) => b.points - a.points);
 const bettors = players.filter((player) => player.playerId !== round.challengerId && player.status === 'active');
 ```
+
+## Gate Host-only controls with an opt-in resolver param and per-row data
+
+A resolver that builds per-player rows takes a flag that defaults to the non-Host case (`isHost = false`, `canRemoveGuests = false`) and returns what the Host may do as data on each row: a list (`hostActions`, empty when none) or a boolean (`removable`). Both are empty or `false` for a Guest's view and on the Host's own row. Only the Host's screen passes the flag. The component renders a control only when its row says so and never checks the role itself, so who may act on whom is defined and tested in one place. Each resolver's test file pins the Host case and the default case.
+
+```ts
+removable: canRemoveGuests && !isLocal,
+hostActions: isHost && !isLocal ? hostActionsFor(player) : [],
+```
