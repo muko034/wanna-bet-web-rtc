@@ -52,6 +52,20 @@ describe('resolveResultScreen', () => {
     });
   });
 
+  it('leaves a removed player out of the ranking', () => {
+    const screen = screenFor(
+      stateWith({
+        players: [
+          { playerId: 'host-1', name: 'Host', points: 115, status: 'active', connected: true },
+          { playerId: 'guest-1', name: 'Alex', points: 120, status: 'removed', connected: false },
+          { playerId: 'guest-2', name: 'Sam', points: 85, status: 'active', connected: true },
+        ],
+      }),
+    );
+
+    expect(screen?.rows.map((row) => [row.playerId, row.rank])).toEqual([['host-1', 1], ['guest-2', 2]]);
+  });
+
   it('shows a red failure screen for Outcome NO', () => {
     const screen = screenFor(
       stateWith({ resolution: { challengerId: 'host-1', outcome: 'NO', payouts: [{ playerId: 'guest-2', amount: 5 }] } }),

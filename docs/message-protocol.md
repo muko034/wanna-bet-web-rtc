@@ -47,7 +47,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 | `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`.                                 |
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
 | `placeBet` | `{ amount, prediction, challengeId }` | Actor derived from the connection binding. `challengeId` is the Challenge the Bettor saw when betting. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`), including `STALE_CHALLENGE` when `challengeId` no longer matches the Round's Challenge. |
-| `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. |
+| `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. Before the Game starts the Guest leaves the Lobby roster; in the Game their row stays in `players` as `status: 'removed'` with their last Points. Either way their reconnect token is deleted, so a later `rejoin` is refused with `UNKNOWN_PLAYER`. |
 | `sitOut`   | `{}`                     | The Guest steps away (see Sit Out in the glossary). The Host sets the player to `status: 'paused'`, `pausedBy: 'self'`; actor derived from the connection binding. The Guest then closes its transport. A placed Bet stays in the Round; a Challenger's Round is discarded and the Game rotates. |
 
 ### Host → one Guest
@@ -152,7 +152,10 @@ Notes:
   Round starts.
 - `resolution` carries the most recently completed Round's outcome and Payouts, so a Guest can render the result
   screen; `null` once no Resolution is pending display.
-- Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove.
+- Removed players stay in `players` forever (`status: 'removed'`) — there is no unremove. A Guest's own `leave` in the
+  Game leaves such a row with their last Points; the next `state` already lists it. The Host drops their open Bet (and
+  discards a Round whose Challenger left, with no Points change) and deletes their reconnect token. The Leaderboard and
+  the Game Result Screen do not show `removed` rows.
 - Host-only actions (start round, submit outcome, Pause/Remove) are never wire messages — they're local reducer calls
   whose effects simply appear in the next `state` broadcast.
 - **Redraw:** when the Host redraws the Challenge (see `domain-glossary.md`), the Round keeps its `challengerId` and

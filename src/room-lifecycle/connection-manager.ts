@@ -436,11 +436,12 @@ export class ConnectionManager {
   }
 
   /**
-   * Handles a Guest's self-initiated `leave`: removes them from the Room entirely and forgets
-   * their reconnect token, so the Room never waits on them again. Before the game starts it
+   * Handles a Guest's self-initiated `leave`: removes them from the Room and forgets their
+   * reconnect token, so the Room never waits on them again. Before the game starts it
    * broadcasts the refreshed Lobby snapshot; mid-game it takes them out of the Round Engine
    * too (their Bet is dropped, and a Challenger's Round is discarded in favor of one for the
-   * next Challenger) and broadcasts the new GameState.
+   * next Challenger), keeps their row in the GameState as `removed` with their last Points,
+   * and broadcasts it.
    */
   private handleLeave(_payload: LeaveMessage['payload'], peerId: string): void {
     const playerId = this.playerIdByPeerId.get(peerId);
@@ -475,10 +476,10 @@ export class ConnectionManager {
     this.roundEngineState = wasChallenger ? this.advanceRound(removed) : removed;
     this.gameState = {
       ...applyRoundEngineState(gameState, this.roundEngineState, gameState.resolution),
-      players: gameState.players.filter((p) => p.playerId !== playerId),
+      players: gameState.players.map((p) => (p.playerId === playerId ? { ...p, status: 'removed' as const } : p)),
     };
     this.emitGameState(this.gameState);
-    if (this.gameState.players.every((p) => p.playerId === this.room.hostPlayerId)) {
+    if (this.gameState.players.every((p) => p.playerId === this.room.hostPlayerId || p.status === 'removed')) {
       this.leave();
     }
   }
