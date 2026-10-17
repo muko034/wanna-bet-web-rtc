@@ -114,9 +114,11 @@ The screen shown to every player after a Resolution, listing each player's Point
 its own after a short time, or earlier when the player dismisses it. _Avoid_: Results page, round summary
 
 **Host Admin Action**:
-A moderation action only the Host can take on another player: **Pause** (player is skipped from Bets/rotation until
-resumed) or **Remove** (player exits the Room permanently). There is no automatic disconnect handling — a disconnected
-player who hasn't been Paused or Removed is still waited on. _Avoid_: Kick, ban, timeout
+A moderation action only the Host can take on another player, never on themself: **Pause** (player is skipped from
+Bets/rotation until the Host resumes them), **Resume** (ends a Host Pause; a Sit Out is not the Host's to end) or
+**Remove** (player exits the Room permanently, before or after the Game starts). A Host Pause outranks a Sit Out: the
+player cannot undo it by stepping away and returning. There is no automatic disconnect handling — a disconnected player
+who hasn't been Paused or Removed is still waited on. _Avoid_: Kick, ban, timeout
 
 **Sit Out**:
 A Guest's own voluntary step away from the Game without Leaving. The Guest is skipped from Bets/rotation like a Paused
