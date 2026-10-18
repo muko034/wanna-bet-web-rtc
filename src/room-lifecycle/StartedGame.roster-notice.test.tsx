@@ -86,6 +86,23 @@ describe('StartedGame Host Admin notices', () => {
   });
 });
 
+describe('StartedGame join notice', () => {
+  it('names the Late Joiner and their starting Points in the Display Language', () => {
+    const { rerender } = render(startedGame(stateWith([host, alex])));
+
+    rerender(startedGame(stateWith([host, alex, { ...sam, points: 40 }])));
+
+    expect(screen.getByText(translate(dictionaries.pl, 'notice.joined', { name: 'Sam', points: 40 }))).toBeTruthy();
+  });
+
+  it('has an English copy naming the player and the Points', () => {
+    const text = translate(dictionaries.en, 'notice.joined', { name: 'Sam', points: 40 });
+
+    expect(text).toContain('Sam');
+    expect(text).toContain('40');
+  });
+});
+
 describe('StartedGame roster notice timer', () => {
   it('hides the notice after its duration', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));

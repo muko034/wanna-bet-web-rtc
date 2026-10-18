@@ -65,6 +65,8 @@ Each round, players try to predict whether the challenger will succeed at a chal
   bettor's bet. The late joiner starts with the points the host sets: a whole number of at least 1, with no upper
   limit. The field starts at the lowest points among active players, the host included; paused and removed players do
   not count. A name that matches a player in the game gets a "(n)" suffix.
+- When a late joiner is admitted, every other player, the host included, sees a short notice with the late joiner's name
+  and starting points. The late joiner sees no notice about themself, and a waiting or declined request produces none.
 - A declined guest may ask again. A guest who left or was removed asks the same way and returns as a new player with
   new points; the old row stays removed.
 - The room holds at most 20 players, the host included. A request that arrives when the room is full is refused, and
