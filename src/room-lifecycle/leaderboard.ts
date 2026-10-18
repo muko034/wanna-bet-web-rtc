@@ -19,6 +19,8 @@ export type LeaderboardRow = {
   statusLabel: MessageKey | null;
   /** What the Host may do to this player from the row's menu; empty for everyone else. */
   hostActions: HostAction[];
+  /** Host only: this Guest's link is down. Display only; it never changes their status. */
+  disconnected: boolean;
   isLocal: boolean;
 };
 
@@ -81,6 +83,7 @@ export function resolveLeaderboard({
       paused: player.status === 'paused',
       statusLabel: statusLabelFor(player),
       hostActions: isHost && !isLocal ? hostActionsFor(player) : [],
+      disconnected: isHost && !isLocal && !player.connected,
       isLocal,
     };
   });

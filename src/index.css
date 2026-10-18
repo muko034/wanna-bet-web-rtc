@@ -508,6 +508,10 @@ input {
   opacity: 0.65;
   margin-top: 2px;
 }
+.vb-disconnected {
+  color: #ffd27c;
+  opacity: 1;
+}
 .vb-delta {
   font-weight: 800;
 }

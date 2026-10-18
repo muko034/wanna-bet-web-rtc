@@ -98,6 +98,7 @@ export function LeaderboardSheet({ rows, onClose, onHostAction, onRemoveGuest }:
               <span class="vb-rank-sheet-name">
                 {t(row.nameLabel.key, row.nameLabel.params)}
                 {row.statusLabel && <span class="vb-score-sub">{t(row.statusLabel)}</span>}
+                {row.disconnected && <span class="vb-score-sub vb-disconnected">{t('leaderboard.disconnected')}</span>}
               </span>
               <span>{t('leaderboard.points', { points: row.points })}</span>
               {row.hostActions.length > 0 && (

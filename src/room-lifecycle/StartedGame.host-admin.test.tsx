@@ -146,6 +146,41 @@ describe('Leaderboard row menu', () => {
   });
 });
 
+describe('Leaderboard disconnected marker', () => {
+  const down = (player: TestPlayer): TestPlayer => ({ ...player, connected: false });
+
+  it('shows the Host a marker on each Guest whose link is down, and clears it on reconnect', () => {
+    const { rerender } = renderAs('host', stateWith([host, down(alex), sam]));
+
+    expect(screen.getAllByText(t('leaderboard.disconnected'))).toHaveLength(1);
+
+    rerender(stateWith([host, alex, sam]));
+
+    expect(screen.queryByText(t('leaderboard.disconnected'))).toBeNull();
+  });
+
+  it('never shows a Guest the marker', () => {
+    renderAs('guest', stateWith([host, down(sam), alex]));
+
+    expect(screen.queryByText(t('leaderboard.disconnected'))).toBeNull();
+  });
+
+  it("never shows the marker on the Host's own row", () => {
+    renderAs('host', stateWith([down(host), alex, sam]));
+
+    expect(screen.queryByText(t('leaderboard.disconnected'))).toBeNull();
+  });
+
+  it('leaves the disconnected Guest active, with the usual menu', () => {
+    renderAs('host', stateWith([host, down(alex), sam]));
+
+    fireEvent.click(menuButton('Alex')!);
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([t('hostMenu.pause'), t('hostMenu.remove')]);
+    expect(screen.queryByText(t('leaderboard.paused'))).toBeNull();
+  });
+});
+
 describe('a Guest the Host paused', () => {
   const pausedState = () => stateWith([host, hostPaused(alex), sam]);
 
