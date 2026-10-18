@@ -40,3 +40,17 @@ A dialog or sheet (the Home dialog, the Leaderboard sheet, the Remove confirmati
 ```tsx
 <PhoneShell background="vb-bg-lobby" overlay={removing && <RemoveGuestDialog name={removing.name} onConfirm={confirm} onCancel={cancel} />}>
 ```
+
+## Open a dialog about one item by storing the item, not a boolean
+
+A dialog that is about one specific item (removing a Guest, answering a Join Request) is opened by setting state to that
+item, `null` when closed, and rendered only while it is set. The dialog then reads its title and callbacks from the stored
+item, and it cannot be open without knowing which item it is about. A dialog with no subject (the Home dialog, the
+Leaderboard sheet) keeps a plain boolean open flag.
+
+```tsx
+const [removing, setRemoving] = useState<{ playerId: string; name: string } | null>(null);
+
+<button onClick={() => setRemoving({ playerId: entry.playerId, name: entry.name })}>
+{removing && <RemoveGuestDialog name={removing.name} onCancel={() => setRemoving(null)} />}
+```
