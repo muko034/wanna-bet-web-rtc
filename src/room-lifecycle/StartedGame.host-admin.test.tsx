@@ -396,8 +396,80 @@ describe('Join Requests on the Host screen', () => {
     fireEvent.click(screen.getByRole('button', { name: t('joinRequest.approve') }));
 
     expect(onAdmitJoin).toHaveBeenCalledTimes(1);
+    expect(onAdmitJoin).toHaveBeenCalledWith(100);
     expect(onDeclineJoin).not.toHaveBeenCalled();
     expect(requestDialog('Kim')).toBeNull();
+  });
+
+  describe('the starting Points field', () => {
+    const pointsField = () => screen.getByLabelText(t('joinRequest.points')) as HTMLInputElement;
+    const approve = () => screen.getByRole('button', { name: t('joinRequest.approve') }) as HTMLButtonElement;
+    const typePoints = (value: string) => fireEvent.input(pointsField(), { target: { value } });
+
+    function openDialogFor(players: TestPlayer[]) {
+      const rendered = renderAs('host', stateWith(players), ['Kim']);
+      fireEvent.click(banner(1)!);
+      return rendered;
+    }
+
+    it('starts with the lowest Points among active players, the Host included', () => {
+      openDialogFor([{ ...host, points: 80 }, { ...alex, points: 120 }, { ...sam, points: 95 }]);
+
+      expect(pointsField().value).toBe('80');
+    });
+
+    it('does not count Paused or Removed players in the default', () => {
+      const removed: TestPlayer = { playerId: 'guest-3', name: 'Max', points: 5, status: 'removed', connected: false };
+      openDialogFor([host, { ...alex, points: 90 }, { ...hostPaused(sam), points: 10 }, removed]);
+
+      expect(pointsField().value).toBe('90');
+    });
+
+    it('admits with the Points the Host typed, with no upper cap', () => {
+      const { onAdmitJoin } = openDialogFor([host, alex]);
+
+      typePoints('5000');
+      fireEvent.click(approve());
+
+      expect(onAdmitJoin).toHaveBeenCalledWith(5000);
+    });
+
+    it.each([
+      ['empty', ''],
+      ['zero', '0'],
+      ['negative', '-5'],
+      ['fractional', '2.5'],
+    ])('refuses %s with a visible reason and keeps Approve unavailable', (_name, value) => {
+      const { onAdmitJoin } = openDialogFor([host, alex]);
+
+      typePoints(value);
+      fireEvent.click(approve());
+
+      expect(screen.getByText(t('joinRequest.points.invalid'))).toBeTruthy();
+      expect(approve().disabled).toBe(true);
+      expect(onAdmitJoin).not.toHaveBeenCalled();
+    });
+
+    it('shows no reason for the default and lets Approve through once a bad value is fixed', () => {
+      const { onAdmitJoin } = openDialogFor([host, alex]);
+      expect(screen.queryByText(t('joinRequest.points.invalid'))).toBeNull();
+
+      typePoints('0');
+      typePoints('40');
+      fireEvent.click(approve());
+
+      expect(screen.queryByText(t('joinRequest.points.invalid'))).toBeNull();
+      expect(onAdmitJoin).toHaveBeenCalledWith(40);
+    });
+
+    it('still lets the Host decline while the Points are invalid', () => {
+      const { onDeclineJoin } = openDialogFor([host, alex]);
+
+      typePoints('');
+      fireEvent.click(screen.getByRole('button', { name: t('joinRequest.decline') }));
+
+      expect(onDeclineJoin).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('declines when the Host declines, and closes the dialog', () => {
