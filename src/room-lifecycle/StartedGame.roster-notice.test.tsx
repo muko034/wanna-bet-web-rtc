@@ -42,6 +42,9 @@ function startedGame(gameState: GameState) {
       room={room}
       guestGameStartedCode={null}
       gameState={gameState}
+      joinRequests={[]}
+      onAdmitJoin={noop}
+      onDeclineJoin={noop}
       onPlaceBet={noop}
       betFailedRoundKey={null}
       onReconnectGaveUp={noop}

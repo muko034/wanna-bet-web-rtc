@@ -5,6 +5,7 @@ import type { GameState } from '../protocol/messages';
 import { resolveGameResult } from './game-result';
 import { resolveRoundControls } from './round-controls';
 import { MAX_ROOM_PLAYERS, type Room } from './room';
+import type { HostSession } from '../host-persistence/host-session-store';
 
 function roomWith(players: Room['players'], overrides: Partial<Room> = {}): Room {
   return { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players, playerCount: 1 + players.length, started: false, ...overrides };
@@ -244,20 +245,6 @@ describe('ConnectionManager', () => {
 
     expect(received).toEqual([{ type: 'rejected', seq: expect.any(Number), payload: { reason: 'ROOM_FULL', action: 'join' } }]);
     expect(manager.room.players).toHaveLength(MAX_ROOM_PLAYERS - 1);
-  });
-
-  it('rejects a fresh join once the Game has started, and does not add the Guest', async () => {
-    const hostTransport = new FakeTransport();
-    const hostId = await hostTransport.connect();
-    const manager = new ConnectionManager(hostTransport, roomWith([], { started: true }), () => {});
-
-    const guestTransport = await connectGuest(hostId);
-    const received: unknown[] = [];
-    guestTransport.onMessage((message) => received.push(message));
-    guestTransport.send({ type: 'join', payload: { name: 'Latecomer' } });
-
-    expect(received).toEqual([{ type: 'rejected', seq: 0, payload: { reason: 'GAME_STARTED', action: 'join' } }]);
-    expect(manager.room.players).toHaveLength(0);
   });
 
   it('still allows a previously-joined Guest to rejoin after the Game has started', async () => {
@@ -1072,5 +1059,333 @@ describe('the Host removing a Guest in the Lobby', () => {
     manager.removeGuest('host-1');
 
     expect(manager.gameState).toBe(before);
+  });
+});
+
+describe('a Guest asking to join a started Game', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const typeOf = (message: unknown) => (message as { type?: unknown }).type;
+  const messagesOf = (received: unknown[], type: string) => received.filter((m) => typeOf(m) === type);
+  const lastState = (received: unknown[]) =>
+    (messagesOf(received, 'state').at(-1) as { payload: { snapshot: GameState } } | undefined)?.payload.snapshot;
+  const playerIn = (state: GameState | null | undefined, playerId: string) => state?.players.find((p) => p.playerId === playerId);
+  const hostJudges = (manager: ConnectionManager) =>
+    resolveRoundControls({ code: 'ABCDEF', room: manager.room, gameState: manager.gameState }).kind === 'judge-round';
+
+  async function startedGame(guestNames: string[] = ['Sam'], onJoinRequestsChange: (names: string[]) => void = () => {}) {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(
+      hostTransport, roomWith([]), () => {}, undefined, () => 'host-1', () => {}, () => {}, () => {}, onJoinRequestsChange,
+    );
+    const guests = [];
+    for (const name of guestNames) {
+      const transport = await connectGuest(hostId);
+      const received: unknown[] = [];
+      transport.onMessage((message) => received.push(message));
+      transport.send({ type: 'join', payload: { name } });
+      const welcome = (messagesOf(received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+      guests.push({ transport, received, ...welcome });
+    }
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    return { manager, hostId, guests };
+  }
+
+  async function requestJoin(hostId: string, name: string) {
+    const transport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    transport.onMessage((message) => received.push(message));
+    transport.send({ type: 'join', payload: { name } });
+    return { transport, received };
+  }
+
+  const waitingNames = (manager: ConnectionManager) => manager.joinRequests.map((request) => request.name);
+
+  it('queues the request without a reply and without adding a player', async () => {
+    const { manager, hostId } = await startedGame();
+
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+
+    expect(latecomer.received.filter((m) => typeOf(m) !== 'state')).toEqual([]);
+    expect(waitingNames(manager)).toEqual(['Latecomer']);
+    expect(manager.room.players.map((p) => p.name)).toEqual(['Sam']);
+    expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam']);
+  });
+
+  it('tells the Host UI about every change of the waiting requests', async () => {
+    const changes: string[][] = [];
+    const { manager, hostId } = await startedGame(['Sam'], (names) => changes.push(names));
+
+    const first = await requestJoin(hostId, 'Kim');
+    await requestJoin(hostId, 'Lee');
+    manager.admitJoinRequest();
+    first.transport.close();
+
+    expect(changes).toEqual([['Kim'], ['Kim', 'Lee'], ['Lee']]);
+  });
+
+  it('admits the first request: the Guest gets a welcome and joins as an active player with the given Points', async () => {
+    const { manager, hostId } = await startedGame();
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+
+    manager.admitJoinRequest(70);
+
+    const welcome = (messagesOf(latecomer.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+    expect(welcome).toEqual({ playerId: expect.any(String), reconnectToken: expect.any(String) });
+    expect(playerIn(manager.gameState, welcome.playerId)).toEqual(
+      expect.objectContaining({ name: 'Latecomer', points: 70, status: 'active', connected: true }),
+    );
+    expect(playerIn(lastState(latecomer.received), welcome.playerId)).toEqual(expect.objectContaining({ name: 'Latecomer', points: 70 }));
+    expect(manager.room.players.map((p) => p.name)).toEqual(['Sam', 'Latecomer']);
+    expect(manager.room.playerCount).toBe(3);
+    expect(manager.joinRequests).toEqual([]);
+  });
+
+  it('keeps the current Challenger and Round when someone joins, and puts the Late Joiner last in the rotation', async () => {
+    const { manager, hostId } = await startedGame();
+    const before = manager.gameState!.round;
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+
+    manager.admitJoinRequest(100);
+    const { playerId } = (messagesOf(latecomer.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+
+    expect(manager.gameState?.round).toEqual(before);
+    expect(manager.gameState?.challengerId).toBe('host-1');
+    manager.resolveRound('YES');
+    manager.resolveRound('YES');
+    expect(manager.gameState?.challengerId).toBe(playerId);
+  });
+
+  it('lets the Late Joiner bet in the open Round at once', async () => {
+    const { manager, hostId } = await startedGame();
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+    manager.admitJoinRequest(100);
+    const { playerId } = (messagesOf(latecomer.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+
+    latecomer.transport.send({
+      type: 'placeBet',
+      payload: { amount: 10, prediction: 'YES', challengeId: manager.gameState!.round!.challengeId },
+    });
+
+    expect(manager.gameState?.round?.bets.map((bet) => bet.playerId)).toEqual([playerId]);
+  });
+
+  it('sends a Host who was ready to judge back to waiting for Bets', async () => {
+    const { manager, hostId, guests } = await startedGame();
+    guests[0].transport.send({
+      type: 'placeBet',
+      payload: { amount: 10, prediction: 'YES', challengeId: manager.gameState!.round!.challengeId },
+    });
+    expect(hostJudges(manager)).toBe(true);
+    await requestJoin(hostId, 'Latecomer');
+
+    manager.admitJoinRequest(100);
+
+    expect(hostJudges(manager)).toBe(false);
+  });
+
+  describe('the default Points', () => {
+    async function gameWhereSamLostPoints() {
+      const game = await startedGame(['Sam', 'Kim']);
+      const [sam] = game.guests;
+      sam.transport.send({
+        type: 'placeBet',
+        payload: { amount: 10, prediction: 'YES', challengeId: game.manager.gameState!.round!.challengeId },
+      });
+      game.manager.placeBet(game.guests[1].playerId, 5, 'NO', game.manager.gameState!.round!.challengeId);
+      game.manager.resolveRound('NO');
+      return { ...game, sam, kim: game.guests[1] };
+    }
+
+    it('is the lowest Points among active players, the Host included', async () => {
+      const { manager } = await gameWhereSamLostPoints();
+
+      expect(manager.defaultJoinPoints()).toBe(90);
+    });
+
+    it('ignores a paused player', async () => {
+      const { manager, sam } = await gameWhereSamLostPoints();
+      manager.pauseGuest(sam.playerId);
+
+      expect(manager.defaultJoinPoints()).toBe(100);
+    });
+
+    it('ignores a player who left', async () => {
+      const { manager, sam } = await gameWhereSamLostPoints();
+      sam.transport.send({ type: 'leave', payload: {} });
+
+      expect(manager.defaultJoinPoints()).toBe(100);
+    });
+
+    it('is what an admit uses when no Points are given', async () => {
+      const { manager, hostId } = await gameWhereSamLostPoints();
+      const latecomer = await requestJoin(hostId, 'Latecomer');
+
+      manager.admitJoinRequest();
+
+      const { playerId } = (messagesOf(latecomer.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+      expect(playerIn(manager.gameState, playerId)?.points).toBe(90);
+    });
+  });
+
+  it('declines the first request with JOIN_DECLINED, to that Guest only, and adds nobody', async () => {
+    const { manager, hostId, guests } = await startedGame();
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+
+    manager.declineJoinRequest();
+
+    expect(messagesOf(latecomer.received, 'rejected')).toEqual([
+      { type: 'rejected', seq: expect.any(Number), payload: { reason: 'JOIN_DECLINED', action: 'join' } },
+    ]);
+    expect(messagesOf(guests[0].received, 'rejected')).toEqual([]);
+    expect(manager.joinRequests).toEqual([]);
+    expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam']);
+  });
+
+  it('handles requests one at a time in arrival order', async () => {
+    const { manager, hostId } = await startedGame();
+    await requestJoin(hostId, 'Kim');
+    await requestJoin(hostId, 'Lee');
+
+    manager.declineJoinRequest();
+    expect(waitingNames(manager)).toEqual(['Lee']);
+    manager.admitJoinRequest(100);
+
+    expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam', 'Lee']);
+  });
+
+  it('drops a request whose connection closes before the Host answers, so it can never be admitted', async () => {
+    const { manager, hostId } = await startedGame();
+    const gone = await requestJoin(hostId, 'Gone');
+    await requestJoin(hostId, 'Stays');
+
+    gone.transport.close();
+    expect(waitingNames(manager)).toEqual(['Stays']);
+    manager.admitJoinRequest(100);
+
+    expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam', 'Stays']);
+  });
+
+  it('ignores an admit or a decline when nobody waits', async () => {
+    const { manager } = await startedGame();
+    const before = manager.gameState;
+
+    manager.admitJoinRequest(100);
+    manager.declineJoinRequest();
+
+    expect(manager.gameState).toBe(before);
+  });
+
+  it('keeps sending the heartbeat to a waiting Guest, bound or not', async () => {
+    const { manager, hostId, guests } = await startedGame();
+    guests[0].transport.close();
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+    latecomer.received.length = 0;
+
+    vi.advanceTimersByTime(HEARTBEAT_INTERVAL_MS);
+
+    expect(messagesOf(latecomer.received, 'state')).toHaveLength(1);
+    manager.close();
+  });
+
+  describe('the Room cap', () => {
+    const fullRoomPlayers = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({ playerId: `p${i}`, name: `Player ${i}`, connected: true }));
+
+    async function startedRoomWith(guestCount: number) {
+      const hostTransport = new FakeTransport();
+      const hostId = await hostTransport.connect();
+      const manager = new ConnectionManager(hostTransport, roomWith(fullRoomPlayers(guestCount)), () => {}, undefined, () => 'host-1');
+      manager.room = { ...manager.room, started: true };
+      manager.startGame();
+      manager.startRound();
+      return { manager, hostId };
+    }
+
+    it('answers ROOM_FULL at request time when the Room is full, and queues nothing', async () => {
+      const { manager, hostId } = await startedRoomWith(MAX_ROOM_PLAYERS - 1);
+
+      const overflow = await requestJoin(hostId, 'Overflow');
+
+      expect(messagesOf(overflow.received, 'rejected')).toEqual([
+        { type: 'rejected', seq: expect.any(Number), payload: { reason: 'ROOM_FULL', action: 'join' } },
+      ]);
+      expect(manager.joinRequests).toEqual([]);
+    });
+
+    it('answers ROOM_FULL at admission when the Room filled up while the request waited, and drops it', async () => {
+      const { manager, hostId } = await startedRoomWith(MAX_ROOM_PLAYERS - 2);
+      await requestJoin(hostId, 'Kim');
+      const second = await requestJoin(hostId, 'Lee');
+
+      manager.admitJoinRequest(100);
+      manager.admitJoinRequest(100);
+
+      expect(messagesOf(second.received, 'rejected')).toEqual([
+        { type: 'rejected', seq: expect.any(Number), payload: { reason: 'ROOM_FULL', action: 'join' } },
+      ]);
+      expect(manager.room.playerCount).toBe(MAX_ROOM_PLAYERS);
+      expect(manager.joinRequests).toEqual([]);
+    });
+  });
+
+  it('gives a name that clashes with an existing player the "(n)" suffix', async () => {
+    const { manager, hostId } = await startedGame(['Sam']);
+    await requestJoin(hostId, 'Sam');
+    manager.admitJoinRequest(100);
+    await requestJoin(hostId, 'Sam');
+    manager.admitJoinRequest(100);
+
+    expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam', 'Sam (2)', 'Sam (3)']);
+    expect(manager.room.players.map((p) => p.name)).toEqual(['Sam', 'Sam (2)', 'Sam (3)']);
+  });
+
+  describe.each([
+    ['Left', (_manager: ConnectionManager, sam: { transport: FakeTransport; playerId: string }) => sam.transport.send({ type: 'leave', payload: {} })],
+    ['was Removed', (manager: ConnectionManager, sam: { playerId: string }) => manager.removeGuest(sam.playerId)],
+  ])('a Guest who %s', (_label, goAway) => {
+    it('asks the same way and returns as a new player with a new row, keeping the old one removed', async () => {
+      const { manager, hostId, guests } = await startedGame(['Sam', 'Kim']);
+      const [sam] = guests;
+      goAway(manager, sam);
+      vi.advanceTimersByTime(300);
+
+      const returning = await requestJoin(hostId, 'Sam');
+      manager.admitJoinRequest(100);
+
+      const { playerId } = (messagesOf(returning.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+      expect(playerId).not.toBe(sam.playerId);
+      expect(playerIn(manager.gameState, sam.playerId)?.status).toBe('removed');
+      expect(playerIn(manager.gameState, playerId)).toEqual(expect.objectContaining({ name: 'Sam', status: 'active', points: 100 }));
+      expect(manager.gameState?.players).toHaveLength(4);
+    });
+  });
+
+  it('does not persist waiting requests: a Host that resumes the saved session starts with none', async () => {
+    const sessions: HostSession[] = [];
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(
+      hostTransport, roomWith([]), () => {}, undefined, () => 'host-1', () => {}, (session) => sessions.push(session),
+    );
+    await joinAndAwaitWelcome(hostId, 'Sam');
+    manager.room = { ...manager.room, started: true };
+    manager.startGame();
+    manager.startRound();
+    await requestJoin(hostId, 'Latecomer');
+    manager.rebroadcastState();
+    const saved = sessions.at(-1)!;
+
+    const reopenedTransport = new FakeTransport();
+    await reopenedTransport.connect();
+    const reopened = new ConnectionManager(reopenedTransport, saved.room, () => {});
+    reopened.resume(saved);
+
+    expect(JSON.stringify(saved)).not.toContain('Latecomer');
+    expect(reopened.joinRequests).toEqual([]);
   });
 });

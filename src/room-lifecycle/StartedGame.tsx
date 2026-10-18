@@ -28,6 +28,7 @@ import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
+import { JoinRequestDialog } from './JoinRequestDialog';
 import { HomeDialog } from './HomeDialog';
 import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
 import { isHostRoom } from './room-role';
@@ -55,6 +56,12 @@ type Props = {
   /** The Room Code for which this Guest has locally observed the Host's game-started broadcast — see `resolveStartedGameView`. */
   guestGameStartedCode: string | null;
   gameState: GameState | null;
+  /** Host only: names of the Guests waiting to be let into the Game, oldest first. */
+  joinRequests: string[];
+  /** Host only: admits the oldest Join Request. */
+  onAdmitJoin: () => void;
+  /** Host only: declines the oldest Join Request. */
+  onDeclineJoin: () => void;
   /** `context` identifies the Round and local player, so a Guest's Bet can be confirmed against later `state` broadcasts. */
   onPlaceBet: (payload: PlaceBetPayload, context: PlaceBetContext) => void;
   /** Round key of a Bet that never reached the Host — the Bettor may lock in again. */
@@ -112,6 +119,9 @@ export function StartedGame({
   room,
   guestGameStartedCode,
   gameState,
+  joinRequests,
+  onAdmitJoin,
+  onDeclineJoin,
   onPlaceBet,
   betFailedRoundKey,
   onReconnectGaveUp,
@@ -135,6 +145,7 @@ export function StartedGame({
   const t = useT();
   const { language } = useLanguage();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
   const isGuestUnresolved = !isHostRoom(code, room) && guestGameStartedCode !== code;
@@ -418,6 +429,23 @@ export function StartedGame({
   }
 
   const leaderboardBadge = leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />;
+  const answerJoinRequest = (answer: () => void) => {
+    setJoinDialogOpen(false);
+    answer();
+  };
+  const joinRequestOverlay = joinDialogOpen && joinRequests.length > 0 && (
+    <JoinRequestDialog
+      name={joinRequests[0]}
+      onApprove={() => answerJoinRequest(onAdmitJoin)}
+      onDecline={() => answerJoinRequest(onDeclineJoin)}
+      onClose={() => setJoinDialogOpen(false)}
+    />
+  );
+  const joinRequestBanner = isHostRoom(code, room) && joinRequests.length > 0 && (
+    <button class="vb-join-banner" type="button" onClick={() => setJoinDialogOpen(true)}>
+      {t('joinRequest.banner', { count: joinRequests.length })}
+    </button>
+  );
   const leaderboardOverlay = (
     <>
       {leaderboardOpen && <LeaderboardSheet
@@ -426,6 +454,7 @@ export function StartedGame({
           onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)}
           onRemoveGuest={onRemoveGuest}
         />}
+      {joinRequestOverlay}
       {dialogOverlay}
     </>
   );
@@ -453,6 +482,7 @@ export function StartedGame({
       topRight={leaderboardBadge}
       overlay={leaderboardOverlay}
     >
+      {joinRequestBanner}
       {roundControls.kind === 'no-active-guests' ? (
         <>
           <div class="vb-giant-title vb-title-small">{t('noActive.title')}</div>

@@ -44,7 +44,7 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 
 | type       | payload                  | notes                                                                                                                                 |
 |------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`.                                 |
+| `join`     | `{ name }`               | Sent once, as the first message on a fresh connection, when the Guest has no stored `reconnectToken`. In the Lobby the Host answers at once with `welcome`. After Start it is a Join Request: the Host holds it until it admits (`welcome`) or declines (`rejected`, `JOIN_DECLINED`), see [Join after Start](#join-after-start). |
 | `rejoin`   | `{ reconnectToken }`     | Sent once, as the first message on a fresh connection, when the Guest has a stored `reconnectToken` from a prior session.             |
 | `placeBet` | `{ amount, prediction, challengeId }` | Actor derived from the connection binding. `challengeId` is the Challenge the Bettor saw when betting. Confirmed only by a `state` showing the Bet; refused with `rejected` (`action: 'placeBet'`), including `STALE_CHALLENGE` when `challengeId` no longer matches the Round's Challenge. |
 | `leave`    | `{}`                     | Self-triggered alias for the same remove logic as a Host-initiated Remove (see ADR 0003) — actor derived from the connection binding. Before the Game starts the Guest leaves the Lobby roster; in the Game their row stays in `players` as `status: 'removed'` with their last Points. Either way their reconnect token is deleted, so a later `rejoin` is refused with `UNKNOWN_PLAYER`. |
@@ -55,13 +55,40 @@ Room access control is the shareable link/`peerId` alone (per ADR 0001) — no s
 | type       | payload                        | notes                                                                                                                                                                                                                     |
 |------------|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `welcome`  | `{ playerId, reconnectToken }` | Sent once, immediately after a successful `join`/`rejoin`, only to that connection. The one and only time `reconnectToken` is transmitted.                                                                                |
-| `rejected` | `{ reason, action }`           | Sent only to the Guest whose action was rejected. `action` echoes the offending message's `type` for the Guest's own error handling. `reason` is an extensible string enum (e.g. `INVALID_BET_AMOUNT`, `UNKNOWN_PLAYER`, `STALE_CHALLENGE`). |
+| `rejected` | `{ reason, action }`           | Sent only to the Guest whose action was rejected. `action` echoes the offending message's `type` for the Guest's own error handling. `reason` is an extensible string enum (e.g. `INVALID_BET_AMOUNT`, `UNKNOWN_PLAYER`, `STALE_CHALLENGE`, `ROOM_FULL`, `JOIN_DECLINED`). |
 
 ### Host → all Guests
 
 | type    | payload                                        | notes                                                                                                                                                |
 |---------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `state` | `{ epoch, version, snapshot }` (see Heartbeat) | `snapshot` is the full `GameState` (see below), identical for every recipient, sent after every state-changing action and as a heartbeat. No deltas/patches. |
+
+### Join after Start
+
+A `join` after the Game started is a Join Request (see the glossary). There is no new message type:
+
+- **Queue.** The Host does not answer at once. It keeps the request in memory, in arrival order, with the connection it
+  came on. If the Room already holds 20 players (`MAX_ROOM_PLAYERS`, the Host included) it answers `rejected` with
+  `ROOM_FULL` and `action: 'join'` instead, and queues nothing. The queue is never persisted: a Host reload drops it,
+  and the Guests, whose connections closed, see "Can't reach the Host" and may ask again.
+- **Admit.** The Host handles the oldest request, with the starting Points it sets (default: the lowest Points among
+  players with `status: 'active'`, the Host included). It checks the cap again, adds the "(n)" suffix to a name that
+  clashes with a player in the Game, creates the player, mints the `reconnectToken`, binds the connection, sends
+  `welcome` and broadcasts `state`. The Late Joiner is `status: 'active'` at once, last in the Challenger rotation; the
+  current Challenger and Round stay. A Host who was ready to judge goes back to waiting for Bets, as after a Resume.
+  A Guest who Left or was Removed asks the same way and returns as a new player with a new `playerId`; the old
+  `removed` row stays.
+- **Decline.** `rejected` with `reason: 'JOIN_DECLINED'` and `action: 'join'`, only to that connection. The Guest may
+  send a new `join`.
+- **Cancel.** There is no cancel message. The Guest closes its transport, and the Host drops the queued request when
+  that connection closes, so it can never admit a Guest who has gone.
+- **The wait.** The Guest's 8 s connection timeout covers only opening the connection; there is no reply timeout for the
+  answer, since it waits for a person. The Host's heartbeat goes to every open connection, bound or not, and the Guest
+  arms its 9 s host-silence watcher as soon as it has sent `join`, so a silent Host ends the wait with "Can't reach the
+  Host". Until `welcome` the Guest ignores `state` broadcasts (they still count as signs of life), so it never reaches
+  the Game as an unbound spectator.
+
+A Guest on an older build gets no `welcome` within 8 s and shows "unreachable". Accepted, as the developer is the only user.
 
 ### Heartbeat and `state` payload
 
@@ -72,9 +99,9 @@ The `state` payload wraps the snapshot: `{ epoch: string, version: number, snaps
 - `version`: starts at 0 on every Host boot and rises by one only when the snapshot differs from the previous broadcast.
   Never persisted. (`seq` is unchanged: it still rises on every Host message.)
 - **Heartbeat:** from Room creation (Lobby and Game) the Host re-sends the current `state` every 3 s
-  (`HEARTBEAT_INTERVAL_MS`). It sends nothing while no Guest is connected, stops when the Room closes, and changes
+  (`HEARTBEAT_INTERVAL_MS`). It sends nothing while no Guest is connected and no Join Request waits, stops when the Room closes, and changes
   neither the Host's game state nor the saved session.
-- **Guest handling:** every `state` is a sign of life. The Guest skips its re-render and Bet-confirmation work when
+- **Guest handling:** every `state` is a sign of life, also before `welcome`. The Guest skips its re-render and Bet-confirmation work when
   `epoch` and `version` both equal the last pair it saw; it never drops a message for a lower `version`. 9 s without
   any `state` (`HOST_SILENCE_TIMEOUT_MS`) means the link is lost and the Guest starts its reconnect loop. A sent Bet
   with no confirming `state` after 4 s (`BET_CONFIRMATION_TIMEOUT_MS`) is treated the same way.

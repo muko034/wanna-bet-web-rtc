@@ -32,8 +32,10 @@ function stateWith(players: TestPlayer[]): GameState {
 
 const t = (key: MessageKey, params?: MessageParams) => translate(dictionaries.pl, key, params);
 
-function renderAs(role: 'host' | 'guest', gameState: GameState) {
+function renderAs(role: 'host' | 'guest', gameState: GameState, joinRequests: string[] = []) {
   const props = {
+    onAdmitJoin: vi.fn(),
+    onDeclineJoin: vi.fn(),
     onPauseGuest: vi.fn(),
     onResumeGuest: vi.fn(),
     onRemoveGuest: vi.fn(),
@@ -45,12 +47,13 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
   if (role === 'guest') {
     saveIdentity(localStorage, CODE, { playerId: alex.playerId, reconnectToken: 'token' });
   }
-  const screen = (state: GameState) => (
+  const screen = (state: GameState, requests: string[] = joinRequests) => (
     <StartedGame
       code={CODE}
       room={role === 'host' ? room : null}
       guestGameStartedCode={role === 'guest' ? CODE : null}
       gameState={state}
+      joinRequests={requests}
       onPlaceBet={noop}
       betFailedRoundKey={null}
       onReconnectGaveUp={noop}
@@ -75,7 +78,7 @@ function renderAs(role: 'host' | 'guest', gameState: GameState) {
     if (badge) fireEvent.click(badge);
   };
   openLeaderboard();
-  return { ...props, openLeaderboard, rerender: (state: GameState) => rerender(screen(state)) };
+  return { ...props, openLeaderboard, rerender: (state: GameState, requests: string[] = joinRequests) => rerender(screen(state, requests)) };
 }
 
 const menuButton = (name: string) => screen.queryByRole('button', { name: t('hostMenu.open', { name }) });
@@ -338,5 +341,95 @@ describe('a Guest the Host removed', () => {
     rerender({ ...removedState(), status: 'ended', round: null });
 
     expect(screen.getByText(t('removed.title'))).toBeTruthy();
+  });
+});
+
+describe('Join Requests on the Host screen', () => {
+  const banner = (count: number) => screen.queryByRole('button', { name: t('joinRequest.banner', { count }) });
+  const requestDialog = (name: string) => screen.queryByRole('dialog', { name: t('joinRequest.title', { name }) });
+
+  it('shows no banner while nobody waits', () => {
+    renderAs('host', stateWith([host, alex]));
+
+    expect(document.querySelector('.vb-join-banner')).toBeNull();
+  });
+
+  it('shows the Host a banner with the number of waiting requests, which opens nothing by itself', () => {
+    renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
+
+    expect(banner(2)).not.toBeNull();
+    expect(requestDialog('Kim')).toBeNull();
+  });
+
+  it('keeps the banner next to the Host judging a Round, and keeps the count live', () => {
+    const judging: GameState = { ...stateWith([host, alex]), round: { challengerId: 'host-1', challengeId: challengeBank[0].id, bets: [{ playerId: 'guest-1' }], outcome: null } };
+    const { rerender } = renderAs('host', judging, ['Kim']);
+
+    expect(screen.getByText(t('judge.subtitle'))).toBeTruthy();
+    expect(banner(1)).not.toBeNull();
+
+    rerender(judging, ['Kim', 'Lee', 'Max']);
+
+    expect(banner(3)).not.toBeNull();
+  });
+
+  it('never shows a Guest the banner', () => {
+    renderAs('guest', stateWith([host, alex]), ['Kim']);
+
+    expect(document.querySelector('.vb-join-banner')).toBeNull();
+  });
+
+  it('opens a dialog naming the oldest requester, with Approve and Decline', () => {
+    renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
+
+    fireEvent.click(banner(2)!);
+
+    expect(requestDialog('Kim')).not.toBeNull();
+    expect(screen.getByRole('button', { name: t('joinRequest.approve') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t('joinRequest.decline') })).toBeTruthy();
+  });
+
+  it('admits when the Host approves, and closes the dialog', () => {
+    const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
+    fireEvent.click(banner(1)!);
+
+    fireEvent.click(screen.getByRole('button', { name: t('joinRequest.approve') }));
+
+    expect(onAdmitJoin).toHaveBeenCalledTimes(1);
+    expect(onDeclineJoin).not.toHaveBeenCalled();
+    expect(requestDialog('Kim')).toBeNull();
+  });
+
+  it('declines when the Host declines, and closes the dialog', () => {
+    const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
+    fireEvent.click(banner(1)!);
+
+    fireEvent.click(screen.getByRole('button', { name: t('joinRequest.decline') }));
+
+    expect(onDeclineJoin).toHaveBeenCalledTimes(1);
+    expect(onAdmitJoin).not.toHaveBeenCalled();
+    expect(requestDialog('Kim')).toBeNull();
+  });
+
+  it('answers nothing when the Host dismisses the dialog, and the request keeps waiting', () => {
+    const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
+    fireEvent.click(banner(1)!);
+
+    fireEvent.click(document.querySelector('.vb-dialog-backdrop')!);
+
+    expect(requestDialog('Kim')).toBeNull();
+    expect(onAdmitJoin).not.toHaveBeenCalled();
+    expect(onDeclineJoin).not.toHaveBeenCalled();
+    expect(banner(1)).not.toBeNull();
+  });
+
+  it('closes the dialog when its request goes away, e.g. the Guest cancelled', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim']);
+    fireEvent.click(banner(1)!);
+
+    rerender(stateWith([host, alex]), []);
+
+    expect(document.querySelector('.vb-dialog')).toBeNull();
+    expect(document.querySelector('.vb-join-banner')).toBeNull();
   });
 });

@@ -10,7 +10,7 @@ export type JoinResult =
   | { status: 'invalid-room' }
   | { status: 'unreachable' }
   | { status: 'room-full' }
-  | { status: 'game-started' };
+  | { status: 'join-declined' };
 
 export type RejoinResult =
   | { status: 'joined'; playerId: string; reconnectToken: string }
@@ -19,7 +19,8 @@ export type RejoinResult =
   | { status: 'unknown-player' };
 
 /**
- * How long `connectAndSend` waits for `transport.connect()` to settle before treating the
+ * How long `connectAndSend` waits for `transport.connect()` to settle (or, for a `rejoin`, for
+ * the reply to follow) before treating the
  * Host as unreachable. A real WebRTC connection attempt that gets no response at all (the
  * Host is gone without cleanly deregistering, a network partition) never rejects on its
  * own — there is no PeerJS error event for "nothing answered" — so without this timeout the
@@ -29,6 +30,15 @@ const CONNECT_TIMEOUT_MS = 8_000;
 
 /** How long a Guest tolerates hearing nothing from the Host (three missed heartbeats) before treating the link as lost. */
 export const HOST_SILENCE_TIMEOUT_MS = 9_000;
+
+type ConnectHooks = {
+  /** With `false`, the timeout bounds only opening the connection, not the Host's reply. */
+  replyTimeout?: boolean;
+  /** Runs right after the request left. */
+  onSent?: () => void;
+  /** Runs the moment the Host's `welcome` or `rejected` arrives, before the returned promise settles. */
+  onReply?: () => void;
+};
 
 function afterTimeout(ms: number): Promise<'timed-out'> {
   return new Promise((resolve) => setTimeout(() => resolve('timed-out'), ms));
@@ -40,6 +50,9 @@ function afterTimeout(ms: number): Promise<'timed-out'> {
  * connects, sends via `send`, and awaits the Host's `welcome`/`rejected` reply — mapping a
  * `rejected` reply's reason via `onRejected`. Races the connect attempt against `timeout`,
  * resolving `unreachable` if nothing (success or error) comes back within `CONNECT_TIMEOUT_MS`.
+ * With `replyTimeout: false` the timeout covers only opening the connection: once the request is
+ * sent, the reply may take as long as the Host needs (a Join Request waits for a person), and a
+ * silent Host is caught by the Guest's host-silence watcher instead.
  */
 function connectAndSend<Result extends { status: string }>(
   transport: Transport,
@@ -48,33 +61,45 @@ function connectAndSend<Result extends { status: string }>(
   send: (protocol: GuestProtocol) => void,
   onRejected: (reason: string) => Result,
   timeout: (ms: number) => Promise<'timed-out'> = afterTimeout,
+  { replyTimeout = true, onSent, onReply }: ConnectHooks = {},
 ): Promise<Result | { status: 'joined'; playerId: string; reconnectToken: string } | { status: 'invalid-room' } | { status: 'unreachable' }> {
   const transportId = registry.transportIdFor(code);
+  let connected = false;
 
   const connectAttempt = new Promise<Result | { status: 'joined'; playerId: string; reconnectToken: string } | { status: 'invalid-room' } | { status: 'unreachable' }>((resolve) => {
     transport
       .connect(transportId)
       .then(() => {
+        connected = true;
         const protocol = new GuestProtocol(transport);
         protocol.on('welcome', (payload) => {
+          onReply?.();
           resolve({ status: 'joined', playerId: payload.playerId, reconnectToken: payload.reconnectToken });
         });
         protocol.on('rejected', (payload) => {
+          onReply?.();
           resolve(onRejected(payload.reason));
         });
         send(protocol);
+        onSent?.();
       })
       .catch((error) => resolve({ status: error instanceof PeerUnavailableError ? 'invalid-room' : 'unreachable' }));
   });
 
-  return Promise.race([connectAttempt, timeout(CONNECT_TIMEOUT_MS).then((): { status: 'unreachable' } => ({ status: 'unreachable' }))]);
+  const timedOut = timeout(CONNECT_TIMEOUT_MS).then((): Promise<{ status: 'unreachable' }> =>
+    !replyTimeout && connected ? new Promise(() => {}) : Promise.resolve({ status: 'unreachable' }),
+  );
+  return Promise.race([connectAttempt, timedOut]);
 }
 
 /**
  * Guest-side join flow, for a Guest with no stored identity yet: sends `join` and awaits
  * the Host's `welcome`/`rejected` reply. Reports a clear, distinct result for an invalid
- * Room Code (no Host reachable under its derived id), an unreachable Host, and a full
- * Room, rather than leaving the caller to interpret a raw connection failure.
+ * Room Code (no Host reachable under its derived id), an unreachable Host, a full
+ * Room and a declined Join Request, rather than leaving the caller to interpret a raw
+ * connection failure. After Start the Host holds the request until the Host answers, so there is
+ * no reply timeout: only opening the connection is bounded. `onSent` runs once the
+ * `join` has left, which is when the Guest starts to wait; `onReply` runs the moment the Host answers.
  */
 export function joinRoom(
   transport: Transport,
@@ -82,6 +107,7 @@ export function joinRoom(
   code: string,
   name: string,
   timeout: (ms: number) => Promise<'timed-out'> = afterTimeout,
+  hooks: Pick<ConnectHooks, 'onSent' | 'onReply'> = {},
 ): Promise<JoinResult> {
   return connectAndSend(
     transport,
@@ -90,10 +116,11 @@ export function joinRoom(
     (protocol) => protocol.join({ name }),
     (reason) => (
       reason === 'ROOM_FULL' ? { status: 'room-full' } :
-      reason === 'GAME_STARTED' ? { status: 'game-started' } :
+      reason === 'JOIN_DECLINED' ? { status: 'join-declined' } :
       { status: 'invalid-room' }
     ),
     timeout,
+    { ...hooks, replyTimeout: false },
   );
 }
 
@@ -128,10 +155,10 @@ export function rejoinRoom(
  * start" screen — there is no separate "game started" message, just the first `state`
  * broadcast, since Round Engine state itself carries no earlier status a Guest could act on.
  */
-export function watchForGameStart(transport: Transport, onGameStarted: () => void): void {
+export function watchForGameStart(transport: Transport, onGameStarted: () => void, isAccepting: () => boolean = () => true): void {
   const protocol = new GuestProtocol(transport);
   protocol.on('state', (payload) => {
-    if (payload.snapshot.status === 'active') {
+    if (isAccepting() && payload.snapshot.status === 'active') {
       onGameStarted();
     }
   });
@@ -153,16 +180,32 @@ export function watchForGameEnd(transport: Transport, onGameEnded: () => void): 
  * heartbeat repeats an unchanged snapshot, which must not re-render. A lower `version` is
  * still applied, and a different `epoch` (a restarted Host) always is.
  */
-export function watchGameState(transport: Transport, onGameState: (state: GameState) => void): void {
+export function watchGameState(transport: Transport, onGameState: (state: GameState) => void, isAccepting: () => boolean = () => true): void {
   const protocol = new GuestProtocol(transport);
   let last: { epoch: string; version: number } | null = null;
   protocol.on('state', ({ epoch, version, snapshot }) => {
+    if (!isAccepting()) {
+      return;
+    }
     if (last?.epoch === epoch && last.version === version) {
       return;
     }
     last = { epoch, version };
     onGameState(snapshot);
   });
+}
+
+/**
+ * Watches a Guest's own `transport` for the Host's `welcome`. Returns whether it has arrived: until then this
+ * connection is not bound to a player, so the `state` broadcasts it hears (the Host sends them to
+ * every open connection) must not take the Guest anywhere.
+ */
+export function watchForWelcome(transport: Transport): () => boolean {
+  let welcomed = false;
+  new GuestProtocol(transport).on('welcome', () => {
+    welcomed = true;
+  });
+  return () => welcomed;
 }
 
 /**

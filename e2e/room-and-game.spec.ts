@@ -4,7 +4,7 @@ import { expect, test as base, type Page } from '@playwright/test';
  * A Host and a Guest, each in its own browser context, so their `localStorage` (identity,
  * saved Room) is separate like two real devices.
  */
-const test = base.extend<{ host: Page; guest: Page }>({
+const test = base.extend<{ host: Page; guest: Page; latecomer: Page }>({
   host: async ({ browser }, use) => {
     const context = await browser.newContext();
     // The first Challenger is a random pick. Halving every `Math.random` result makes the Host
@@ -17,6 +17,11 @@ const test = base.extend<{ host: Page; guest: Page }>({
     await context.close();
   },
   guest: async ({ browser }, use) => {
+    const context = await browser.newContext();
+    await use(await context.newPage());
+    await context.close();
+  },
+  latecomer: async ({ browser }, use) => {
     const context = await browser.newContext();
     await use(await context.newPage());
     await context.close();
@@ -117,4 +122,24 @@ test('Host removes a Guest in the Lobby, and the Guest lands on the removed scre
 
   await guest.reload();
   await expect(guest.getByPlaceholder('Your name')).toBeVisible();
+});
+
+test('a Guest asks to join the started Game, the Host admits, and the Guest bets in the open Round', async ({ host, guest, latecomer }) => {
+  const code = await createRoom(host, 'Hanna');
+  await joinRoom(guest, code, 'Gus');
+  await expect(host.getByText('Gus', { exact: true })).toBeVisible();
+  await host.getByRole('button', { name: 'Start game' }).click();
+  await expect(guest.getByRole('button', { name: 'Lock in bet' })).toBeVisible();
+
+  await joinRoom(latecomer, code, 'Lena');
+  await expect(latecomer.getByText('Waiting for the Host to let you in')).toBeVisible();
+
+  await host.getByRole('button', { name: 'Waiting to join: 1' }).click();
+  await host.getByRole('dialog', { name: 'Lena wants to join' }).getByRole('button', { name: 'Approve' }).click();
+
+  await latecomer.getByRole('button', { name: 'YES', exact: true }).click();
+  await latecomer.getByRole('button', { name: 'Lock in bet' }).click();
+
+  await expect(latecomer.getByText(/You bet \d+ pts on YES/)).toBeVisible();
+  await expect(host.getByRole('button', { name: /Waiting to join/ })).toHaveCount(0);
 });

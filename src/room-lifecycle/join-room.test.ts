@@ -72,13 +72,80 @@ describe('joinRoom', () => {
     expect(result).toEqual({ status: 'room-full' });
   });
 
-  it('resolves with a "game already started" error and does not connect, once the Room\'s game has started', async () => {
-    const registry = new RoomRegistry();
-    const code = await hostRoom(registry, roomWith([], { started: true }));
+  describe('on a started Game', () => {
+    afterEach(() => vi.useRealTimers());
 
-    const result = await joinRoom(new FakeTransport(), registry, code, 'Latecomer');
+    async function startedHost(registry: RoomRegistry) {
+      const hostTransport = new FakeTransport();
+      const code = registry.generate();
+      await hostTransport.connect(undefined, registry.transportIdFor(code));
+      const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+      manager.room = { ...manager.room, started: true };
+      manager.startGame();
+      manager.startRound();
+      return { code, manager };
+    }
 
-    expect(result).toEqual({ status: 'game-started' });
+    it('waits for the Host to answer, with no reply timeout, and resolves joined once the Host admits', async () => {
+      vi.useFakeTimers();
+      const registry = new RoomRegistry();
+      const { code, manager } = await startedHost(registry);
+      let result: Awaited<ReturnType<typeof joinRoom>> | undefined;
+      joinRoom(new FakeTransport(), registry, code, 'Latecomer').then((r) => (result = r));
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(result).toBeUndefined();
+      manager.admitJoinRequest(100);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(result).toEqual({ status: 'joined', playerId: expect.any(String), reconnectToken: expect.any(String) });
+    });
+
+    it('resolves "join-declined" when the Host declines', async () => {
+      const registry = new RoomRegistry();
+      const { code, manager } = await startedHost(registry);
+      const result = joinRoom(new FakeTransport(), registry, code, 'Latecomer');
+      await vi.waitFor(() => expect(manager.joinRequests).toHaveLength(1));
+
+      manager.declineJoinRequest();
+
+      expect(await result).toEqual({ status: 'join-declined' });
+    });
+
+    it('resolves "room-full" when the Room is full at request time', async () => {
+      const registry = new RoomRegistry();
+      const hostTransport = new FakeTransport();
+      const code = registry.generate();
+      await hostTransport.connect(undefined, registry.transportIdFor(code));
+      const guests = Array.from({ length: 19 }, (_, i) => ({ playerId: `p${i}`, name: `Player ${i}`, connected: true }));
+      const manager = new ConnectionManager(hostTransport, roomWith(guests), () => {});
+      manager.room = { ...manager.room, started: true };
+      manager.startGame();
+      manager.startRound();
+
+      expect(await joinRoom(new FakeTransport(), registry, code, 'Overflow')).toEqual({ status: 'room-full' });
+    });
+
+    it('tells the caller once the request is sent, and not before the connection opened', async () => {
+      const registry = new RoomRegistry();
+      const { code, manager } = await startedHost(registry);
+      const onRequestSent = vi.fn();
+
+      const result = joinRoom(new FakeTransport(), registry, code, 'Latecomer', undefined, { onSent: onRequestSent });
+      expect(onRequestSent).not.toHaveBeenCalled();
+      await vi.waitFor(() => expect(onRequestSent).toHaveBeenCalledTimes(1));
+      manager.admitJoinRequest(100);
+
+      expect((await result).status).toBe('joined');
+    });
+
+    it('still gives up on the connection after the connect timeout when the Host never opens it', async () => {
+      const registry = new RoomRegistry();
+      const transport = new FakeTransport();
+      vi.spyOn(transport, 'connect').mockReturnValue(new Promise(() => {}));
+
+      expect(await joinRoom(transport, registry, registry.generate(), 'Latecomer', async () => 'timed-out')).toEqual({ status: 'unreachable' });
+    });
   });
 });
 

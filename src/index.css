@@ -354,6 +354,20 @@ input {
   text-align: center;
   animation: vb-banner-drop 3.5s ease-out forwards;
 }
+.vb-join-banner {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  color: #1c1c1e;
+  font-family: inherit;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
 .vb-change-hint {
   display: block;
   font-size: 12px;

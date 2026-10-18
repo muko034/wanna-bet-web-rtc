@@ -57,6 +57,17 @@ Each round, players try to predict whether the challenger will succeed at a chal
   Removing the last guest ends the room.
 - The host can also remove a guest in the lobby, before the game starts, after confirming by name. Nobody else is told: the
   guest simply leaves the roster. The removed guest may join again as a new player.
+- Once the game started, someone with the invite link can ask to join. The host sees the request and admits or
+  declines it; in the lobby nobody asks, guests enter at once. The host handles requests one at a time, in arrival
+  order, and a request disappears if the guest cancels or closes the page before the host answers.
+- An admitted player (a late joiner) is an active bettor at once, even in an open round, and is last in the challenger
+  rotation. The current challenger and round stay, and a host who was ready to judge goes back to waiting for the new
+  bettor's bet. The late joiner starts with the points the host sets; by default the lowest points among active
+  players, the host included. A name that matches a player in the game gets a "(n)" suffix.
+- A declined guest may ask again. A guest who left or was removed asks the same way and returns as a new player with
+  new points; the old row stays removed.
+- The room holds at most 20 players, the host included. A request that arrives when the room is full is refused, and
+  the cap is checked again when the host admits.
 - There is no automatic skipping for a disconnected player — a round waits for them unless the host pauses or removes them.
 
 ## Game ending
