@@ -102,7 +102,7 @@ Bettor's gain and the Challenger's gain/loss are separate flows, not drawn from 
 superseded — see below)
 
 **Points**:
-A player's score. Starts at 100. Floored at 1 — a Bet can never reduce a player to 0, and a player with exactly 1 Point
+A player's score. Starts at 100, except for a Late Joiner, whose starting Points the Host sets. Floored at 1 — a Bet can never reduce a player to 0, and a player with exactly 1 Point
 may still Bet their full 1 Point. _Avoid_: Score, chips
 
 **Leaderboard**:
@@ -120,6 +120,17 @@ Bets/rotation until the Host resumes them), **Resume** (ends a Host Pause; a Sit
 player cannot undo it by stepping away and returning. There is no automatic disconnect handling — a disconnected player
 who hasn't been Paused or Removed is still waited on. _Avoid_: Kick, ban, timeout
 
+**Join Request**:
+A Guest's request to enter a Room whose Game has already started. It waits until the Host admits or declines it; the
+requester is not yet a player. Admitting sets the starting Points and makes the requester a Late Joiner; declining lets
+them ask again. A Guest who Left or was Removed asks the same way and returns as a new player. In the Lobby there is no
+Join Request: Guests enter at once. _Avoid_: Knock, application, pending player
+
+**Late Joiner**:
+A Guest admitted after the Game started. An active Bettor from the moment of admission, even in an open Round, and
+last in the Challenger rotation. _Avoid_: Mid-game joiner, new player (a Left or Removed Guest who returns is also a
+new player, but not always late)
+
 **Sit Out**:
 A Guest's own voluntary step away from the Game without Leaving. The Guest is skipped from Bets/rotation like a Paused
 player and returns by rejoining the Room. Returning never undoes a Pause set by the Host. _Avoid_: Self-Pause, away,
@@ -127,7 +138,8 @@ idle
 
 **Leave**:
 A player's own voluntary exit from the Room, self-triggered rather than Host-initiated. For a Guest, produces the
-identical outcome as a Host Remove (permanent, no path back) but is not itself a Host Admin Action — it's
+identical outcome as a Host Remove (permanent: no path back to the same player — a returning Guest is a new player,
+see Join Request) but is not itself a Host Admin Action — it's
 self-service, not moderation. When the Host Leaves, the Room ends for everyone (see Game Result Screen) and cannot be
 reopened. _Avoid_: Quit, disconnect (a dropped connection alone is not a Leave — see Host Admin Action)
 
