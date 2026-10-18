@@ -127,6 +127,19 @@ describe('a Guest waiting to be let into a started Game', () => {
     expect(props.onGameState).not.toHaveBeenCalled();
   });
 
+  it('ends in "can\'t reach the Host" at once when the Host reloads, since its queue is gone', async () => {
+    const { code, hostTransport, manager } = await hostStartedRoom();
+    renderJoinRoom(code);
+    await askToJoin();
+    expect(manager.joinRequests).toHaveLength(1);
+
+    hostTransport.close();
+    await settle();
+
+    expect(screen.getByText(t('joinRoom.unreachableTitle'))).not.toBeNull();
+    expect(waitingTitle()).toBeNull();
+  });
+
   it('can ask again from "can\'t reach the Host"', async () => {
     const { code, hostTransport } = await hostStartedRoom();
     renderJoinRoom(code);
