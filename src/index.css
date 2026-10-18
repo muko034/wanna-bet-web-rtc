@@ -508,7 +508,7 @@ input {
   opacity: 0.65;
   margin-top: 2px;
 }
-.vb-disconnected {
+.vb-score-sub.disconnected {
   color: #ffd27c;
   opacity: 1;
 }
