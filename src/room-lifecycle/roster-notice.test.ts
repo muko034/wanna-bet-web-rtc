@@ -47,6 +47,30 @@ describe('resolveRosterNotices', () => {
     expect(resolveRosterNotices(stateWith([host, paused]), stateWith([host, alex]), 'guest-1')).toEqual([]);
   });
 
+  it('announces a player who just joined, with the starting Points', () => {
+    const late = { ...sam, points: 40 };
+
+    expect(resolveRosterNotices(stateWith([host, alex]), stateWith([host, alex, late]), 'guest-1')).toEqual([
+      { key: 'notice.joined', params: { name: 'Sam', points: 40 } },
+    ]);
+    expect(resolveRosterNotices(stateWith([host, alex]), stateWith([host, alex, late]), 'host-1')).toEqual([
+      { key: 'notice.joined', params: { name: 'Sam', points: 40 } },
+    ]);
+  });
+
+  it('announces a join to a paused player too, and not again on later snapshots', () => {
+    const paused = { ...alex, status: 'paused', pausedBy: 'self' } as const;
+
+    expect(resolveRosterNotices(stateWith([host, paused]), stateWith([host, paused, sam]), 'guest-1')).toEqual([
+      { key: 'notice.joined', params: { name: 'Sam', points: 100 } },
+    ]);
+    expect(resolveRosterNotices(stateWith([host, alex, sam]), stateWith([host, alex, sam]), 'guest-1')).toEqual([]);
+  });
+
+  it('stays silent for the Late Joiner themself', () => {
+    expect(resolveRosterNotices(stateWith([host, alex]), stateWith([host, alex, sam]), 'guest-2')).toEqual([]);
+  });
+
   it('stays silent for a Sit Out by a Host-paused player, a return from a Sit Out, an unchanged roster and the local player', () => {
     const hostPaused = { ...alex, status: 'paused', pausedBy: 'host' } as const;
     const sat = { ...alex, status: 'paused', pausedBy: 'self' } as const;
