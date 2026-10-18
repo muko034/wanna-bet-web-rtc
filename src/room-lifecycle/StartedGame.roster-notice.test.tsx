@@ -70,6 +70,19 @@ function startedGame(gameState: GameState) {
 const leftText = (name: string) => translate(dictionaries.pl, 'notice.left', { name });
 const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
+describe('StartedGame Host Admin notices', () => {
+  it('names a player the Host paused, then resumed, in the Display Language', () => {
+    const paused = { ...sam, status: 'paused', pausedBy: 'host' } as const;
+    const { rerender } = render(startedGame(stateWith([host, alex, sam])));
+
+    rerender(startedGame(stateWith([host, alex, paused])));
+    expect(screen.getByText(translate(dictionaries.pl, 'notice.hostPaused', { name: 'Sam' }))).toBeTruthy();
+
+    rerender(startedGame(stateWith([host, alex, sam])));
+    expect(screen.getByText(translate(dictionaries.pl, 'notice.hostResumed', { name: 'Sam' }))).toBeTruthy();
+  });
+});
+
 describe('StartedGame roster notice timer', () => {
   it('hides the notice after its duration', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));
