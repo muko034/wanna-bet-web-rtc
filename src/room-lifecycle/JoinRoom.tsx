@@ -53,10 +53,18 @@ type Props = {
   onRemoved: (code: string) => void;
 };
 
+/**
+ * One `join` request of this screen. `waiting` lasts until the Host replies (after Start that takes a
+ * person's decision), `replied` until the result is handled, `ended` once the Guest cancelled or the
+ * request failed, after which the connection's signals do nothing.
+ */
+type JoinAttempt = { phase: 'waiting' | 'replied' | 'ended'; transport: Transport };
+
 type Status =
   | { kind: 'form' }
   | { kind: 'rejoining' }
   | { kind: 'joining' }
+  | { kind: 'waiting' }
   | { kind: 'joined'; playerId: string }
   | { kind: 'removed' }
   | { kind: 'error'; message: MessageKey }
@@ -67,7 +75,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey
   'invalid-room': 'joinRoom.error.invalidRoom',
   unreachable: 'joinRoom.error.unreachable',
   'room-full': 'joinRoom.error.roomFull',
-  'game-started': 'joinRoom.error.gameStarted',
+  'join-declined': 'joinRoom.error.declined',
 };
 
 /**
@@ -87,6 +95,16 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
   // effect below from scratch (including its own automatic retry budget) rather than a
   // single bare attempt.
   const [retryKey, setRetryKey] = useState(0);
+  const joinAttemptRef = useRef<JoinAttempt | null>(null);
+
+  // A Join Request still waiting when the screen goes away must not stay in the Host's queue.
+  useEffect(() => () => {
+    const attempt = joinAttemptRef.current;
+    if (attempt?.phase === 'waiting') {
+      attempt.phase = 'ended';
+      attempt.transport.close();
+    }
+  }, []);
 
   // Read through a ref so the effects below depend on `code` alone: a caller passing a fresh
   // callback per render must not re-run them, since each run opens a new Peer.
@@ -159,17 +177,59 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     if (!code) return;
     setStatus({ kind: 'joining' });
     const transport = createGuestTransport();
+    const attempt: JoinAttempt = { phase: 'waiting', transport };
+    joinAttemptRef.current = attempt;
     const callbacks = makeCallbacks();
-    const armHostSilence = wireGuestConnection(transport, code, callbacks);
-    joinRoom(transport, roomRegistry, code, name).then((result) => {
+    const armHostSilence = wireGuestConnection(transport, code, {
+      ...callbacks,
+      // While waiting for the Host's answer a silent Host ends the wait; once admitted it is an ordinary drop.
+      onConnectionDropped: () => {
+        if (attempt.phase === 'waiting') {
+          attempt.phase = 'ended';
+          callbacksRef.current.onPlaceBetReady(null);
+          setStatus({ kind: 'reconnect-failed' });
+        } else if (attempt.phase === 'replied') {
+          callbacks.onConnectionDropped();
+        }
+      },
+    });
+    const hooks = {
+      onSent: () => {
+        setStatus({ kind: 'waiting' });
+        armHostSilence();
+      },
+      onReply: () => {
+        attempt.phase = 'replied';
+      },
+    };
+    joinRoom(transport, roomRegistry, code, name, undefined, hooks).then((result) => {
+      if (attempt.phase === 'ended') return;
       if (result.status === 'joined') {
         completeGuestConnection(transport, code, localStorage, result.playerId, result.reconnectToken, callbacks, armHostSilence);
         setStatus({ kind: 'joined', playerId: result.playerId });
       } else {
+        attempt.phase = 'ended';
         callbacksRef.current.onPlaceBetReady(null);
         setStatus({ kind: 'error', message: ERROR_MESSAGES[result.status] });
       }
     });
+  };
+
+  const cancelJoinRequest = () => {
+    const attempt = joinAttemptRef.current;
+    if (attempt) {
+      attempt.phase = 'ended';
+      attempt.transport.close();
+    }
+    setStatus({ kind: 'form' });
+  };
+
+  const retryAfterUnreachable = () => {
+    if (code && loadIdentity(localStorage, code)) {
+      setRetryKey((key) => key + 1);
+    } else {
+      setStatus({ kind: 'form' });
+    }
   };
 
   if (status.kind === 'removed') {
@@ -213,6 +273,20 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
     return <ReconnectingScreen roomCode={code} />;
   }
 
+  if (status.kind === 'waiting') {
+    return (
+      <PhoneShell background="vb-bg-wait" roomCode={code}>
+        <div class="vb-giant-title" style="font-size:24px">
+          {t('joinRoom.waiting.title')}
+        </div>
+        <div class="vb-giant-sub">{t('joinRoom.waiting.subtitle')}</div>
+        <button class="vb-cta" type="button" onClick={cancelJoinRequest}>
+          {t('homeDialog.cancel')}
+        </button>
+      </PhoneShell>
+    );
+  }
+
   if (status.kind === 'reconnect-failed') {
     return (
       <PhoneShell background="vb-bg-wait" roomCode={code}>
@@ -220,7 +294,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
           {t('joinRoom.unreachableTitle')}
         </div>
         <div class="vb-giant-sub">{t(ERROR_MESSAGES.unreachable)}</div>
-        <button class="vb-cta" type="button" onClick={() => setRetryKey((key) => key + 1)}>
+        <button class="vb-cta" type="button" onClick={retryAfterUnreachable}>
           {t('joinRoom.retry')}
         </button>
       </PhoneShell>

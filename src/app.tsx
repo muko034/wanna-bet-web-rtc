@@ -92,6 +92,8 @@ export function App() {
   const [guestGameStartedCode, setGuestGameStartedCode] = useState<string | null>(null);
   const [hostGameState, setHostGameState] = useState<GameState | null>(null);
   const [guestGameState, setGuestGameState] = useState<GameState | null>(null);
+  /** Names of the Guests waiting to be let into the started Game, oldest first. */
+  const [joinRequests, setJoinRequests] = useState<string[]>([]);
   const connectionManagerRef = useRef<ConnectionManager | null>(null);
   /** Round key of the Guest Bet that never reached the Host, until the Bettor locks in again. */
   const [betFailedRoundKey, setBetFailedRoundKey] = useState<string | null>(null);
@@ -120,6 +122,7 @@ export function App() {
       setHostGameState,
       autosave,
       forgetSession,
+      setJoinRequests,
     );
     connectionManagerRef.current = manager;
     hostTransportRef.current = transport;
@@ -329,6 +332,13 @@ export function App() {
           room={room}
           guestGameStartedCode={guestGameStartedCode}
           gameState={hostGameState ?? guestGameState}
+          joinRequests={joinRequests}
+          onAdmitJoin={() => {
+            connectionManagerRef.current?.admitJoinRequest();
+          }}
+          onDeclineJoin={() => {
+            connectionManagerRef.current?.declineJoinRequest();
+          }}
           onPlaceBet={handlePlaceBet}
           betFailedRoundKey={betFailedRoundKey}
           onReconnectGaveUp={handleReconnectGaveUp}

@@ -38,6 +38,15 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 ```
 
+## Advance fake timers inside `act` through a local `settle` or `advance` helper
+
+A component test that fakes timers never calls `vi.advanceTimersByTime` bare: state updates it triggers must run inside `act`. Declare a small helper at the top of the file. `settle` is async and flushes the promises a timer callback or a connection attempt leaves pending; `advance` is the sync variant for timers that only set state. Calling `settle()` with no argument flushes pending work without moving the clock.
+
+```ts
+const settle = (ms = 0) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+```
+
 ## Name component tests `*.test.tsx` and logic tests `*.test.ts`
 
 The file extension picks the test environment. `*.test.ts` files run in Node with no DOM; `*.test.tsx` files run in

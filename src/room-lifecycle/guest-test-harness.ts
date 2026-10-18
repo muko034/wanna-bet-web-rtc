@@ -36,3 +36,16 @@ export async function hostRoomWithStoredGuest(): Promise<string> {
   saveIdentity(localStorage, code, { playerId: joined.playerId, reconnectToken: joined.reconnectToken });
   return code;
 }
+
+/** Starts a real Host whose Game is already running, with no Guest in it. Returns its Room Code and its handles. */
+export async function hostStartedRoom() {
+  const code = roomRegistry.generate();
+  const hostTransport = new FakeTransport();
+  await hostTransport.connect(undefined, roomRegistry.transportIdFor(code));
+  const room: Room = { code, hostName: 'Host', hostPlayerId: 'host-1', players: [], playerCount: 1, started: false };
+  const manager = new ConnectionManager(hostTransport, room, () => {});
+  manager.room = { ...manager.room, started: true };
+  manager.startGame();
+  manager.startRound();
+  return { code, manager, hostTransport };
+}

@@ -79,7 +79,14 @@ export type ResumePlayerAction = {
   playerId: string;
 };
 
+export type AddPlayerAction = {
+  type: 'ADD_PLAYER';
+  playerId: string;
+  points: number;
+};
+
 export type RoundEngineAction =
+  | AddPlayerAction
   | PausePlayerAction
   | ResumePlayerAction
   | StartRoundAction
@@ -125,6 +132,8 @@ export function roundEngineReducer(
       return placeBet(state, action);
     case 'RESOLVE_ROUND':
       return resolveRound(state, action);
+    case 'ADD_PLAYER':
+      return addPlayer(state, action);
     case 'REMOVE_PLAYER':
       return removePlayer(state, action);
     case 'PAUSE_PLAYER':
@@ -293,6 +302,21 @@ function resumePlayer(state: RoundEngineState, action: ResumePlayerAction): Roun
   if (!state.pausedPlayerIds.includes(action.playerId)) return { state, payouts: [] };
   return {
     state: { ...state, pausedPlayerIds: state.pausedPlayerIds.filter((id) => id !== action.playerId) },
+    payouts: [],
+  };
+}
+
+/**
+ * Brings a Late Joiner into the Game: last in the rotation, active, with the given Points. The open
+ * Round is not restarted — its Challenger and Bets stay, and the new player is a Bettor who has not bet.
+ */
+function addPlayer(state: RoundEngineState, action: AddPlayerAction): RoundEngineResult {
+  return {
+    state: {
+      ...state,
+      playerOrder: [...state.playerOrder, action.playerId],
+      points: { ...state.points, [action.playerId]: action.points },
+    },
     payouts: [],
   };
 }

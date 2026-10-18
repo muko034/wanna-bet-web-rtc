@@ -3,7 +3,7 @@ import type { GameState, LeaveMessage, PlaceBetPayload, Player as GamePlayer, Si
 import { HostProtocol } from '../protocol/host-protocol';
 import { roundEngineReducer, type BetRejection, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
-import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
+import { STARTING_POINTS, applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 import type { HostSession } from '../host-persistence/host-session-store';
 
@@ -39,10 +39,13 @@ function disambiguate(name: string, existingNames: string[]): string {
   return `${name} (${n})`;
 }
 
+/** A Guest's Join Request to a started Game, waiting in memory for the Host to admit or decline it. */
+export type JoinRequest = { peerId: string; name: string };
+
 /**
  * Host-side Connection Manager: binds incoming Guest connections to the Room's player
  * list. Handles `join` (capacity enforcement, name disambiguation, `welcome`/`rejected`
- * replies) and `rejoin` (reconnect matching by `reconnectToken`) via `HostProtocol`, and
+ * replies; after Start the request waits in a queue for the Host's `admitJoinRequest` or `declineJoinRequest`) and `rejoin` (reconnect matching by `reconnectToken`) via `HostProtocol`, and
  * tracks each player's live connection status, notifying `onRoomChange` with the updated
  * Room after every change so the Host's Lobby view stays live.
  */
@@ -70,6 +73,10 @@ export class ConnectionManager {
   /** Guests who sat out in the Lobby; `startGame` begins them paused. */
   private readonly lobbySatOut = new Set<string>();
   private readonly heartbeatTimer: ReturnType<typeof setInterval>;
+  /** Join Requests to the started Game, oldest first. Never persisted: a Host reload drops them. */
+  private joinRequestQueue: JoinRequest[] = [];
+  /** Notified with the waiting requesters' names after every change of the queue. */
+  private readonly onJoinRequestsChange: (names: string[]) => void;
 
   constructor(
     transport: Transport,
@@ -80,12 +87,14 @@ export class ConnectionManager {
     onGameStateChange: (gameState: GameState) => void = () => {},
     onSessionChange: (session: HostSession) => void = () => {},
     onRoomEnded: (code: string) => void = () => {},
+    onJoinRequestsChange: (names: string[]) => void = () => {},
   ) {
     this.transport = transport;
     this.onRoomChange = onRoomChange;
     this.onGameStateChange = onGameStateChange;
     this.onSessionChange = onSessionChange;
     this.onRoomEnded = onRoomEnded;
+    this.onJoinRequestsChange = onJoinRequestsChange;
     this.room = initialRoom;
     this.pickChallenge = pickChallenge;
     this.pickChallenger = pickChallenger;
@@ -126,9 +135,9 @@ export class ConnectionManager {
     }
   }
 
-  /** Re-sends the current snapshot to Guests, only while at least one is connected; touches neither the Host UI nor the saved session. */
+  /** Re-sends the current snapshot to every open connection, bound or not, only while a Guest is connected or a Join Request waits; touches neither the Host UI nor the saved session. */
   private sendHeartbeat(): void {
-    if (this.gameState !== null && this.room.players.some((player) => player.connected)) {
+    if (this.gameState !== null && (this.room.players.some((player) => player.connected) || this.joinRequestQueue.length > 0)) {
       this.protocol.broadcastState(this.gameState);
     }
   }
@@ -313,12 +322,12 @@ export class ConnectionManager {
   }
 
   private handleJoin(payload: { name: string }, peerId: string): void {
-    if (this.room.started) {
-      this.protocol.rejected(peerId, { reason: 'GAME_STARTED', action: 'join' });
-      return;
-    }
     if (this.room.playerCount >= MAX_ROOM_PLAYERS) {
       this.protocol.rejected(peerId, { reason: 'ROOM_FULL', action: 'join' });
+      return;
+    }
+    if (this.room.started) {
+      this.queueJoinRequest(payload.name, peerId);
       return;
     }
 
@@ -339,6 +348,75 @@ export class ConnectionManager {
     this.protocol.welcome(peerId, { playerId: player.playerId, reconnectToken });
     this.onRoomChange(this.room);
     this.refreshLobby();
+  }
+
+  private queueJoinRequest(name: string, peerId: string): void {
+    if (this.joinRequestQueue.some((request) => request.peerId === peerId)) {
+      return;
+    }
+    this.setJoinRequestQueue([...this.joinRequestQueue, { peerId, name }]);
+  }
+
+  private setJoinRequestQueue(queue: JoinRequest[]): void {
+    this.joinRequestQueue = queue;
+    this.onJoinRequestsChange(queue.map((request) => request.name));
+  }
+
+  /** The Join Requests waiting for the Host, oldest first. */
+  get joinRequests(): readonly JoinRequest[] {
+    return this.joinRequestQueue;
+  }
+
+  /** The Points a Late Joiner starts with unless the Host sets others: the lowest among active players, the Host included. */
+  defaultJoinPoints(): number {
+    const activePoints = this.gameState?.players.filter((p) => p.status === 'active').map((p) => p.points) ?? [];
+    return activePoints.length > 0 ? Math.min(...activePoints) : STARTING_POINTS;
+  }
+
+  /**
+   * Admits the oldest Join Request as a Late Joiner with `points`: an active Bettor at once, last in
+   * the rotation, in the Round that is open. The cap is checked again — the Room may have filled up
+   * while the request waited.
+   */
+  admitJoinRequest(points: number = this.defaultJoinPoints()): void {
+    const request = this.joinRequestQueue[0];
+    const { gameState, roundEngineState } = this;
+    if (request === undefined || gameState === null || roundEngineState === null) {
+      return;
+    }
+    this.setJoinRequestQueue(this.joinRequestQueue.slice(1));
+    if (this.room.playerCount >= MAX_ROOM_PLAYERS) {
+      this.protocol.rejected(request.peerId, { reason: 'ROOM_FULL', action: 'join' });
+      return;
+    }
+
+    const takenNames = gameState.players.filter((p) => p.status !== 'removed').map((p) => p.name);
+    const player: Player = { playerId: randomId(), name: disambiguate(request.name, takenNames), connected: true };
+    this.room = { ...this.room, players: [...this.room.players, player], playerCount: this.room.playerCount + 1 };
+    const reconnectToken = randomId();
+    this.playerIdByPeerId.set(request.peerId, player.playerId);
+    this.playerIdByReconnectToken.set(reconnectToken, player.playerId);
+
+    this.roundEngineState = roundEngineReducer(roundEngineState, { type: 'ADD_PLAYER', playerId: player.playerId, points }).state;
+    const withLateJoiner: GameState = {
+      ...gameState,
+      players: [...gameState.players, { playerId: player.playerId, name: player.name, points, status: 'active', connected: true }],
+    };
+    this.gameState = applyRoundEngineState(withLateJoiner, this.roundEngineState, gameState.resolution);
+
+    this.protocol.welcome(request.peerId, { playerId: player.playerId, reconnectToken });
+    this.onRoomChange(this.room);
+    this.emitGameState(this.gameState);
+  }
+
+  /** Declines the oldest Join Request; the Guest may ask again. */
+  declineJoinRequest(): void {
+    const request = this.joinRequestQueue[0];
+    if (request === undefined) {
+      return;
+    }
+    this.setJoinRequestQueue(this.joinRequestQueue.slice(1));
+    this.protocol.rejected(request.peerId, { reason: 'JOIN_DECLINED', action: 'join' });
   }
 
   /**
@@ -560,6 +638,9 @@ export class ConnectionManager {
   }
 
   private handleConnectionChange(peerId: string, connected: boolean): void {
+    if (!connected && this.joinRequestQueue.some((request) => request.peerId === peerId)) {
+      this.setJoinRequestQueue(this.joinRequestQueue.filter((request) => request.peerId !== peerId));
+    }
     const playerId = this.playerIdByPeerId.get(peerId);
     if (playerId === undefined) {
       return;

@@ -23,9 +23,11 @@ export const en = {
   'joinRoom.error.invalidRoom': "This room link doesn't exist or has expired.",
   'joinRoom.error.unreachable': "Couldn't reach the Host — check the link and try again.",
   'joinRoom.error.roomFull': 'This Room is already full (20 players).',
-  'joinRoom.error.gameStarted': 'This game has already started.',
+  'joinRoom.error.declined': 'The Host declined your request. You can ask again.',
   'joinRoom.unreachableTitle': "Can't reach the Host",
   'joinRoom.retry': 'Retry',
+  'joinRoom.waiting.title': 'Waiting for the Host to let you in',
+  'joinRoom.waiting.subtitle': 'The game has already started. The Host decides whether you join.',
   'waiting.title': "You're in!",
   'waiting.subtitle': 'Waiting for the Host to start the game.',
   'lobby.roomCode': 'Room code',
@@ -96,6 +98,10 @@ export const en = {
   'homeDialog.sitOut': 'Sit out',
   'homeDialog.goHome': 'Go Home',
   'homeDialog.cancel': 'Cancel',
+  'joinRequest.banner': 'Waiting to join: {count}',
+  'joinRequest.title': '{name} wants to join',
+  'joinRequest.approve': 'Approve',
+  'joinRequest.decline': 'Decline',
 };
 
 export type MessageKey = keyof typeof en;
@@ -126,9 +132,11 @@ export const pl: Record<MessageKey, string> = {
   'joinRoom.error.invalidRoom': 'Ten link do pokoju nie istnieje lub wygasł.',
   'joinRoom.error.unreachable': 'Nie udało się połączyć z Gospodarzem — sprawdź link i spróbuj ponownie.',
   'joinRoom.error.roomFull': 'Ten pokój jest już pełny (20 graczy).',
-  'joinRoom.error.gameStarted': 'Ta gra już się rozpoczęła.',
+  'joinRoom.error.declined': 'Gospodarz odrzucił Twoją prośbę. Możesz poprosić ponownie.',
   'joinRoom.unreachableTitle': 'Nie można połączyć z Gospodarzem',
   'joinRoom.retry': 'Spróbuj ponownie',
+  'joinRoom.waiting.title': 'Czekamy, aż Gospodarz Cię wpuści',
+  'joinRoom.waiting.subtitle': 'Gra już się rozpoczęła. Gospodarz decyduje, czy dołączysz.',
   'waiting.title': 'Jesteś w grze!',
   'waiting.subtitle': 'Czekamy, aż Gospodarz rozpocznie grę.',
   'lobby.roomCode': 'Kod pokoju',
@@ -199,6 +207,10 @@ export const pl: Record<MessageKey, string> = {
   'homeDialog.sitOut': 'Zrób przerwę',
   'homeDialog.goHome': 'Strona główna',
   'homeDialog.cancel': 'Anuluj',
+  'joinRequest.banner': 'Chcą dołączyć: {count}',
+  'joinRequest.title': '{name} chce dołączyć',
+  'joinRequest.approve': 'Zatwierdź',
+  'joinRequest.decline': 'Odrzuć',
 };
 
 export const dictionaries: Record<DisplayLanguage, Record<MessageKey, string>> = { pl, en };

@@ -1,7 +1,7 @@
 import { GuestProtocol } from '../protocol/guest-protocol';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 import type { Transport } from '../transport/transport';
-import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameEnd, watchForGameStart, watchForHostSilence, watchGameState } from './join-room';
+import { rejoinRoom, watchForBetRejection, watchForConnectionDrop, watchForGameEnd, watchForGameStart, watchForHostSilence, watchForWelcome, watchGameState } from './join-room';
 import { closeEndedGame } from './guest-leave';
 import { loadIdentity, saveIdentity } from './player-identity';
 import type { RoomRegistry } from './room-registry';
@@ -62,6 +62,9 @@ function delay(ms: number): Promise<void> {
 
 /**
  * Subscribes `callbacks` to `transport`'s game-state, connection-loss (a reported drop or a silent Host), game-started and Bet-rejection signals.
+ * Game-state and game-started signals wait for the Host's `welcome`: a connection the Host has not bound to a player
+ * (a Join Request still waiting) hears the Host's `state` broadcasts too, but must not be sent into the Game by them.
+ * They still count as signs of life for the Host-silence watcher.
  * Safe to call before the Host has confirmed this connection (even before `transport.connect`)
  * — attaching these watchers as early as possible, ahead of sending `join`/`rejoin`, matters
  * because the Host may broadcast a state resend (`resendInProgressState`) synchronously
@@ -71,10 +74,11 @@ function delay(ms: number): Promise<void> {
  * long rejoin retry.
  */
 export function wireGuestConnection(transport: Transport, code: string, callbacks: ReconnectCallbacks): () => void {
-  watchGameState(transport, callbacks.onGameState);
+  const isWelcomed = watchForWelcome(transport);
+  watchGameState(transport, callbacks.onGameState, isWelcomed);
   watchForConnectionDrop(transport, callbacks.onConnectionDropped);
   const armHostSilence = watchForHostSilence(transport, callbacks.onConnectionDropped);
-  watchForGameStart(transport, () => callbacks.onGameStarted(code));
+  watchForGameStart(transport, () => callbacks.onGameStarted(code), isWelcomed);
   watchForBetRejection(transport, callbacks.onBetRejected);
   return armHostSilence;
 }

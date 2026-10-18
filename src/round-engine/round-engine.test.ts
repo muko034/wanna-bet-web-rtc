@@ -14,6 +14,43 @@ function stateWith(overrides: Partial<RoundEngineState> = {}): RoundEngineState 
 }
 
 describe('roundEngineReducer', () => {
+  describe('ADD_PLAYER', () => {
+    const roundWith = (bets: Bet[]) => ({ challengerId: 'p2', challengeId: 'c1', bets, outcome: null });
+    const add = (state: RoundEngineState, playerId: string, points: number) =>
+      roundEngineReducer(state, { type: 'ADD_PLAYER', playerId, points });
+
+    it('puts the player last in the rotation with the given Points', () => {
+      const { state: next } = add(stateWith(), 'p4', 70);
+
+      expect(next.playerOrder).toEqual(['p1', 'p2', 'p3', 'p4']);
+      expect(next.points).toEqual({ p1: 100, p2: 100, p3: 100, p4: 70 });
+    });
+
+    it('keeps the open Round, its Challenger and its Bets, and makes the player a Bettor who can bet', () => {
+      const placed: Bet = { playerId: 'p1', amount: 10, prediction: 'YES' };
+      const state = stateWith({ round: roundWith([placed]) });
+
+      const { state: next } = add(state, 'p4', 50);
+      const { state: afterBet, rejection } = roundEngineReducer(next, {
+        type: 'PLACE_BET',
+        playerId: 'p4',
+        challengeId: 'c1',
+        amount: 20,
+        prediction: 'NO',
+      });
+
+      expect(next.round).toEqual(roundWith([placed]));
+      expect(rejection).toBeUndefined();
+      expect(afterBet.round?.bets.map((bet) => bet.playerId)).toEqual(['p1', 'p4']);
+    });
+
+    it('leaves the pause list alone, so the new player is not paused', () => {
+      const { state: next } = add(stateWith({ pausedPlayerIds: ['p3'] }), 'p4', 100);
+
+      expect(next.pausedPlayerIds).toEqual(['p3']);
+    });
+  });
+
   describe('REMOVE_PLAYER', () => {
     const roundWith = (challengerId: string, bets: Bet[]) => ({ challengerId, challengeId: 'c1', bets, outcome: null });
     const remove = (state: RoundEngineState, playerId: string) => roundEngineReducer(state, { type: 'REMOVE_PLAYER', playerId });

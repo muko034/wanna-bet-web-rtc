@@ -35,6 +35,11 @@ per ADR 0002's grouping of the message protocol and the state-snapshot schema as
 
 - `leave` reuses the same remove logic as Host-initiated Remove (host-admin spec), which required amending that spec's
   "only an explicit Host action" wording to include the player's own Leave.
+- Joining a started Game adds no message type. A `join` after Start is held by the Host as a Join Request and answered
+  with the existing `welcome`, or with `rejected` (`ROOM_FULL`, or the new `JOIN_DECLINED`), so `rejected` reasons grow
+  but the message set does not. Cancelling is closing the transport. The wait for the Host's decision has no reply
+  timeout; the Guest relies on the heartbeat and its host-silence watcher instead. A Guest on an older build gets no
+  `welcome` and shows "unreachable". Accepted, as below.
 - No protocol version field and no room-join PIN were deliberately left out of scope — both are cheap to add later if
   this project's trust model (small, trusted friend group, per ADR 0001) ever changes.
 - The wrapped `state` payload is a breaking wire change: Guests on an older build cannot parse it. Accepted, since the
