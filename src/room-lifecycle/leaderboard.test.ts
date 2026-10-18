@@ -170,6 +170,34 @@ describe('Host menu', () => {
   });
 
   it.each([
+    ['an active Guest', { status: 'active' }],
+    ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }],
+    ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }],
+  ] as const)('flags %s with a down link as disconnected for the Host only', (_name, guest) => {
+    const down = { ...guest, connected: false };
+
+    expect(rowFor(down, true).disconnected).toBe(true);
+    expect(rowFor(down, false, 'someone-else').disconnected).toBe(false);
+    expect(rowFor({ ...guest, connected: true }, true).disconnected).toBe(false);
+  });
+
+  it("never flags the Host's own row as disconnected", () => {
+    const players = [playerWith({ playerId: 'host', connected: false }), playerWith({ playerId: 'g' })];
+
+    const { rows } = resolveLeaderboard({ players, localPlayerId: 'host', isHost: true });
+
+    expect(rows.find((row) => row.playerId === 'host')!.disconnected).toBe(false);
+  });
+
+  it('leaves a disconnected Guest status unchanged', () => {
+    const row = rowFor({ status: 'active', connected: false }, true);
+
+    expect(row.paused).toBe(false);
+    expect(row.statusLabel).toBeNull();
+    expect(row.hostActions).toEqual(['pause', 'remove']);
+  });
+
+  it.each([
     ['an active Guest', { status: 'active' }, null],
     ['a Host-paused Guest', { status: 'paused', pausedBy: 'host' }, 'leaderboard.paused'],
     ['a Guest who sat out', { status: 'paused', pausedBy: 'self' }, 'leaderboard.steppedAway'],
