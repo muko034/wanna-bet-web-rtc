@@ -281,7 +281,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
         </div>
         <div class="vb-giant-sub">{t('joinRoom.waiting.subtitle')}</div>
         <button class="vb-cta" type="button" onClick={cancelJoinRequest}>
-          {t('joinRoom.cancel')}
+          {t('homeDialog.cancel')}
         </button>
       </PhoneShell>
     );

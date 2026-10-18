@@ -106,7 +106,7 @@ describe('a Guest waiting to be let into a started Game', () => {
     renderJoinRoom(code);
     await askToJoin();
 
-    fireEvent.click(screen.getByRole('button', { name: t('joinRoom.cancel') }));
+    fireEvent.click(screen.getByRole('button', { name: t('homeDialog.cancel') }));
     await settle();
 
     expect(waitingTitle()).toBeNull();
@@ -144,7 +144,7 @@ describe('a Guest waiting to be let into a started Game', () => {
     const { code, hostTransport } = await hostStartedRoom();
     renderJoinRoom(code);
     await askToJoin();
-    fireEvent.click(screen.getByRole('button', { name: t('joinRoom.cancel') }));
+    fireEvent.click(screen.getByRole('button', { name: t('homeDialog.cancel') }));
     await settle();
 
     hostTransport.setBlackHole(true);
