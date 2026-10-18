@@ -1145,6 +1145,17 @@ describe('a Guest asking to join a started Game', () => {
     expect(manager.joinRequests).toEqual([]);
   });
 
+  it('gives the Late Joiner exactly the Points the Host typed, even far above everyone else', async () => {
+    const { manager, hostId } = await startedGame();
+    const latecomer = await requestJoin(hostId, 'Latecomer');
+
+    manager.admitJoinRequest(5000);
+
+    const { playerId } = (messagesOf(latecomer.received, 'welcome')[0] as { payload: WelcomePayload }).payload;
+    expect(playerIn(manager.gameState, playerId)?.points).toBe(5000);
+    expect(playerIn(lastState(latecomer.received), playerId)?.points).toBe(5000);
+  });
+
   it('keeps the current Challenger and Round when someone joins, and puts the Late Joiner last in the rotation', async () => {
     const { manager, hostId } = await startedGame();
     const before = manager.gameState!.round;

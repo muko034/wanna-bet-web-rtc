@@ -29,6 +29,7 @@ import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemo
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { JoinRequestDialog } from './JoinRequestDialog';
+import { defaultJoinPoints } from './join-points';
 import { HomeDialog } from './HomeDialog';
 import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
 import { isHostRoom } from './room-role';
@@ -58,8 +59,8 @@ type Props = {
   gameState: GameState | null;
   /** Host only: names of the Guests waiting to be let into the Game, oldest first. */
   joinRequests: string[];
-  /** Host only: admits the oldest Join Request. */
-  onAdmitJoin: () => void;
+  /** Host only: admits the oldest Join Request with the starting Points the Host chose. */
+  onAdmitJoin: (points: number) => void;
   /** Host only: declines the oldest Join Request. */
   onDeclineJoin: () => void;
   /** `context` identifies the Round and local player, so a Guest's Bet can be confirmed against later `state` broadcasts. */
@@ -436,7 +437,8 @@ export function StartedGame({
   const joinRequestOverlay = joinDialogOpen && joinRequests.length > 0 && (
     <JoinRequestDialog
       name={joinRequests[0]}
-      onApprove={() => answerJoinRequest(onAdmitJoin)}
+      defaultPoints={defaultJoinPoints(gameState?.players ?? [])}
+      onApprove={(points) => answerJoinRequest(() => onAdmitJoin(points))}
       onDecline={() => answerJoinRequest(onDeclineJoin)}
       onClose={() => setJoinDialogOpen(false)}
     />

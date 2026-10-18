@@ -3,7 +3,8 @@ import type { GameState, LeaveMessage, PlaceBetPayload, Player as GamePlayer, Si
 import { HostProtocol } from '../protocol/host-protocol';
 import { roundEngineReducer, type BetRejection, type Prediction, type RoundEngineState } from '../round-engine/round-engine';
 import type { Transport } from '../transport/transport';
-import { STARTING_POINTS, applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
+import { applyRoundEngineState, buildInitialGameState, buildInitialRoundEngineState, buildLobbyGameState } from './game-state';
+import { defaultJoinPoints } from './join-points';
 import { MAX_ROOM_PLAYERS, type Player, type Room } from './room';
 import type { HostSession } from '../host-persistence/host-session-store';
 
@@ -369,8 +370,7 @@ export class ConnectionManager {
 
   /** The Points a Late Joiner starts with unless the Host sets others: the lowest among active players, the Host included. */
   defaultJoinPoints(): number {
-    const activePoints = this.gameState?.players.filter((p) => p.status === 'active').map((p) => p.points) ?? [];
-    return activePoints.length > 0 ? Math.min(...activePoints) : STARTING_POINTS;
+    return defaultJoinPoints(this.gameState?.players ?? []);
   }
 
   /**

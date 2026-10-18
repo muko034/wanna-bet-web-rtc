@@ -333,8 +333,8 @@ export function App() {
           guestGameStartedCode={guestGameStartedCode}
           gameState={hostGameState ?? guestGameState}
           joinRequests={joinRequests}
-          onAdmitJoin={() => {
-            connectionManagerRef.current?.admitJoinRequest();
+          onAdmitJoin={(points) => {
+            connectionManagerRef.current?.admitJoinRequest(points);
           }}
           onDeclineJoin={() => {
             connectionManagerRef.current?.declineJoinRequest();

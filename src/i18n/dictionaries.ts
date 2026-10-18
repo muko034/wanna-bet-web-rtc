@@ -100,6 +100,8 @@ export const en = {
   'homeDialog.cancel': 'Cancel',
   'joinRequest.banner': 'Waiting to join: {count}',
   'joinRequest.title': '{name} wants to join',
+  'joinRequest.points': 'Starting Points',
+  'joinRequest.points.invalid': 'Enter a whole number of at least 1.',
   'joinRequest.approve': 'Approve',
   'joinRequest.decline': 'Decline',
 };
@@ -209,6 +211,8 @@ export const pl: Record<MessageKey, string> = {
   'homeDialog.cancel': 'Anuluj',
   'joinRequest.banner': 'Chcą dołączyć: {count}',
   'joinRequest.title': '{name} chce dołączyć',
+  'joinRequest.points': 'Punkty na start',
+  'joinRequest.points.invalid': 'Podaj liczbę całkowitą, co najmniej 1.',
   'joinRequest.approve': 'Zatwierdź',
   'joinRequest.decline': 'Odrzuć',
 };

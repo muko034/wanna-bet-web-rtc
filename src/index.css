@@ -684,6 +684,24 @@ input {
   text-align: center;
   padding: 4px 0 8px;
 }
+.vb-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+.vb-dialog-field .vb-input-white {
+  margin-bottom: 0;
+}
+.vb-dialog-error {
+  color: #ff8a8d;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
 .vb-dialog-destructive {
   display: block;
   width: 100%;
