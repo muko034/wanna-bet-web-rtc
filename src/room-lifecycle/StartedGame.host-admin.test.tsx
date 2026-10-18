@@ -483,6 +483,51 @@ describe('Join Requests on the Host screen', () => {
     expect(requestDialog('Kim')).toBeNull();
   });
 
+  it('shows the next request in arrival order once the Host has answered the first', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
+    fireEvent.click(banner(2)!);
+    fireEvent.click(screen.getByRole('button', { name: t('joinRequest.decline') }));
+
+    rerender(stateWith([host, alex]), ['Lee']);
+
+    expect(banner(1)).not.toBeNull();
+    expect(requestDialog('Kim')).toBeNull();
+    fireEvent.click(banner(1)!);
+    expect(requestDialog('Lee')).not.toBeNull();
+  });
+
+  it('never shows a request that was cancelled while queued', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
+
+    rerender(stateWith([host, alex]), ['Lee']);
+    fireEvent.click(banner(1)!);
+
+    expect(requestDialog('Kim')).toBeNull();
+    expect(requestDialog('Lee')).not.toBeNull();
+  });
+
+  it('closes the dialog instead of switching to the next request when the open one is cancelled', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
+    fireEvent.click(banner(2)!);
+
+    rerender(stateWith([host, alex]), ['Lee']);
+
+    expect(requestDialog('Kim')).toBeNull();
+    expect(requestDialog('Lee')).toBeNull();
+    expect(banner(1)).not.toBeNull();
+  });
+
+  it('does not open the dialog by itself for a request that arrives after the open one was cancelled', () => {
+    const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim']);
+    fireEvent.click(banner(1)!);
+
+    rerender(stateWith([host, alex]), []);
+    rerender(stateWith([host, alex]), ['Lee']);
+
+    expect(requestDialog('Lee')).toBeNull();
+    expect(banner(1)).not.toBeNull();
+  });
+
   it('answers nothing when the Host dismisses the dialog, and the request keeps waiting', () => {
     const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
     fireEvent.click(banner(1)!);

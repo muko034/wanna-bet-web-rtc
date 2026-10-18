@@ -146,7 +146,7 @@ export function StartedGame({
   const t = useT();
   const { language } = useLanguage();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
-  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [joinDialogFor, setJoinDialogFor] = useState<string | null>(null);
   const [reconnectPhase, setReconnectPhase] = useState<ReconnectPhase>(null);
   const hasStoredIdentity = code !== undefined && loadIdentity(localStorage, code) !== null;
   const isGuestUnresolved = !isHostRoom(code, room) && guestGameStartedCode !== code;
@@ -431,20 +431,22 @@ export function StartedGame({
 
   const leaderboardBadge = leaderboard.badge && <LeaderboardBadge badge={leaderboard.badge} onOpen={() => setLeaderboardOpen(true)} />;
   const answerJoinRequest = (answer: () => void) => {
-    setJoinDialogOpen(false);
+    setJoinDialogFor(null);
     answer();
   };
-  const joinRequestOverlay = joinDialogOpen && joinRequests.length > 0 && (
+  if (joinDialogFor !== null && joinRequests[0] !== joinDialogFor) setJoinDialogFor(null);
+  const joinRequestOverlay = joinDialogFor !== null && joinRequests[0] === joinDialogFor && (
     <JoinRequestDialog
-      name={joinRequests[0]}
+      key={joinDialogFor}
+      name={joinDialogFor}
       defaultPoints={defaultJoinPoints(gameState?.players ?? [])}
       onApprove={(points) => answerJoinRequest(() => onAdmitJoin(points))}
       onDecline={() => answerJoinRequest(onDeclineJoin)}
-      onClose={() => setJoinDialogOpen(false)}
+      onClose={() => setJoinDialogFor(null)}
     />
   );
   const joinRequestBanner = isHostRoom(code, room) && joinRequests.length > 0 && (
-    <button class="vb-join-banner" type="button" onClick={() => setJoinDialogOpen(true)}>
+    <button class="vb-join-banner" type="button" onClick={() => setJoinDialogFor(joinRequests[0])}>
       {t('joinRequest.banner', { count: joinRequests.length })}
     </button>
   );

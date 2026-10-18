@@ -40,3 +40,29 @@ A dialog or sheet (the Home dialog, the Leaderboard sheet, the Remove confirmati
 ```tsx
 <PhoneShell background="vb-bg-lobby" overlay={removing && <RemoveGuestDialog name={removing.name} onConfirm={confirm} onCancel={cancel} />}>
 ```
+
+## Open a dialog about one item by storing the item, not a boolean
+
+A dialog that is about one specific item (removing a Guest, answering a Join Request) is opened by setting state to that
+item, `null` when closed, and rendered only while it is set. The dialog then reads its title and callbacks from the stored
+item, and it cannot be open without knowing which item it is about. A dialog with no subject (the Home dialog, the
+Leaderboard sheet) keeps a plain boolean open flag.
+
+```tsx
+const [removing, setRemoving] = useState<{ playerId: string; name: string } | null>(null);
+
+<button onClick={() => setRemoving({ playerId: entry.playerId, name: entry.name })}>
+{removing && <RemoveGuestDialog name={removing.name} onCancel={() => setRemoving(null)} />}
+```
+
+## Key a single element by what it shows to get a fresh instance when that changes
+
+Outside a list, an element's `key` is also a reset switch: when the key changes, the renderer discards the old instance
+and mounts a new one. Give an element a key derived from what it is about, or from a counter bumped for each new
+occurrence, when stale instance state must not carry over: a dialog keyed by the item it answers keeps typed input from
+leaking to the next item, and a banner keyed by a notice counter replays its CSS animation for every new notice.
+
+```tsx
+<JoinRequestDialog key={joinDialogFor} name={joinDialogFor} />
+<div class="vb-change-banner" key={`roster-${rosterNotice.key}`}>
+```
