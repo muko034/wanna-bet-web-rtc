@@ -91,3 +91,14 @@ A resolver that builds per-player rows takes a flag that defaults to the non-Hos
 removable: canRemoveGuests && !isLocal,
 hostActions: isHost && !isLocal ? hostActionsFor(player) : [],
 ```
+
+## Detect a change by diffing the previous and next snapshot in a pure resolver
+
+When the UI must react to a change between two `GameState` snapshots (a toast for a player who joined or left, a notice that a Challenge was redrawn), put the comparison in a pure resolver that takes `previous: GameState | null` and `next`. It returns the result (a `Message[]` of notices, a boolean) and returns the empty result when `previous` is `null`, so a view that just opened announces nothing for state that was already there. If the change is made by the local player, the resolver also takes `localPlayerId` and stays silent about it. The component keeps the previous snapshot in a ref, passes it in from an effect keyed on the state, then overwrites the ref. It never compares the two snapshots itself. Each resolver's test file pins the `null` previous snapshot, an unchanged state and the local player's own action.
+
+```ts
+export function resolveRosterNotices(previous: GameState | null, next: GameState, localPlayerId: string | null): Message[] {
+  if (previous === null || previous.status !== 'active' || next.status !== 'active') return [];
+  // diff previous.players against next.players
+}
+```
