@@ -72,6 +72,9 @@ Each round, players try to predict whether the challenger will succeed at a chal
   not count. A name that matches a player in the game gets a "(n)" suffix.
 - When a late joiner is admitted, every other player, the host included, sees a short notice with the late joiner's name
   and starting points. The late joiner sees no notice about themself, and a waiting or declined request produces none.
+- A bettor's challenge card shows whose turn it is on a second line under the challenge type: "Anna's turn" in English,
+  "Kolej na: Anna" in Polish. The name is shown as typed, with its "(n)" suffix, and a long name is cut with an
+  ellipsis on one line. The challenger's own hidden card has no such line. The challenge text keeps its line breaks.
 - Notices are toasts: they float in front of the screen just under the top bar, slightly transparent, and never move
   the content or take taps. Each one disappears after 3.5 seconds, a newer one does not cut an older one short, and
   several at once are stacked. The notices are: a player left, sat out, was paused or resumed by the host, or joined

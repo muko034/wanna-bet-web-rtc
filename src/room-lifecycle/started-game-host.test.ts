@@ -91,6 +91,7 @@ describe('starting a round from the Host', () => {
       timeLimit: null,
       text: challengeBank[0].content.en,
       ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
+      challengerName: 'Alex',
     });
 
     expect(resolveChallengeCard({
@@ -104,6 +105,7 @@ describe('starting a round from the Host', () => {
       timeLimit: null,
       text: challengeBank[0].content.en,
       ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
+      challengerName: 'Alex',
     });
   });
 

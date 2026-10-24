@@ -32,6 +32,7 @@ export type ChallengeCardView = ChallengeCardHeader &
       kind: 'visible';
       text: string;
       illustration?: string;
+      challengerName?: string;
     });
 
 type Params = {
@@ -70,10 +71,12 @@ export function resolveChallengeCard({
     };
   }
 
+  const challenger = gameState?.players.find((player) => player.playerId === round.challengerId);
   return {
     ...header,
     kind: 'visible',
     text: challenge.content[displayLanguage],
+    ...(challenger ? { challengerName: challenger.name } : {}),
     ...(challenge.illustration ? { illustration: challenge.illustration } : {}),
   };
 }
