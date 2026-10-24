@@ -60,6 +60,11 @@ Each round, players try to predict whether the challenger will succeed at a chal
 - Once the game started, someone with the invite link can ask to join. The host sees the request and admits or
   declines it; in the lobby nobody asks, guests enter at once. The host handles requests one at a time, in arrival
   order, and a request disappears if the guest cancels or closes the page before the host answers.
+- Waiting requests show on a bell in the host's top bar, between the leaderboard badge and the language toggle. The bell
+  is visible but greyed out and disabled when nobody waits, and enabled with a red count when someone does; the count
+  follows the queue as requests are answered. It shakes once when a new request arrives. Tapping it opens the request
+  of the first in line. Only the host sees the bell, and only on the main round screen: not a guest, not in the lobby,
+  and not on the result or host-paused screens.
 - An admitted player (a late joiner) is an active bettor at once, even in an open round, and is last in the challenger
   rotation. The current challenger and round stay, and a host who was ready to judge goes back to waiting for the new
   bettor's bet. The late joiner starts with the points the host sets: a whole number of at least 1, with no upper

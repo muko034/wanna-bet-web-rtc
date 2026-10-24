@@ -134,12 +134,12 @@ test('a Guest asks to join the started Game, the Host admits, and the Guest bets
   await joinRoom(latecomer, code, 'Lena');
   await expect(latecomer.getByText('Waiting for the Host to let you in')).toBeVisible();
 
-  await host.getByRole('button', { name: 'Waiting to join: 1' }).click();
+  await host.getByRole('button', { name: 'Join requests: 1' }).click();
   await host.getByRole('dialog', { name: 'Lena wants to join' }).getByRole('button', { name: 'Approve' }).click();
 
   await latecomer.getByRole('button', { name: 'YES', exact: true }).click();
   await latecomer.getByRole('button', { name: 'Lock in bet' }).click();
 
   await expect(latecomer.getByText(/You bet \d+ pts on YES/)).toBeVisible();
-  await expect(host.getByRole('button', { name: /Waiting to join/ })).toHaveCount(0);
+  await expect(host.getByRole('button', { name: 'Join requests: 0' })).toBeDisabled();
 });

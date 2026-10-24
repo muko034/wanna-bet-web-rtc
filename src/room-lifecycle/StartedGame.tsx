@@ -31,6 +31,7 @@ import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemo
 import { JoinRoom } from './JoinRoom';
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { JoinRequestDialog } from './JoinRequestDialog';
+import { JoinRequestsBell } from './JoinRequestsBell';
 import { defaultJoinPoints } from './join-points';
 import { HomeDialog } from './HomeDialog';
 import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './home-dialog';
@@ -443,10 +444,8 @@ export function StartedGame({
       onClose={() => setJoinDialogFor(null)}
     />
   );
-  const joinRequestBanner = isHostRoom(code, room) && joinRequests.length > 0 && (
-    <button class="vb-join-banner" type="button" onClick={() => setJoinDialogFor(joinRequests[0])}>
-      {t('joinRequest.banner', { count: joinRequests.length })}
-    </button>
+  const joinRequestsBell = isHostRoom(code, room) && (
+    <JoinRequestsBell count={joinRequests.length} onOpen={() => setJoinDialogFor(joinRequests[0])} />
   );
   const leaderboardOverlay = (
     <>
@@ -481,11 +480,10 @@ export function StartedGame({
       background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
-      topRight={leaderboardBadge}
+      topRight={<>{leaderboardBadge}{joinRequestsBell}</>}
       toasts={<ToastLayer toasts={toasts} />}
       overlay={leaderboardOverlay}
     >
-      {joinRequestBanner}
       {roundControls.kind === 'no-active-guests' ? (
         <>
           <div class="vb-giant-title vb-title-small">{t('noActive.title')}</div>

@@ -374,19 +374,42 @@ input {
   text-align: center;
   animation: vb-toast-drop 3.5s ease-out forwards;
 }
-.vb-join-banner {
-  width: 100%;
-  max-width: 320px;
-  margin-bottom: 12px;
-  padding: 10px 14px;
+.vb-bell {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border: none;
-  border-radius: 14px;
-  background: #fff;
-  color: #1c1c1e;
-  font-family: inherit;
-  font-weight: 800;
-  text-align: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+.vb-bell:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.vb-bell-icon {
+  display: inline-flex;
+}
+.vb-bell-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #e5334b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
 }
 .vb-toast-hint {
   display: block;
