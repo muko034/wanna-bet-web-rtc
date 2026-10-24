@@ -51,6 +51,7 @@ describe('resolveChallengeCard', () => {
       title: { key: 'challengeCard.hiddenTitle' },
       detail: { key: 'challengeCard.hiddenDetail' },
     });
+    expect(view).not.toHaveProperty('challengerName');
   });
 
   it.each([
@@ -70,7 +71,40 @@ describe('resolveChallengeCard', () => {
       timeLimit: null,
       text: 'English challenge text',
       illustration: '/images/challenge-1.png',
+      challengerName: 'Alex',
     });
+  });
+
+  it('shows the Challenger name as typed, with its "(n)" suffix, to a Bettor', () => {
+    const state = stateWith({
+      players: [
+        { playerId: 'host-1', name: 'Host', points: 100, status: 'active', connected: true },
+        { playerId: 'guest-1', name: 'ola (2)', points: 100, status: 'active', connected: true },
+        { playerId: 'guest-2', name: 'Sam', points: 100, status: 'active', connected: true },
+      ],
+    });
+
+    const view = resolveChallengeCard({
+      gameState: state,
+      localPlayerId: 'guest-2',
+      challengeBank: [illustratedChallenge],
+      displayLanguage: 'en',
+    });
+
+    expect(view).toMatchObject({ kind: 'visible', challengerName: 'ola (2)' });
+  });
+
+  it('names the Host as Challenger to the Guests when the Host is the Challenger', () => {
+    const state = stateWith({ round: { ...stateWith().round!, challengerId: 'host-1' } });
+
+    const view = resolveChallengeCard({
+      gameState: state,
+      localPlayerId: 'guest-2',
+      challengeBank: [illustratedChallenge],
+      displayLanguage: 'pl',
+    });
+
+    expect(view).toMatchObject({ kind: 'visible', challengerName: 'Host' });
   });
 
   it.each([

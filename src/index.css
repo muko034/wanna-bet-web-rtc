@@ -441,12 +441,24 @@ input {
   opacity: 0.7;
   margin-bottom: 10px;
 }
+.vb-task-head {
+  margin-bottom: 10px;
+}
 .vb-task-title {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-bottom: 10px;
+}
+.vb-task-challenger {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .vb-task-title .vb-task-label {
   margin-bottom: 0;
@@ -491,6 +503,7 @@ input {
   font-size: 19px;
   font-weight: 800;
   line-height: 1.4;
+  white-space: pre-line;
 }
 .vb-task-detail {
   margin-top: 10px;

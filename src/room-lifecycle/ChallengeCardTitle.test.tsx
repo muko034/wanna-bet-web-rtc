@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/preact';
 import { describe, expect, it } from 'vitest';
+import { dictionaries } from '../i18n/dictionaries';
+import { LanguageProvider } from '../i18n/LanguageContext';
+import { translate } from '../i18n/translate';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
 import type { ChallengeCardView } from './challenge-card';
 
@@ -27,5 +30,43 @@ describe('ChallengeCardTitle time limit', () => {
     render(<ChallengeCardTitle card={card(null)} />);
 
     expect(screen.queryByRole('img')).toBeNull();
+  });
+});
+
+describe('ChallengeCardTitle Challenger line', () => {
+  const visibleCard = (challengerName: string): ChallengeCardView => ({
+    challengeType: 'PHYSICAL',
+    timeLimit: null,
+    kind: 'visible',
+    text: 'Do it',
+    challengerName,
+  });
+
+  it.each(['pl', 'en'] as const)('tells a Bettor whose turn it is in %s', (language) => {
+    localStorage.setItem('wanna-bet:language', language);
+
+    render(<LanguageProvider><ChallengeCardTitle card={visibleCard('Anna')} /></LanguageProvider>);
+
+    expect(screen.getByText(translate(dictionaries[language], 'challengeCard.challengerTurn', { name: 'Anna' }))).toBeTruthy();
+  });
+
+  it('keeps the typed case and the "(n)" suffix of the name', () => {
+    render(<ChallengeCardTitle card={visibleCard('ola (2)')} />);
+
+    expect(screen.getByText(translate(dictionaries.pl, 'challengeCard.challengerTurn', { name: 'ola (2)' }))).toBeTruthy();
+  });
+
+  it('shows no Challenger line on the Challenger\'s own hidden card', () => {
+    const hidden: ChallengeCardView = {
+      challengeType: 'PHYSICAL',
+      timeLimit: null,
+      kind: 'hidden',
+      title: { key: 'challengeCard.hiddenTitle' },
+      detail: { key: 'challengeCard.hiddenDetail' },
+    };
+
+    const { container } = render(<ChallengeCardTitle card={hidden} />);
+
+    expect(container.textContent).toBe(translate(dictionaries.pl, 'challengeCard.typePhysical'));
   });
 });

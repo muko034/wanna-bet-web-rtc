@@ -27,14 +27,18 @@ function TimeLimitIcon({ timeLimit }: { timeLimit: ChallengeTimeLimitView }) {
   );
 }
 
-/** Title line of the Challenge card: the Challenge type plus a colored time-limit stopwatch. */
+/** Title of the Challenge card: the Challenge type with a colored time-limit stopwatch, and under it whose turn it is. */
 export function ChallengeCardTitle({ card }: { card: ChallengeCardView }) {
   const t = useT();
   const { timeLimit } = card;
+  const challengerName = card.kind === 'visible' ? card.challengerName : undefined;
   return (
-    <div class="vb-task-title">
-      <div class="vb-task-label">{t(TYPE_LABELS[card.challengeType])}</div>
-      {timeLimit && <TimeLimitIcon timeLimit={timeLimit} />}
+    <div class="vb-task-head">
+      <div class="vb-task-title">
+        <div class="vb-task-label">{t(TYPE_LABELS[card.challengeType])}</div>
+        {timeLimit && <TimeLimitIcon timeLimit={timeLimit} />}
+      </div>
+      {challengerName && <div class="vb-task-challenger">{t('challengeCard.challengerTurn', { name: challengerName })}</div>}
     </div>
   );
 }
