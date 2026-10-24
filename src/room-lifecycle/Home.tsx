@@ -6,7 +6,7 @@ import { useT } from '../i18n/LanguageContext';
 export function Home(_props: { path?: string }) {
   const t = useT();
   return (
-    <PhoneShell background="vb-bg-home">
+    <PhoneShell background="vb-bg-home" hideExit>
       <div class="vb-giant-title">
         {t('home.title')}
       </div>

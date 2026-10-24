@@ -5,23 +5,23 @@ import type { Room } from './room';
 const hostRoom: Room = { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', players: [], playerCount: 1, started: true };
 
 describe('resolveHomeDialog', () => {
-  it('offers a Guest a destructive Leave, a primary Sit out and a plain Cancel', () => {
+  it('offers a Guest a destructive Leave, a primary Sit out and a plain Stay', () => {
     const result = resolveHomeDialog({ code: 'ABCDEF', room: null });
 
     expect(result.options).toEqual([
       { action: 'leave', label: 'homeDialog.leave', style: 'destructive' },
       { action: 'sit-out', label: 'homeDialog.sitOut', style: 'primary' },
-      { action: 'cancel', label: 'homeDialog.cancel', style: 'link' },
+      { action: 'cancel', label: 'homeDialog.stay', style: 'link' },
     ]);
   });
 
-  it('offers the Host a destructive Leave, a primary Go Home and a plain Cancel', () => {
+  it('offers the Host a destructive End game, a primary Exit and a plain Stay', () => {
     const result = resolveHomeDialog({ code: 'ABCDEF', room: hostRoom });
 
     expect(result.options).toEqual([
-      { action: 'leave', label: 'homeDialog.leave', style: 'destructive' },
-      { action: 'go-home', label: 'homeDialog.goHome', style: 'primary' },
-      { action: 'cancel', label: 'homeDialog.cancel', style: 'link' },
+      { action: 'leave', label: 'homeDialog.endGame', style: 'destructive' },
+      { action: 'go-home', label: 'homeDialog.exit', style: 'primary' },
+      { action: 'cancel', label: 'homeDialog.stay', style: 'link' },
     ]);
   });
 
@@ -53,11 +53,11 @@ describe('resolveHomeChoice', () => {
     expect(resolveHomeChoice('sit-out', undefined, null)).toEqual({ kind: 'none' });
   });
 
-  it('Go Home goes Home', () => {
+  it("the Host's Exit goes Home", () => {
     expect(resolveHomeChoice('go-home', 'ABCDEF', null)).toEqual({ kind: 'go-home' });
   });
 
-  it('Cancel changes nothing', () => {
+  it('Stay changes nothing', () => {
     expect(resolveHomeChoice('cancel', 'ABCDEF', null)).toEqual({ kind: 'none' });
   });
 });
