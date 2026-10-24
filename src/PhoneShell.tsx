@@ -15,6 +15,8 @@ type Props = {
   onHome?: () => void;
   /** Content for the top bar's right slot, such as the Leaderboard badge. */
   topRight?: ComponentChildren;
+  /** Notices floating in front of the content, just under the top bar. */
+  toasts?: ComponentChildren;
   /** Rendered above the whole screen, such as the Leaderboard sheet. */
   overlay?: ComponentChildren;
   children: ComponentChildren;
@@ -24,7 +26,7 @@ type Props = {
  * Full-bleed, mobile-first phone frame shared by every screen — the "Big State" layout:
  * one giant color-block idea per screen instead of small cards.
  */
-export function PhoneShell({ background, roomCode, hideExit, onHome, topRight, overlay, children }: Props) {
+export function PhoneShell({ background, roomCode, hideExit, onHome, topRight, toasts, overlay, children }: Props) {
   const t = useT();
   return (
     <div class="vb">
@@ -51,6 +53,7 @@ export function PhoneShell({ background, roomCode, hideExit, onHome, topRight, o
         </div>
         <div class="vb-stage">{children}</div>
         {roomCode && <div class="vb-room-footer">{roomCode}</div>}
+        {toasts}
         {overlay}
       </div>
     </div>
