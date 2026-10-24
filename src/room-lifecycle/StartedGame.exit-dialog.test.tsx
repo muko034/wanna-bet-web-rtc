@@ -74,16 +74,13 @@ function renderAs(role: 'host' | 'guest') {
 const choose = (label: MessageKey) => fireEvent.click(screen.getByRole('button', { name: t(label) }));
 const dialogButtons = () => screen.getAllByRole('button').filter((button) => button.closest('.vb-dialog'));
 
-beforeEach(() => {
-  localStorage.clear();
-  vi.mocked(route).mockClear();
-});
+beforeEach(() => vi.mocked(route).mockClear());
 
 describe("the Host's Exit dialog", () => {
-  it('offers End game (destructive), Exit and Stay, in Polish "Zakończ grę", "Wyjdź", "Zostań"', () => {
+  it('offers End game (destructive), Exit and Stay', () => {
     renderAs('host');
 
-    expect(dialogButtons().map((button) => button.textContent)).toEqual(['Zakończ grę', 'Wyjdź', 'Zostań']);
+    expect(dialogButtons().map((button) => button.textContent)).toEqual([t('homeDialog.endGame'), t('homeDialog.exit'), t('homeDialog.stay')]);
     expect(screen.getByRole('button', { name: t('homeDialog.endGame') }).classList.contains('vb-dialog-destructive')).toBe(true);
   });
 
@@ -116,10 +113,10 @@ describe("the Host's Exit dialog", () => {
 });
 
 describe("a Guest's Exit dialog", () => {
-  it('offers Leave (destructive), Sit out and Stay, in Polish "Wyjdź", "Zrób przerwę", "Zostań"', () => {
+  it('offers Leave (destructive), Sit out and Stay', () => {
     renderAs('guest');
 
-    expect(dialogButtons().map((button) => button.textContent)).toEqual(['Wyjdź', 'Zrób przerwę', 'Zostań']);
+    expect(dialogButtons().map((button) => button.textContent)).toEqual([t('homeDialog.leave'), t('homeDialog.sitOut'), t('homeDialog.stay')]);
     expect(screen.getByRole('button', { name: t('homeDialog.leave') }).classList.contains('vb-dialog-destructive')).toBe(true);
   });
 

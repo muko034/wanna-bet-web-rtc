@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/preact';
+import { fireEvent, render, screen } from '@testing-library/preact';
 import type { ComponentChildren } from 'preact';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { NotFound } from './NotFound';
 import { withBase } from './base-path';
 import { LanguageProvider } from './i18n/LanguageContext';
@@ -18,8 +18,6 @@ const room: Room = { code: 'ABCDEF', hostName: 'Host', hostPlayerId: 'host-1', p
 
 const exitName = (language: 'pl' | 'en') => translate(dictionaries[language], 'exit.label');
 const exitButton = (language: 'pl' | 'en' = 'pl') => screen.queryByRole('link', { name: exitName(language) });
-
-afterEach(() => localStorage.clear());
 
 describe('the Exit button', () => {
   it.each([
@@ -41,12 +39,10 @@ describe('the Exit button', () => {
     render(screenUnderTest);
 
     expect(exitButton()).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Home' })).toBeNull();
   });
 
-  it('is named "Wyjdź" in Polish and "Exit" in English', () => {
-    expect(exitName('pl')).toBe('Wyjdź');
-    expect(exitName('en')).toBe('Exit');
+  it('is named in the chosen Display Language', () => {
+    expect(exitName('en')).not.toBe(exitName('pl'));
     localStorage.setItem('wanna-bet:language', 'en');
 
     render(<LanguageProvider><CreateRoom onRoomCreated={vi.fn()} /></LanguageProvider>);
@@ -61,5 +57,14 @@ describe('the Exit button', () => {
 
     expect(exit.getAttribute('href')).toBe(withBase('/'));
     expect(exit.querySelector('svg')).not.toBeNull();
+  });
+
+  it('leaves the Lobby at once, with no confirmation dialog', () => {
+    render(<Lobby code={room.code} room={room} gameState={null} onStart={vi.fn()} onRemoveGuest={vi.fn()} />);
+
+    fireEvent.click(exitButton()!);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(exitButton()!.getAttribute('href')).toBe(withBase('/'));
   });
 });

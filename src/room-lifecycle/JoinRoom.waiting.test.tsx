@@ -166,3 +166,25 @@ describe('a Guest waiting to be let into a started Game', () => {
     expect(screen.queryByText(t('joinRoom.unreachableTitle'))).toBeNull();
   });
 });
+
+describe('the Exit button on the Join screens', () => {
+  const exitLink = () => screen.queryByRole('link', { name: t('exit.label') });
+
+  it('shows on the Join form', async () => {
+    const { code } = await hostStartedRoom();
+    renderJoinRoom(code);
+
+    expect(exitLink()).not.toBeNull();
+  });
+
+  it('shows on "can\'t reach the Host"', async () => {
+    const { code, hostTransport } = await hostStartedRoom();
+    renderJoinRoom(code);
+    await askToJoin();
+    hostTransport.setBlackHole(true);
+    await settle(HOST_SILENCE_TIMEOUT_MS);
+
+    expect(screen.getByText(t('joinRoom.unreachableTitle'))).not.toBeNull();
+    expect(exitLink()).not.toBeNull();
+  });
+});
