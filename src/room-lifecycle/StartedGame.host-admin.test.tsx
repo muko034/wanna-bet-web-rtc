@@ -345,7 +345,7 @@ describe('a Guest the Host removed', () => {
 });
 
 describe('Join Requests on the Host screen', () => {
-  const banner = (count: number) => screen.queryByRole('button', { name: t('joinRequest.bell', { count }) });
+  const bellWithCount = (count: number) => screen.queryByRole('button', { name: t('joinRequest.bell', { count }) });
   const bell = () => screen.getByRole('button', { name: t('joinRequest.bell', { count: 0 }) }) as HTMLButtonElement;
   const bellCount = () => document.querySelector('.vb-bell-count')?.textContent ?? null;
   const resolved = (players: TestPlayer[]): GameState => ({
@@ -365,7 +365,7 @@ describe('Join Requests on the Host screen', () => {
   it('enables the bell with the number of waiting requests, which opens nothing by itself', () => {
     renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
 
-    expect((banner(2) as HTMLButtonElement).disabled).toBe(false);
+    expect((bellWithCount(2) as HTMLButtonElement).disabled).toBe(false);
     expect(bellCount()).toBe('2');
     expect(requestDialog('Kim')).toBeNull();
   });
@@ -375,11 +375,11 @@ describe('Join Requests on the Host screen', () => {
     const { rerender } = renderAs('host', judging, ['Kim']);
 
     expect(screen.getByText(t('judge.subtitle'))).toBeTruthy();
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
 
     rerender(judging, ['Kim', 'Lee', 'Max']);
 
-    expect(banner(3)).not.toBeNull();
+    expect(bellWithCount(3)).not.toBeNull();
     expect(bellCount()).toBe('3');
   });
 
@@ -438,7 +438,7 @@ describe('Join Requests on the Host screen', () => {
 
     rerender(stateWith([host, alex]), ['Lee']);
     expect(bellCount()).toBe('1');
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
 
     rerender(stateWith([host, alex]), []);
     expect(bellCount()).toBeNull();
@@ -448,7 +448,7 @@ describe('Join Requests on the Host screen', () => {
   it('opens a dialog naming the oldest requester, with Approve and Decline', () => {
     renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
 
-    fireEvent.click(banner(2)!);
+    fireEvent.click(bellWithCount(2)!);
 
     expect(requestDialog('Kim')).not.toBeNull();
     expect(screen.getByRole('button', { name: t('joinRequest.approve') })).toBeTruthy();
@@ -457,7 +457,7 @@ describe('Join Requests on the Host screen', () => {
 
   it('admits when the Host approves, and closes the dialog', () => {
     const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     fireEvent.click(screen.getByRole('button', { name: t('joinRequest.approve') }));
 
@@ -474,7 +474,7 @@ describe('Join Requests on the Host screen', () => {
 
     function openDialogFor(players: TestPlayer[]) {
       const rendered = renderAs('host', stateWith(players), ['Kim']);
-      fireEvent.click(banner(1)!);
+      fireEvent.click(bellWithCount(1)!);
       return rendered;
     }
 
@@ -540,7 +540,7 @@ describe('Join Requests on the Host screen', () => {
 
   it('declines when the Host declines, and closes the dialog', () => {
     const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     fireEvent.click(screen.getByRole('button', { name: t('joinRequest.decline') }));
 
@@ -551,14 +551,14 @@ describe('Join Requests on the Host screen', () => {
 
   it('shows the next request in arrival order once the Host has answered the first', () => {
     const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
-    fireEvent.click(banner(2)!);
+    fireEvent.click(bellWithCount(2)!);
     fireEvent.click(screen.getByRole('button', { name: t('joinRequest.decline') }));
 
     rerender(stateWith([host, alex]), ['Lee']);
 
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
     expect(requestDialog('Kim')).toBeNull();
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
     expect(requestDialog('Lee')).not.toBeNull();
   });
 
@@ -566,7 +566,7 @@ describe('Join Requests on the Host screen', () => {
     const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
 
     rerender(stateWith([host, alex]), ['Lee']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     expect(requestDialog('Kim')).toBeNull();
     expect(requestDialog('Lee')).not.toBeNull();
@@ -574,41 +574,41 @@ describe('Join Requests on the Host screen', () => {
 
   it('closes the dialog instead of switching to the next request when the open one is cancelled', () => {
     const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim', 'Lee']);
-    fireEvent.click(banner(2)!);
+    fireEvent.click(bellWithCount(2)!);
 
     rerender(stateWith([host, alex]), ['Lee']);
 
     expect(requestDialog('Kim')).toBeNull();
     expect(requestDialog('Lee')).toBeNull();
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
   });
 
   it('does not open the dialog by itself for a request that arrives after the open one was cancelled', () => {
     const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     rerender(stateWith([host, alex]), []);
     rerender(stateWith([host, alex]), ['Lee']);
 
     expect(requestDialog('Lee')).toBeNull();
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
   });
 
   it('answers nothing when the Host dismisses the dialog, and the request keeps waiting', () => {
     const { onAdmitJoin, onDeclineJoin } = renderAs('host', stateWith([host, alex]), ['Kim']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     fireEvent.click(document.querySelector('.vb-dialog-backdrop')!);
 
     expect(requestDialog('Kim')).toBeNull();
     expect(onAdmitJoin).not.toHaveBeenCalled();
     expect(onDeclineJoin).not.toHaveBeenCalled();
-    expect(banner(1)).not.toBeNull();
+    expect(bellWithCount(1)).not.toBeNull();
   });
 
   it('closes the dialog when its request goes away, e.g. the Guest cancelled', () => {
     const { rerender } = renderAs('host', stateWith([host, alex]), ['Kim']);
-    fireEvent.click(banner(1)!);
+    fireEvent.click(bellWithCount(1)!);
 
     rerender(stateWith([host, alex]), []);
 

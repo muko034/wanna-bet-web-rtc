@@ -87,6 +87,12 @@ describe('the Host\'s Lobby roster', () => {
     expect(screen.queryByText(t('lobby.removeHint'))).toBeNull();
   });
 
+  it('shows the Host no Join Requests bell', () => {
+    renderLobby([host, alex]);
+
+    expect(document.querySelector('.vb-bell')).toBeNull();
+  });
+
   it('never renders a removed row', () => {
     renderLobby([host, alex, { ...sam, status: 'removed' }]);
 
