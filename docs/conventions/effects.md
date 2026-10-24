@@ -57,6 +57,19 @@ useEffect(() => {
 }, [copied]);
 ```
 
+## Extract a timer or listener effect into a `use-<name>.ts` hook beside the component
+
+An effect that owns a timer, an interval or a document listener, together with the state it drives, moves out of the
+component into a hook file in the same folder, named in kebab-case `use-<name>.ts` and exporting `use<Name>`
+(`use-toasts.ts`, `use-link-lost-duration.ts`, `use-foreground-retry.ts`). The hook sets up and tears down everything it
+starts, so the component only calls it and renders what it returns. The screen stays readable, and the timing logic is
+named and kept in one place.
+
+```ts
+// use-link-lost-duration.ts
+export function useLinkLostDuration(lost: boolean, now: () => number = Date.now): number | null {
+```
+
 ## Set browser state before the first render when a screen replaces the `Router`
 
 `route()` does nothing while another screen is rendered in place of the `Router`. If the app must change the URL for a
