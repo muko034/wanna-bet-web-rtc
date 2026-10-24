@@ -16,6 +16,7 @@ import { resolveHomeChoice, resolveHomeDialog, type HomeDialogAction } from './h
 import { ReconnectingScreen } from './ReconnectingScreen';
 import { useForegroundRetry } from './use-foreground-retry';
 import { roomRegistry } from './room-registry-instance';
+import { useNameField } from './use-name-field';
 import type { BetRejection } from '../round-engine/round-engine';
 import type { GameState, PlaceBetPayload } from '../protocol/messages';
 
@@ -88,7 +89,7 @@ const ERROR_MESSAGES: Record<Exclude<JoinResult['status'], 'joined'>, MessageKey
  */
 export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceBetReady, onBetRejected, onConnectionLost, createGuestTransport, isSatOut, onLeave, onSitOut, onRemoved }: Props) {
   const t = useT();
-  const [name, setName] = useState('');
+  const nameField = useNameField();
   const [homeDialogOpen, setHomeDialogOpen] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: 'form' });
   // Bumped by the "can't reach the Host" state's Retry button, to re-run the reconnect
@@ -174,7 +175,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!code) return;
+    if (!code || !nameField.valid) return;
     setStatus({ kind: 'joining' });
     const transport = createGuestTransport();
     const attempt: JoinAttempt = { phase: 'waiting', transport };
@@ -202,7 +203,7 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
         attempt.phase = 'replied';
       },
     };
-    joinRoom(transport, roomRegistry, code, name, undefined, hooks).then((result) => {
+    joinRoom(transport, roomRegistry, code, nameField.name, undefined, hooks).then((result) => {
       if (attempt.phase === 'ended') return;
       if (result.status === 'joined') {
         completeGuestConnection(transport, code, localStorage, result.playerId, result.reconnectToken, callbacks, armHostSilence);
@@ -312,11 +313,10 @@ export function JoinRoom({ code, onGameStarted, onGameState, gameState, onPlaceB
           class="vb-input-white"
           placeholder={t('form.namePlaceholder')}
           autofocus
-          value={name}
-          onInput={(event) => setName((event.target as HTMLInputElement).value)}
-          required
+          value={nameField.text}
+          onInput={nameField.onInput}
         />
-        <button class="vb-cta" type="submit" disabled={status.kind === 'joining'}>
+        <button class="vb-cta" type="submit" disabled={status.kind === 'joining' || !nameField.valid}>
           {status.kind === 'joining' ? t('joinRoom.submitting') : t('joinRoom.submit')}
         </button>
       </form>

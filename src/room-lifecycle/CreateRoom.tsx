@@ -6,6 +6,7 @@ import { createPeerJsTransport } from '../transport/create-peerjs-transport';
 import type { RecoverableTransport } from '../transport/transport';
 import { createRoom, type Room } from './room';
 import { roomRegistry } from './room-registry-instance';
+import { useNameField } from './use-name-field';
 
 type Props = {
   path?: string;
@@ -15,14 +16,15 @@ type Props = {
 /** `/room`: form to enter the Host's display name and create the Room. */
 export function CreateRoom({ onRoomCreated }: Props) {
   const t = useT();
-  const [name, setName] = useState('');
+  const nameField = useNameField();
   const [creating, setCreating] = useState(false);
 
   const handleSubmit = (event: JSX.TargetedEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!nameField.valid) return;
     setCreating(true);
     const transport = createPeerJsTransport();
-    createRoom(transport, roomRegistry, name).then((room) => onRoomCreated(room, transport));
+    createRoom(transport, roomRegistry, nameField.name).then((room) => onRoomCreated(room, transport));
   };
 
   return (
@@ -36,11 +38,10 @@ export function CreateRoom({ onRoomCreated }: Props) {
           class="vb-input-white"
           placeholder={t('form.namePlaceholder')}
           autofocus
-          value={name}
-          onInput={(event) => setName((event.target as HTMLInputElement).value)}
-          required
+          value={nameField.text}
+          onInput={nameField.onInput}
         />
-        <button class="vb-cta" type="submit" disabled={creating}>
+        <button class="vb-cta" type="submit" disabled={creating || !nameField.valid}>
           {creating ? t('createRoom.submitting') : t('createRoom.submit')}
         </button>
       </form>

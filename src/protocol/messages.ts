@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeName } from './player-name';
 
 /**
  * Message schemas and envelope for the Host↔Guest wire protocol. Every message type below
@@ -66,9 +67,15 @@ export type GameState = z.infer<typeof gameStateSchema>;
 
 // Guest → Host message schemas — no `seq`, per the envelope rules.
 
+/** A Guest's name as the Host accepts it: trimmed, then 1 to `MAX_NAME_LENGTH` characters as the player sees them. */
+const playerNameSchema = z
+  .string()
+  .trim()
+  .refine((name) => normalizeName(name).valid);
+
 const joinMessageSchema = z.object({
   type: z.literal('join'),
-  payload: z.object({ name: z.string() }),
+  payload: z.object({ name: playerNameSchema }),
 });
 
 const rejoinMessageSchema = z.object({
