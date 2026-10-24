@@ -6,7 +6,7 @@ import { dictionaries } from '../i18n/dictionaries';
 import { translate } from '../i18n/translate';
 import type { GameState } from '../protocol/messages';
 import { StartedGame } from './StartedGame';
-import { ROSTER_NOTICE_DURATION_MS } from './roster-notice';
+import { TOAST_DURATION_MS } from './use-toasts';
 import type { Room } from './room';
 
 beforeEach(() => vi.useFakeTimers());
@@ -103,36 +103,92 @@ describe('StartedGame join notice', () => {
   });
 });
 
-describe('StartedGame roster notice timer', () => {
-  it('hides the notice after its duration', () => {
+function redrawn(state: GameState, challengeId: string): GameState {
+  return { ...state, round: { ...state.round!, challengeId } };
+}
+
+const changedText = translate(dictionaries.pl, 'challengeNotice.changed');
+const betAgainText = translate(dictionaries.pl, 'challengeNotice.betAgain');
+
+describe('StartedGame toasts', () => {
+  it('shows a roster notice as a status toast outside the content flow', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));
 
     rerender(startedGame(stateWith([host, alex, left(sam)])));
-    advance(ROSTER_NOTICE_DURATION_MS - 1);
+
+    const toast = screen.getByRole('status');
+    expect(toast.textContent).toBe(leftText('Sam'));
+    expect(toast.closest('.vb-stage')).toBeNull();
+  });
+
+  it('hides the toast after its duration', () => {
+    const { rerender } = render(startedGame(stateWith([host, alex, sam])));
+
+    rerender(startedGame(stateWith([host, alex, left(sam)])));
+    advance(TOAST_DURATION_MS - 1);
     expect(screen.getByText(leftText('Sam'))).toBeTruthy();
 
     advance(1);
     expect(screen.queryByText(leftText('Sam'))).toBeNull();
   });
 
-  it('restarts the timer when a newer notice replaces the shown one', () => {
+  it('stacks two notices that arrive together as separate toasts', () => {
     const { rerender } = render(startedGame(stateWith([host, alex, sam])));
-    rerender(startedGame(stateWith([host, alex, left(sam)])));
-    advance(ROSTER_NOTICE_DURATION_MS - 1_000);
 
     rerender(startedGame(stateWith([host, left(alex), left(sam)])));
-    advance(ROSTER_NOTICE_DURATION_MS - 1);
+
+    expect(screen.getAllByRole('status').map((toast) => toast.textContent)).toEqual([leftText('Alex'), leftText('Sam')]);
+  });
+
+  it('does not cut an older toast short when a newer one arrives', () => {
+    const { rerender } = render(startedGame(stateWith([host, alex, sam])));
+    rerender(startedGame(stateWith([host, alex, left(sam)])));
+    advance(TOAST_DURATION_MS - 1_000);
+
+    rerender(startedGame(stateWith([host, left(alex), left(sam)])));
+    expect(screen.getByText(leftText('Sam'))).toBeTruthy();
     expect(screen.getByText(leftText('Alex'))).toBeTruthy();
 
-    advance(1);
+    advance(1_000);
+    expect(screen.queryByText(leftText('Sam'))).toBeNull();
+    expect(screen.getByText(leftText('Alex'))).toBeTruthy();
+
+    advance(TOAST_DURATION_MS - 1_000);
     expect(screen.queryByText(leftText('Alex'))).toBeNull();
   });
 
-  it('clears the timer on unmount', () => {
+  it('shows no toast for the local player\'s own action or without a previous snapshot', () => {
+    const { rerender } = render(startedGame(stateWith([host, alex, sam])));
+    rerender(startedGame(stateWith([left(host), alex, sam])));
+    expect(screen.queryByRole('status')).toBeNull();
+
+    const fresh = render(startedGame(stateWith([host, alex, left(sam)])));
+    expect(fresh.queryByRole('status')).toBeNull();
+  });
+
+  it('announces a Redraw as a status toast that ends after its duration while the card still shakes and the Bet form pops in', () => {
+    const first = stateWith([host, alex, sam]);
+    const { rerender, container } = render(startedGame(first));
+
+    rerender(startedGame(redrawn(first, challengeBank[1].id)));
+
+    const toast = screen.getByRole('status');
+    expect(toast.textContent).toContain(changedText);
+    expect(toast.textContent).toContain(betAgainText);
+    expect(toast.closest('.vb-stage')).toBeNull();
+
+    advance(TOAST_DURATION_MS);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(container.querySelector('.vb-task-card')?.classList.contains('vb-shake')).toBe(true);
+    expect(container.querySelector('.vb-bet-form')?.classList.contains('vb-pop-in')).toBe(true);
+  });
+});
+
+describe('StartedGame toast cleanup', () => {
+  it('clears the timers on unmount', () => {
     const { rerender, unmount } = render(startedGame(stateWith([host, alex, sam])));
     rerender(startedGame(stateWith([host, alex, left(sam)])));
-    const pending = vi.getTimerCount();
-    expect(pending).toBeGreaterThan(0);
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
 
     unmount();
 

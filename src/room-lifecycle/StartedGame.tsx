@@ -3,14 +3,16 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { PhoneShell } from '../PhoneShell';
 import { NotFound } from '../NotFound';
 import { useLanguage, useT } from '../i18n/LanguageContext';
-import type { Message, MessageKey } from '../i18n/dictionaries';
+import type { MessageKey } from '../i18n/dictionaries';
 import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import type { Transport } from '../transport/transport';
 import type { GameState, Prediction, PlaceBetPayload } from '../protocol/messages';
 import { loadIdentity } from './player-identity';
 import { attemptReconnect, muteWhile, type ReconnectCallbacks } from './guest-reconnect';
-import { ROSTER_NOTICE_DURATION_MS, resolveRosterNotices } from './roster-notice';
+import { resolveRosterNotices } from './roster-notice';
+import { useToasts } from './use-toasts';
+import { ToastLayer } from './ToastLayer';
 import { resolveChallengeCard } from './challenge-card';
 import { ChallengeCardTitle } from './ChallengeCardTitle';
 import { isChallengeRedrawn } from './challenge-change';
@@ -308,26 +310,22 @@ export function StartedGame({
     setPrediction(null);
   }, [roundKey]);
 
-  // A Redraw is a changed Challenge id within the same Round; the notice belongs to the Round key
-  // it announced, so it never replays once the screen moves on.
+  // A Redraw is a changed Challenge id within the same Round. The toast fades after its own timer;
+  // the shake and Bet form pop-in belong to the Round key they announced, so they never replay once
+  // the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
-  const [rosterNotice, setRosterNotice] = useState<{ messages: Message[]; key: number } | null>(null);
+  const { toasts, showToasts } = useToasts();
   useEffect(() => {
     const redrawn = isChallengeRedrawn(previousGameStateRef.current, gameState);
     const notices = gameState ? resolveRosterNotices(previousGameStateRef.current, gameState, localPlayerId ?? null) : [];
     previousGameStateRef.current = gameState;
-    if (notices.length > 0) {
-      setRosterNotice((current) => ({ messages: notices, key: (current?.key ?? 0) + 1 }));
-    }
+    showToasts([
+      ...notices.map((message) => ({ message })),
+      ...(redrawn ? [{ message: { key: 'challengeNotice.changed' as const }, hint: { key: 'challengeNotice.betAgain' as const } }] : []),
+    ]);
     setChallengeNotice((notice) => nextChallengeNotice(notice, { redrawn, gameState }));
   }, [gameState]);
-  // Matches the banner's CSS animation, so a remounted banner (the Round rotating) never replays it.
-  useEffect(() => {
-    if (rosterNotice === null) return;
-    const timer = setTimeout(() => setRosterNotice(null), ROSTER_NOTICE_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [rosterNotice?.key]);
   const chrome = resolveChallengeChrome({ code, room, gameState, notice: challengeNotice });
   const redrawButton = chrome.showRedraw && (
     <button class="vb-fab vb-redraw" type="button" aria-label="Redraw Challenge" onClick={onRedraw}>
@@ -484,6 +482,7 @@ export function StartedGame({
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
       topRight={leaderboardBadge}
+      toasts={<ToastLayer toasts={toasts} />}
       overlay={leaderboardOverlay}
     >
       {joinRequestBanner}
@@ -510,17 +509,6 @@ export function StartedGame({
         </>
       ) : gameState?.round ? (
         <>
-          {rosterNotice && (
-            <div class="vb-change-banner" role="status" key={`roster-${rosterNotice.key}`}>
-              {rosterNotice.messages.map((message) => t(message.key, message.params)).join(', ')}
-            </div>
-          )}
-          {chrome.noticeCount !== null && (
-            <div class="vb-change-banner" role="status" key={`banner-${chrome.noticeCount}`}>
-              {t('challengeNotice.changed')}
-              <span class="vb-change-hint">{t('challengeNotice.betAgain')}</span>
-            </div>
-          )}
           {challengeCard?.kind === 'hidden' ? (
             <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${chrome.noticeCount ?? 0}`}>
               {redrawButton}

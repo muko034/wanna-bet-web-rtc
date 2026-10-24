@@ -1,9 +1,6 @@
 import type { Message } from '../i18n/dictionaries';
 import type { GameState } from '../protocol/messages';
 
-/** How long a roster notice stays up; equals the banner's CSS animation length. */
-export const ROSTER_NOTICE_DURATION_MS = 3_500;
-
 /**
  * The toasts to show when `next` replaces `previous`: one per other player who sat out, left (or
  * was removed by the Host), was Paused or Resumed by the Host, or joined (a Late Joiner, with their

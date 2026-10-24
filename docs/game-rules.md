@@ -67,6 +67,10 @@ Each round, players try to predict whether the challenger will succeed at a chal
   not count. A name that matches a player in the game gets a "(n)" suffix.
 - When a late joiner is admitted, every other player, the host included, sees a short notice with the late joiner's name
   and starting points. The late joiner sees no notice about themself, and a waiting or declined request produces none.
+- Notices are toasts: they float in front of the screen just under the top bar, slightly transparent, and never move
+  the content or take taps. Each one disappears after 3.5 seconds, a newer one does not cut an older one short, and
+  several at once are stacked. The notices are: a player left, sat out, was paused or resumed by the host, or joined
+  with their points, and "Challenge changed / Bet again" after a redraw. A player gets no roster notice about their own action.
 - A declined guest may ask again. A guest who left or was removed asks the same way and returns as a new player with
   new points; the old row stays removed.
 - The room holds at most 20 players, the host included. A request that arrives when the room is full is refused, and

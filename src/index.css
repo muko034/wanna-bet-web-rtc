@@ -350,17 +350,29 @@ input {
   15%, 55% { transform: translateX(-8px); }
   35%, 75% { transform: translateX(8px); }
 }
-.vb-change-banner {
+.vb-toasts {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 62px);
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  pointer-events: none;
+}
+.vb-toast {
   width: 100%;
   max-width: 320px;
-  margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 14px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
   color: #1c1c1e;
   font-weight: 800;
   text-align: center;
-  animation: vb-banner-drop 3.5s ease-out forwards;
+  animation: vb-toast-drop 3.5s ease-out forwards;
 }
 .vb-join-banner {
   width: 100%;
@@ -376,13 +388,13 @@ input {
   text-align: center;
   cursor: pointer;
 }
-.vb-change-hint {
+.vb-toast-hint {
   display: block;
   font-size: 12px;
   font-weight: 600;
   opacity: 0.7;
 }
-@keyframes vb-banner-drop {
+@keyframes vb-toast-drop {
   0% { transform: translateY(-24px); opacity: 0; }
   10% { transform: translateY(0); opacity: 1; }
   85% { transform: translateY(0); opacity: 1; }

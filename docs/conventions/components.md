@@ -60,9 +60,9 @@ const [removing, setRemoving] = useState<{ playerId: string; name: string } | nu
 Outside a list, an element's `key` is also a reset switch: when the key changes, the renderer discards the old instance
 and mounts a new one. Give an element a key derived from what it is about, or from a counter bumped for each new
 occurrence, when stale instance state must not carry over: a dialog keyed by the item it answers keeps typed input from
-leaking to the next item, and a banner keyed by a notice counter replays its CSS animation for every new notice.
+leaking to the next item, and a toast keyed by its id replays its CSS animation for every new notice.
 
 ```tsx
 <JoinRequestDialog key={joinDialogFor} name={joinDialogFor} />
-<div class="vb-change-banner" key={`roster-${rosterNotice.key}`}>
+<div class="vb-toast" key={toast.id}>
 ```
