@@ -31,3 +31,16 @@ export function watchForBetRejection(transport: Transport, onBetRejected: (reaso
 ## Update the wire protocol doc in the same commit as a wire-shape change
 
 When a message, payload, or `Player`/`GameState` field is added or changed in `src/protocol/messages.ts`, update `docs/message-protocol.md` in that same commit: the message tables, the type listing, and any notes on behaviour. The doc is the reference Guests and Hosts are built against, so a wire change that lands without it leaves the two out of step.
+
+## Write a player-input rule once and use it in the form and on the Host
+
+A rule that limits what a player may send (the name length, the largest Bet) lives in one pure function in its own
+module, with its limit as a named constant. The screen uses it to gate its control, and the Host side uses the same
+function to refuse a bad value: a Zod `.refine` on the Guest message schema, or the check in the round engine. A modified
+or old client can skip a form, so the Host never trusts the screen; and two copies of a rule drift apart.
+
+```ts
+// protocol/messages.ts
+const playerNameSchema = z.string().trim().refine((name) => normalizeName(name).valid);
+// round-engine: amount > maxBetAmount(points), betting-panel: maxBet: maxBetAmount(points)
+```
