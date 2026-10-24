@@ -58,7 +58,7 @@ that renders JSX must therefore be `.tsx`, and a test that needs no DOM stays `.
 
 When a screen has several distinct concerns to test (Host-only controls, effects driven by a timer, a transient notice),
 give each concern its own sibling file named `<Component>.<topic>.test.tsx` in kebab-case, such as
-`StartedGame.host-admin.test.tsx` and `StartedGame.roster-notice.test.tsx`, instead of growing one file. The plain
+`StartedGame.host-admin.test.tsx` and `StartedGame.toasts.test.tsx`, instead of growing one file. The plain
 `<Component>.test.tsx` keeps the screen's core behaviour. Each file declares its own fixtures (room, players, state
 builder) and its own fake-timer setup, so it reads and runs on its own. A new prop that every render needs is added to
 the render helper of each file.
@@ -66,7 +66,7 @@ the render helper of each file.
 ```
 StartedGame.test.tsx
 StartedGame.local-state.test.tsx
-StartedGame.roster-notice.test.tsx
+StartedGame.toasts.test.tsx
 StartedGame.host-admin.test.tsx
 ```
 

@@ -310,8 +310,9 @@ export function StartedGame({
     setPrediction(null);
   }, [roundKey]);
 
-  // A Redraw is a changed Challenge id within the same Round; the notice belongs to the Round key
-  // it announced, so it never replays once the screen moves on.
+  // A Redraw is a changed Challenge id within the same Round. The toast fades after its own timer;
+  // the shake and Bet form pop-in belong to the Round key they announced, so they never replay once
+  // the screen moves on.
   const previousGameStateRef = useRef<GameState | null>(null);
   const [challengeNotice, setChallengeNotice] = useState<ChallengeNotice | null>(null);
   const { toasts, showToasts } = useToasts();

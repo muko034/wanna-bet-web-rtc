@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { Message } from '../i18n/dictionaries';
 
-/** How long each toast stays up. */
+/** How long each toast stays up; equals the `vb-toast` CSS animation length. */
 export const TOAST_DURATION_MS = 3_500;
 
 /** A notice floating in front of the screen: its text and an optional smaller hint line. */
