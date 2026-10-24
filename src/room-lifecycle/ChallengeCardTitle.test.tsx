@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/preact';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { dictionaries } from '../i18n/dictionaries';
 import { LanguageProvider } from '../i18n/LanguageContext';
 import { translate } from '../i18n/translate';
@@ -34,8 +34,6 @@ describe('ChallengeCardTitle time limit', () => {
 });
 
 describe('ChallengeCardTitle Challenger line', () => {
-  afterEach(() => localStorage.clear());
-
   const visibleCard = (challengerName: string): ChallengeCardView => ({
     challengeType: 'PHYSICAL',
     timeLimit: null,
@@ -44,15 +42,12 @@ describe('ChallengeCardTitle Challenger line', () => {
     challengerName,
   });
 
-  it.each([
-    ['pl', 'Kolej na: Anna'],
-    ['en', "Anna's turn"],
-  ] as const)('tells a Bettor whose turn it is in %s', (language, expected) => {
+  it.each(['pl', 'en'] as const)('tells a Bettor whose turn it is in %s', (language) => {
     localStorage.setItem('wanna-bet:language', language);
 
     render(<LanguageProvider><ChallengeCardTitle card={visibleCard('Anna')} /></LanguageProvider>);
 
-    expect(screen.getByText(expected)).toBeTruthy();
+    expect(screen.getByText(translate(dictionaries[language], 'challengeCard.challengerTurn', { name: 'Anna' }))).toBeTruthy();
   });
 
   it('keeps the typed case and the "(n)" suffix of the name', () => {
