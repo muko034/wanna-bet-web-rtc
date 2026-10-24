@@ -111,7 +111,7 @@ describe('App mount-time reopen', () => {
 
     await renderApp();
     expect(screen.getByText(translate(dictionaries.pl, 'reopening.title'))).toBeTruthy();
-    await act(async () => { screen.getByLabelText('Home').click(); });
+    await act(async () => { screen.getByLabelText(translate(dictionaries.pl, 'exit.label')).click(); });
 
     expect(window.location.pathname).toBe(withBase('/'));
     expect(screen.queryByText(translate(dictionaries.pl, 'reopening.title'))).toBeNull();

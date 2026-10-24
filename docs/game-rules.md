@@ -76,6 +76,10 @@ Each round, players try to predict whether the challenger will succeed at a chal
 ## Game ending
 - The game ends when the host or the group decides the session is over.
 - The session may also end when no further rounds are desired or the game is manually stopped.
+- Every screen except the Home screen and the Not Found screen has an Exit button at the top left. In the lobby and on
+  the forms and connection-problem screens it leaves for the Home screen at once. During a game it asks first. The host
+  chooses between End game (the room ends for everyone), Exit (the host steps out and the room stays open) and Stay
+  (nothing changes). A guest chooses between Leave (gives up their place), Sit out and Stay.
 
 ## A good task
 

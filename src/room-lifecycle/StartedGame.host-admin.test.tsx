@@ -206,7 +206,7 @@ describe('a Guest the Host paused', () => {
   ] as const)('can still %s', (_name, label, callback) => {
     const props = renderAs('guest', pausedState());
 
-    fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+    fireEvent.click(screen.getByRole('link', { name: t('exit.label') }));
     fireEvent.click(screen.getByRole('button', { name: t(label) }));
 
     expect(props[callback]).toHaveBeenCalledWith(CODE);
