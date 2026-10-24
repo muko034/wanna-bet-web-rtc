@@ -66,3 +66,15 @@ leaking to the next item, and a toast keyed by its id replays its CSS animation 
 <JoinRequestDialog key={joinDialogFor} name={joinDialogFor} />
 <div class="vb-toast" key={toast.id}>
 ```
+
+## Name an icon-only button with `aria-label` and hide its SVG
+
+A button or link that shows only an icon (the Exit link, the copy-invite button, the Redraw button, the Join Requests
+bell) carries an `aria-label` that says what it does, and its inline `<svg>` is marked `aria-hidden="true"`. Assistive
+tech then announces the label once instead of reading an unnamed graphic, and tests find the control by
+`getByRole('button', { name })`.
+
+```tsx
+<button class="vb-bell" type="button" aria-label={label} onClick={onOpen}>
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+```
