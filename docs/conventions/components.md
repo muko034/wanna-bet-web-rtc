@@ -78,3 +78,14 @@ tech then announces the label once instead of reading an unnamed graphic, and te
 <button class="vb-bell" type="button" aria-label={label} onClick={onOpen}>
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
 ```
+
+## Disable a submit control while its input is invalid, and check again in the handler
+
+A button that commits typed or chosen input (Create, Join, Approve, Lock in) is `disabled` while the input is not valid,
+and its handler returns early on the same condition. A form can still be submitted with the Enter key, and a disabled
+button does not stop that. Derive the condition once, from a pure parse or validation function, and use it for both.
+
+```tsx
+const points = parseJoinPoints(pointsText);
+<button disabled={points === null} onClick={() => points !== null && onApprove(points)}>
+```

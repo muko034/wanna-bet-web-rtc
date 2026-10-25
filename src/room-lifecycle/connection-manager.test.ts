@@ -247,6 +247,40 @@ describe('ConnectionManager', () => {
     expect(manager.room.players).toHaveLength(MAX_ROOM_PLAYERS - 1);
   });
 
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', '   '],
+    ['over-long', 'a'.repeat(17)],
+    ['over-long in emoji', '😀'.repeat(17)],
+  ])('ignores a join with a %s name in the Lobby, as for any invalid message, and does not add the Guest', async (_label, name) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+
+    const guestTransport = await connectGuest(hostId);
+    const received: unknown[] = [];
+    guestTransport.onMessage((message) => received.push(message));
+    guestTransport.send({ type: 'join', payload: { name } });
+
+    expect(received).toEqual([]);
+    expect(manager.room.players).toEqual([]);
+  });
+
+  it.each([
+    ['exactly 16 characters', 'a'.repeat(16), 'a'.repeat(16)],
+    ['16 emoji', '😀'.repeat(16), '😀'.repeat(16)],
+    ['surrounding spaces', '  Anna ', 'Anna'],
+  ])('accepts a join with %s in the Lobby and stores the trimmed name', async (_label, name, stored) => {
+    const hostTransport = new FakeTransport();
+    const hostId = await hostTransport.connect();
+    const manager = new ConnectionManager(hostTransport, roomWith([]), () => {});
+
+    await joinAndAwaitWelcome(hostId, name);
+
+    expect(manager.room.players.map((p) => p.name)).toEqual([stored]);
+  });
+
   it('still allows a previously-joined Guest to rejoin after the Game has started', async () => {
     const hostTransport = new FakeTransport();
     const hostId = await hostTransport.connect();
@@ -1114,6 +1148,28 @@ describe('a Guest asking to join a started Game', () => {
     expect(waitingNames(manager)).toEqual(['Latecomer']);
     expect(manager.room.players.map((p) => p.name)).toEqual(['Sam']);
     expect(manager.gameState?.players.map((p) => p.name)).toEqual(['Host', 'Sam']);
+  });
+
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', '   '],
+    ['over-long', 'a'.repeat(17)],
+  ])('ignores a Join Request with a %s name, queueing nothing', async (_label, name) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { manager, hostId } = await startedGame();
+
+    const latecomer = await requestJoin(hostId, name);
+
+    expect(latecomer.received.filter((m) => typeOf(m) !== 'state')).toEqual([]);
+    expect(waitingNames(manager)).toEqual([]);
+  });
+
+  it('queues a Join Request with a valid name, trimmed', async () => {
+    const { manager, hostId } = await startedGame();
+
+    await requestJoin(hostId, '  Latecomer ');
+
+    expect(waitingNames(manager)).toEqual(['Latecomer']);
   });
 
   it('tells the Host UI about every change of the waiting requests', async () => {
