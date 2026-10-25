@@ -5,6 +5,12 @@ import { PeerUnavailableError, RequestedIdTakenError, type RecoverableTransport 
 /** Overrides PeerJS's cloud-hosted signaling defaults — used to point at a local/self-hosted server. */
 export type PeerJsServerOptions = Pick<PeerJSOption, 'host' | 'port' | 'path' | 'secure'>;
 
+/** How long one reconnect attempt waits for the Peer `open` event before it is retried. */
+const RECONNECT_ATTEMPT_TIMEOUT_MS = 2_000;
+const MAX_RECONNECT_ATTEMPTS = 3;
+/** Upper bound on waiting for the old signaling socket to close before reconnecting. */
+const SOCKET_CLOSE_TIMEOUT_MS = 1_000;
+
 function logTraffic(direction: 'tx' | 'rx', peerId: string, message: unknown): void {
   if (import.meta.env.DEV || isDebugMode()) {
     console.debug(`[${direction}]`, peerId, message);
@@ -118,24 +124,54 @@ export class PeerJsTransport implements RecoverableTransport {
    * A peer that still reports `open` can hold a dead socket, so it is re-registered on purpose:
    * `peer.disconnect()` then `peer.reconnect()`. Both keep open Guest `DataConnection`s; a
    * destroyed `Peer` is rebuilt under `lastRequestedId`, which drops them. Resolves `false` if
-   * the connection could not be restored.
+   * the connection could not be restored within `MAX_RECONNECT_ATTEMPTS`.
    */
-  recover(): Promise<boolean> {
+  async recover(): Promise<boolean> {
     const peer = this.peer;
     if (!peer || this.lastRequestedId === undefined) {
-      return Promise.resolve(false);
+      return false;
     }
     if (peer.destroyed) {
       return this.rebuildHostPeer();
     }
-    if (!peer.disconnected) {
-      peer.disconnect();
+    for (let attempt = 0; attempt < MAX_RECONNECT_ATTEMPTS; attempt++) {
+      await this.disconnectPeer(peer);
+      const outcome = await this.reconnectPeer(peer);
+      if (outcome !== 'timed-out') {
+        return outcome;
+      }
     }
-    return this.reconnectPeer(peer);
+    await this.disconnectPeer(peer);
+    return false;
   }
 
-  /** Re-registers a disconnected `peer` with the signaling server; rebuilds it if it ends up destroyed. */
-  private reconnectPeer(peer: Peer): Promise<boolean> {
+  /**
+   * Disconnects `peer` and waits for its old signaling socket to close. PeerServer sends `OPEN` only
+   * to a socket that registers after it processed the old socket's close, so reconnecting in the
+   * same tick can leave `reconnectPeer` waiting for an `OPEN` that never comes.
+   */
+  private disconnectPeer(peer: Peer): Promise<void> {
+    const oldSocket = (peer.socket as unknown as { _socket?: WebSocket })._socket;
+    peer.disconnect();
+    if (!oldSocket || oldSocket.readyState === WebSocket.CLOSED) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const done = () => {
+        clearTimeout(timer);
+        oldSocket.removeEventListener('close', done);
+        resolve();
+      };
+      const timer = setTimeout(done, SOCKET_CLOSE_TIMEOUT_MS);
+      oldSocket.addEventListener('close', done);
+    });
+  }
+
+  /**
+   * Re-registers a disconnected `peer` with the signaling server; rebuilds it if it ends up destroyed.
+   * Resolves `'timed-out'` when no `open` event arrives within `RECONNECT_ATTEMPT_TIMEOUT_MS`.
+   */
+  private reconnectPeer(peer: Peer): Promise<boolean | 'timed-out'> {
     return new Promise((resolve) => {
       const onOpen = () => {
         cleanup();
@@ -149,7 +185,12 @@ export class PeerJsTransport implements RecoverableTransport {
           resolve(false);
         }
       };
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve('timed-out');
+      }, RECONNECT_ATTEMPT_TIMEOUT_MS);
       const cleanup = () => {
+        clearTimeout(timer);
         peer.off('open', onOpen);
         peer.off('error', onError);
       };
