@@ -8,16 +8,6 @@ Each round, players try to predict whether the challenger will succeed at a chal
 - Each player begins with the same starting amount of points (100).
 - One player is designated as the challenger for the current round.
 
-## Player names
-- A name is trimmed, then must have 1 to 16 characters as the player sees them: an emoji or an accented letter counts as
-  one. A name of only spaces counts as empty.
-- The create-room and join forms keep the Create and Join buttons disabled while the name is not valid, stop typing at 16
-  characters, and cut pasted text to 16. There is no red outline and no error text. They send the trimmed name. The
-  host's own name follows the same rule.
-- The host checks a guest's name too, so a modified or old client cannot send a bad one. A join with an empty or
-  over-long name, in the lobby or as a request after the game started, is refused like any other invalid message: the host
-  ignores it. A guest rejoining with a stored reconnect token sends no name and is not checked.
-
 ## Round flow
 1. A challenge is presented to the challenger.
 2. The other players choose whether they believe the challenger will succeed or fail.
