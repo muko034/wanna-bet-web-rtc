@@ -262,4 +262,48 @@ describe('PeerJsTransport integration tests', () => {
     host.send({ type: 'state', payload: { seq: 1 } });
     await expect(guestReceived).resolves.toMatchObject({ message: { type: 'state', payload: { seq: 1 } } });
   });
+
+  it('recover() retries the reconnect when the server skips OPEN once, and keeps the Guest connection', async () => {
+    const host = createTransport();
+    const hostId = await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
+    const guest = createTransport();
+    await guest.connect(hostId);
+    const peer = host.peerForTesting();
+
+    // PeerServer skips OPEN when a fast reconnect lands before it processes the old socket's close.
+    const socket = peer.socket as unknown as { emit: (event: string, ...args: unknown[]) => boolean };
+    const emit = socket.emit.bind(socket);
+    let skippedOpen = false;
+    socket.emit = (event, ...args) => {
+      if (!skippedOpen && event === 'message' && (args[0] as { type?: string })?.type === 'OPEN') {
+        skippedOpen = true;
+        return false;
+      }
+      return emit(event, ...args);
+    };
+
+    const recovered = await withTimeout(host.recover(), 'recover() when the server skips OPEN once');
+
+    expect(skippedOpen).toBe(true);
+    expect(recovered).toBe(true);
+    expect(peer.open).toBe(true);
+    const guestReceived = onceMessage(guest);
+    host.send({ type: 'state', payload: { seq: 1 } });
+    await expect(guestReceived).resolves.toMatchObject({ message: { type: 'state', payload: { seq: 1 } } });
+  });
+
+  it('recover() resolves false in bounded time when the server never sends OPEN', async () => {
+    const host = createTransport();
+    await host.connect(undefined, `integration-test-recover-${crypto.randomUUID()}`);
+    const peer = host.peerForTesting();
+
+    const socket = peer.socket as unknown as { emit: (event: string, ...args: unknown[]) => boolean };
+    const emit = socket.emit.bind(socket);
+    socket.emit = (event, ...args) =>
+      event === 'message' && (args[0] as { type?: string })?.type === 'OPEN' ? false : emit(event, ...args);
+
+    const recovered = await withTimeout(host.recover(), 'recover() when the server never sends OPEN');
+
+    expect(recovered).toBe(false);
+  });
 });
