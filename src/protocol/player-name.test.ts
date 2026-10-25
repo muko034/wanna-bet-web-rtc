@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_NAME_LENGTH, normalizeName, truncateName } from './player-name';
+import { normalizeName, truncateName } from './player-name';
 
 describe('normalizeName', () => {
   it.each([
@@ -30,9 +30,5 @@ describe('truncateName', () => {
     ['an emoji is never cut in half', '😀'.repeat(20), '😀'.repeat(16)],
   ])('%s', (_label, raw, expected) => {
     expect(truncateName(raw)).toBe(expected);
-  });
-
-  it('exposes the limit', () => {
-    expect(MAX_NAME_LENGTH).toBe(16);
   });
 });

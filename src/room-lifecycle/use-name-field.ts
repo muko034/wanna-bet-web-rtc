@@ -10,10 +10,10 @@ export function useNameField() {
 
   const onInput = (event: Event) => {
     const input = event.target as HTMLInputElement;
-    const cut = truncateName(input.value);
-    // Written back because a cut that leaves the state unchanged would not re-render the input.
-    if (input.value !== cut) input.value = cut;
-    setText(cut);
+    const truncated = truncateName(input.value);
+    // Written back because a truncation that leaves the state unchanged would not re-render the input.
+    if (input.value !== truncated) input.value = truncated;
+    setText(truncated);
   };
 
   return { text, onInput, ...normalizeName(text) };
