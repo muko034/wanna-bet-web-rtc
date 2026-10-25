@@ -475,6 +475,46 @@ export function StartedGame({
     );
   }
 
+  const roundBody = gameState?.round && (
+    <>
+      {challengeCard?.kind === 'hidden' ? (
+        <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${chrome.noticeCount ?? 0}`}>
+          {redrawButton}
+          <ChallengeCardTitle card={challengeCard} />
+          <div class="vb-task-text">{t(challengeCard.title.key, challengeCard.title.params)}</div>
+          <div class="vb-task-detail">{t(challengeCard.detail.key, challengeCard.detail.params)}</div>
+        </div>
+      ) : challengeCard?.kind === 'visible' ? (
+        <div class={chrome.cardClass} key={`card-${chrome.noticeCount ?? 0}`}>
+          {redrawButton}
+          <ChallengeCardTitle card={challengeCard} />
+          <div class="vb-task-text">{challengeCard.text}</div>
+          {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
+        </div>
+      ) : null}
+      {bettingPanel.bettors.length === 0 ? (
+        <div class="vb-status-pill">{t('round.waitingForBettors')}</div>
+      ) : (
+        <div class="vb-bettor-pills">
+          {bettingPanel.bettors.map((bettor) => (
+            <div key={bettor.playerId} class={`vb-status-pill${bettor.hasBet ? ' placed' : ''}`}>
+              {bettor.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  const ownBetPill = bettingPanel.kind === 'locked' && bettingPanel.ownBet && (
+    <div class="vb-status-pill">
+      {t('betting.youBet', {
+        amount: bettingPanel.ownBet.amount,
+        prediction: t(PREDICTION_LABELS[bettingPanel.ownBet.prediction]),
+      })}
+    </div>
+  );
+
   return (
     <PhoneShell
       background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
@@ -493,46 +533,24 @@ export function StartedGame({
           </button>
         </>
       ) : gameState?.round && roundControls.kind === 'judge-round' ? (
-        <>
-          <div class="vb-giant-title vb-title-small">{t(roundControls.title.key, roundControls.title.params)}</div>
-          <div class="vb-giant-sub">{t('judge.subtitle')}</div>
-          <div class="vb-tapzones">
-            <button class="vb-tapzone success" type="button" onClick={() => onResolveRound('YES')}>
-              ✅<br />{t('judge.success')}
-            </button>
-            <button class="vb-tapzone fail" type="button" onClick={() => onResolveRound('NO')}>
-              ❌<br />{t('judge.fail')}
-            </button>
+        <div class="vb-judge">
+          <div class="vb-judge-body">{roundBody}</div>
+          <div class="vb-judge-bar">
+            {ownBetPill}
+            <div class="vb-giant-title vb-title-small">{t(roundControls.title.key, roundControls.title.params)}</div>
+            <div class="vb-tapzones">
+              <button class="vb-tapzone success" type="button" onClick={() => onResolveRound('YES')}>
+                <span class="vb-tapzone-icon" aria-hidden="true">✓</span>{t('judge.success')}
+              </button>
+              <button class="vb-tapzone fail" type="button" onClick={() => onResolveRound('NO')}>
+                <span class="vb-tapzone-icon" aria-hidden="true">✕</span>{t('judge.fail')}
+              </button>
+            </div>
           </div>
-        </>
+        </div>
       ) : gameState?.round ? (
         <>
-          {challengeCard?.kind === 'hidden' ? (
-            <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${chrome.noticeCount ?? 0}`}>
-              {redrawButton}
-              <ChallengeCardTitle card={challengeCard} />
-              <div class="vb-task-text">{t(challengeCard.title.key, challengeCard.title.params)}</div>
-              <div class="vb-task-detail">{t(challengeCard.detail.key, challengeCard.detail.params)}</div>
-            </div>
-          ) : challengeCard?.kind === 'visible' ? (
-            <div class={chrome.cardClass} key={`card-${chrome.noticeCount ?? 0}`}>
-              {redrawButton}
-              <ChallengeCardTitle card={challengeCard} />
-              <div class="vb-task-text">{challengeCard.text}</div>
-              {challengeCard.illustration && <img class="vb-task-illustration" src={challengeCard.illustration} alt="" />}
-            </div>
-          ) : null}
-          {bettingPanel.bettors.length === 0 ? (
-            <div class="vb-status-pill">{t('round.waitingForBettors')}</div>
-          ) : (
-            <div class="vb-bettor-pills">
-              {bettingPanel.bettors.map((bettor) => (
-                <div key={bettor.playerId} class={`vb-status-pill${bettor.hasBet ? ' placed' : ''}`}>
-                  {bettor.name}
-                </div>
-              ))}
-            </div>
-          )}
+          {roundBody}
           {bettingPanel.kind === 'form' ? (
             <div class={chrome.betFormClass}>
               <div class="vb-tapzones">
@@ -569,14 +587,7 @@ export function StartedGame({
           ) : bettingPanel.kind === 'locked' ? (
             <>
               <div class="vb-giant-title vb-title-small">{t('betting.lockedIn')}</div>
-              {bettingPanel.ownBet && (
-                <div class="vb-status-pill">
-                  {t('betting.youBet', {
-                    amount: bettingPanel.ownBet.amount,
-                    prediction: t(PREDICTION_LABELS[bettingPanel.ownBet.prediction]),
-                  })}
-                </div>
-              )}
+              {ownBetPill}
               <div class="vb-giant-sub">{t(bettingPanel.waitingLabel.key, bettingPanel.waitingLabel.params)}</div>
               {bettingPanel.reconnectingNotice && <div class="vb-giant-sub" role="status">{t(bettingPanel.reconnectingNotice.key, bettingPanel.reconnectingNotice.params)}</div>}
             </>
