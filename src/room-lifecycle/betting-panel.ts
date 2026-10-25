@@ -13,7 +13,7 @@ export type BettorStatus = {
   isLocalPlayer: boolean;
 };
 
-export type BettingBackground = 'vb-bg-bet' | 'vb-bg-wait';
+export type BettingBackground = 'vb-bg-bet' | 'vb-bg-wait' | 'vb-bg-waiting-bets' | 'vb-bg-judge';
 
 export type BettingPanel =
   | { kind: 'hidden'; background: BettingBackground; bettors: BettorStatus[] }
@@ -94,15 +94,17 @@ export function resolveBettingPanel({
       };
     });
 
+  const waitingBackground = bettors.length > 0 && bettors.every((bettor) => bettor.hasBet) ? 'vb-bg-judge' : 'vb-bg-waiting-bets';
+
   const localPlayer = gameState.players.find((player) => player.playerId === localPlayerId);
   if (!localPlayer || localPlayerId === round.challengerId) {
-    return { kind: 'status', background: 'vb-bg-wait', bettors };
+    return { kind: 'status', background: waitingBackground, bettors };
   }
 
   if (ownBet !== null || hasPlacedBet(round, localPlayerId)) {
     return {
       kind: 'locked',
-      background: 'vb-bg-wait',
+      background: waitingBackground,
       bettors,
       ownBet,
       waitingLabel: waitingLabel(bettors.filter((bettor) => !bettor.hasBet).length),

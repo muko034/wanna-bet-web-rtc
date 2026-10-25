@@ -129,7 +129,7 @@ describe('resolveBettingPanel', () => {
   it.each([
     ['the Challenger', 'guest-1'],
     ['a Bettor who already placed a Bet', 'guest-2'],
-  ])('uses the waiting background for %s', (_label, localPlayerId) => {
+  ])('uses the waiting-for-Bets background for %s', (_label, localPlayerId) => {
     const panel = resolveBettingPanel({
       gameState: stateWith({
         round: {
@@ -142,7 +142,38 @@ describe('resolveBettingPanel', () => {
       localPlayerId,
     });
 
-    expect(panel.background).toBe('vb-bg-wait');
+    expect(panel.background).toBe('vb-bg-waiting-bets');
+  });
+
+  it.each([
+    ['the Challenger', 'guest-1'],
+    ['a Bettor who placed a Bet', 'guest-2'],
+  ])('uses the judging background for %s once every Bettor has bet', (_label, localPlayerId) => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        round: {
+          challengerId: 'guest-1',
+          challengeId: 'challenge-1',
+          bets: [{ playerId: 'guest-2' }, { playerId: 'host-1' }],
+          outcome: null,
+        },
+      }),
+      localPlayerId,
+    });
+
+    expect(panel.background).toBe('vb-bg-judge');
+  });
+
+  it('counts the local Bet toward the judging background before the Host rebroadcast arrives', () => {
+    const panel = resolveBettingPanel({
+      gameState: stateWith({
+        round: { challengerId: 'guest-1', challengeId: 'challenge-1', bets: [{ playerId: 'host-1' }], outcome: null },
+      }),
+      localPlayerId: 'guest-2',
+      localBet: { amount: 7, prediction: 'NO' },
+    });
+
+    expect(panel.background).toBe('vb-bg-judge');
   });
 
   it('shows a locked-in confirmation with the local Bet before the Host rebroadcast arrives', () => {
@@ -154,7 +185,7 @@ describe('resolveBettingPanel', () => {
 
     expect(panel).toEqual({
       kind: 'locked',
-      background: 'vb-bg-wait',
+      background: 'vb-bg-waiting-bets',
       ownBet: { amount: 7, prediction: 'NO' },
       waitingLabel: { key: 'betting.waitingFor', params: { count: 1 } },
       reconnectingNotice: null,

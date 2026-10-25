@@ -374,7 +374,7 @@ describe('Join Requests on the Host screen', () => {
     const judging: GameState = { ...stateWith([host, alex]), round: { challengerId: 'host-1', challengeId: challengeBank[0].id, bets: [{ playerId: 'guest-1' }], outcome: null } };
     const { rerender } = renderAs('host', judging, ['Kim']);
 
-    expect(screen.getByText(t('judge.subtitle'))).toBeTruthy();
+    expect(screen.getByText(t('judge.title', { name: 'Host' }))).toBeTruthy();
     expect(bellWithCount(1)).not.toBeNull();
 
     rerender(judging, ['Kim', 'Lee', 'Max']);

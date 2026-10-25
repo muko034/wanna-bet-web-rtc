@@ -89,6 +89,12 @@ _Avoid_: Wager (when used loosely without amount+Prediction)
 **Prediction**:
 A Bettor's YES/NO guess on whether the Challenger will succeed at the Challenge. _Avoid_: Guess, call
 
+**Judging**:
+The stage of a Round that begins once every active Bettor has bet and ends when the Host gives the Outcome. Only the Host
+judges. The Challenge stays visible to every player except the Challenger throughout, so a Bettor can read it to them.
+Anything that makes a Bettor owe a Bet again (a Resume, a Late Joiner, a Redraw) sends the Round back to betting.
+_Avoid_: Verdict (the Host's answer is the Outcome), Judge (not a separate role)
+
 **Outcome**:
 The judged result of a Challenge: YES (succeeded) or NO (failed). _Avoid_: Result (ambiguous with Payout results)
 
