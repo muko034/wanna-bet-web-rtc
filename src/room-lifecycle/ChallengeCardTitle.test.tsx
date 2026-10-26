@@ -15,21 +15,22 @@ const card = (timeLimit: ChallengeCardView['timeLimit']): ChallengeCardView => (
 
 describe('ChallengeCardTitle time limit', () => {
   it.each([
-    ['15s', 'yellow'],
-    ['30s', 'red'],
-    ['60s', 'black'],
-  ] as const)('shows the %s stopwatch in %s with the time limit inside the icon', (label, color) => {
-    const { container } = render(<ChallengeCardTitle card={card({ label, color })} />);
+    ['15s', 15, 'yellow'],
+    ['30s', 30, 'red'],
+    ['60s', 60, 'black'],
+  ] as const)('shows the %s stopwatch in %s with the time limit inside the icon', (label, seconds, color) => {
+    const { container } = render(<ChallengeCardTitle card={card({ label, seconds, color })} />);
 
-    const timer = screen.getByRole('img', { name: label });
-    expect(timer.classList.contains(color)).toBe(true);
+    const control = screen.getByRole('button', { name: translate(dictionaries.pl, 'challengeCard.startTimer', { limit: label }) });
+    expect(control.querySelector('.vb-timer')?.classList.contains(color)).toBe(true);
     expect(container.querySelector('.vb-timer-number')?.textContent).toBe(label);
   });
 
   it('draws no stopwatch when the Challenge has no time limit', () => {
-    render(<ChallengeCardTitle card={card(null)} />);
+    const { container } = render(<ChallengeCardTitle card={card(null)} />);
 
-    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelector('.vb-timer')).toBeNull();
   });
 });
 

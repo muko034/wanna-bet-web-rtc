@@ -6,6 +6,7 @@ export type DisplayLanguage = 'pl' | 'en';
 
 export type ChallengeTimeLimitView = {
   label: '15s' | '30s' | '60s';
+  seconds: 15 | 30 | 60;
   color: 'yellow' | 'red' | 'black';
 };
 
@@ -16,9 +17,9 @@ type ChallengeCardHeader = {
 
 const TIME_LIMIT_VIEWS: Record<ChallengeBankEntry['timeLimit'], ChallengeTimeLimitView | null> = {
   NONE: null,
-  QUARTER_MINUTE: { label: '15s', color: 'yellow' },
-  HALF_MINUTE: { label: '30s', color: 'red' },
-  ONE_MINUTE: { label: '60s', color: 'black' },
+  QUARTER_MINUTE: { label: '15s', seconds: 15, color: 'yellow' },
+  HALF_MINUTE: { label: '30s', seconds: 30, color: 'red' },
+  ONE_MINUTE: { label: '60s', seconds: 60, color: 'black' },
 };
 
 export type ChallengeCardView = ChallengeCardHeader &
