@@ -102,7 +102,7 @@ describe('Timer start and stop', () => {
 
     fireEvent.click(ringButton());
 
-    startButton();
+    expect(startButton()).toBeTruthy();
     expect(screen.queryByRole('button', { name: t('challengeCard.stopTimer') })).toBeNull();
   });
 
@@ -158,7 +158,7 @@ describe('Timer end', () => {
     expect(doneButton().textContent).toBe('0');
 
     fireEvent.click(doneButton());
-    startButton();
+    expect(startButton()).toBeTruthy();
     expect(container.querySelector('.vb-task-flash')).toBeNull();
   });
 
