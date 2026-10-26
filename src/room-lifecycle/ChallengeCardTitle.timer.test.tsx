@@ -38,7 +38,8 @@ class FakeAudioContext {
     return oscillator;
   }
   createGain() {
-    return { gain: { value: 1 }, connect: () => undefined };
+    const param = { setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined };
+    return { gain: param, connect: () => undefined };
   }
   resume() {
     return Promise.resolve();
