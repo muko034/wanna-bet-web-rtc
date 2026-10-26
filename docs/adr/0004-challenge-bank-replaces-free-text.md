@@ -8,4 +8,5 @@ is exhausted and the history resets. This removes typing friction for the Host, 
 vetted Polish/English wording, and keeps the game's "good task" qualities (see `docs/game-rules.md`) consistent across
 Rooms — at the cost of losing spontaneous, Host-invented Challenges, which is an explicitly accepted trade-off for v1.
 `timeLimit` is carried as data but not enforced by the engine; an enforced countdown was considered and deferred as a
-separate, later feature.
+separate, later feature. That countdown now exists as a local, unenforced Timer that each player starts on their own
+device.
