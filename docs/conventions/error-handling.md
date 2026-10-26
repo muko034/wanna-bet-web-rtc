@@ -24,3 +24,20 @@ for (let attempt = 0; ; attempt++) {
   await wait(RETRY_DELAY_MS);
 }
 ```
+
+## Let an optional browser API degrade, never break its feature
+
+A browser capability the feature can live without (the clipboard, Wake Lock, Web Audio, device storage) is feature-detected
+before use, and a call that can be refused is wrapped in `try`/`catch`. When the capability is missing or refuses, the
+feature carries on: with a fallback where one exists (the clipboard falls back to `execCommand`), otherwise without it
+(the Timer still counts down with no sound or screen lock). Nothing is surfaced to the player, and a swallowed failure
+is either commented or logged with `console.warn`. Tests cover both the missing and the refusing case.
+
+```ts
+if (!active || !('wakeLock' in navigator)) return;
+try {
+  sentinel = await navigator.wakeLock.request('screen');
+} catch {
+  // A refused request just leaves the screen free to dim.
+}
+```

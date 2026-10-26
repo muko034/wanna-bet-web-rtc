@@ -478,14 +478,14 @@ export function StartedGame({
   const roundBody = gameState?.round && (
     <>
       {challengeCard?.kind === 'hidden' ? (
-        <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${chrome.noticeCount ?? 0}`}>
+        <div class={`${chrome.cardClass} vb-task-hidden`} key={`card-${roundKey}-${chrome.noticeCount ?? 0}`}>
           {redrawButton}
           <ChallengeCardTitle card={challengeCard} />
           <div class="vb-task-text">{t(challengeCard.title.key, challengeCard.title.params)}</div>
           <div class="vb-task-detail">{t(challengeCard.detail.key, challengeCard.detail.params)}</div>
         </div>
       ) : challengeCard?.kind === 'visible' ? (
-        <div class={chrome.cardClass} key={`card-${chrome.noticeCount ?? 0}`}>
+        <div class={chrome.cardClass} key={`card-${roundKey}-${chrome.noticeCount ?? 0}`}>
           {redrawButton}
           <ChallengeCardTitle card={challengeCard} />
           <div class="vb-task-text">{challengeCard.text}</div>

@@ -77,6 +77,15 @@ again; the Challenger stays the same. The replaced Challenge stays in Challenge 
 An optional image attached to a Challenge Bank entry, shared unchanged across every Display Language. Hidden from the
 Challenger under the same rule as Challenge text. _Avoid_: Image, picture
 
+**Time Limit**:
+How long a Challenge allows, as recorded in its Challenge Bank entry: 15s, 30s or 60s, or none. Shown on the Challenge
+card as an icon. Informational: the game never enforces it. _Avoid_: Duration
+
+**Timer**:
+The local countdown a player starts from the Time Limit icon on the Challenge card, running for the Challenge's Time
+Limit. Each player runs their own on their own device, the Challenger included. Not game state and never shared; it
+judges nothing. _Avoid_: stopwatch, countdown
+
 **Display Language**:
 A player's own choice of Polish or English for everything their client renders, set independently per player/device
 and never synced as part of the Room's Game State. Until the player chooses, it follows their browser's language,

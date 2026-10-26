@@ -108,3 +108,16 @@ async function startedGameWithGuest(pickChallenger: (ids: string[]) => string = 
 
 const { manager, guest, playerId } = await startedGameWithGuest();
 ```
+
+## Assert a rendered element's presence with `expect(getBy…).toBeTruthy()` and absence with `expect(queryBy…).toBeNull()`
+
+A component test never calls a `getBy*` query as a bare statement to "check" that something rendered, and it does not
+lean on a jest-dom matcher. `getBy*` throws when nothing matches, so a bare call does pass, but it reads as a stray
+lookup and says nothing about what the test expects. Wrap it in `expect(...).toBeTruthy()` for presence, and use
+`expect(screen.queryBy*(...)).toBeNull()` for absence. A query used only to get a handle to act on (`fireEvent.click(getBy…)`)
+is not an assertion and stays as is.
+
+```tsx
+expect(screen.getByRole('button', { name: t('challengeCard.startTimer', { limit: '30s' }) })).toBeTruthy();
+expect(screen.queryByRole('button', { name: t('challengeCard.stopTimer') })).toBeNull();
+```

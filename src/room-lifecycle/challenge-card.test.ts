@@ -108,9 +108,9 @@ describe('resolveChallengeCard', () => {
   });
 
   it.each([
-    ['QUARTER_MINUTE', { label: '15s', color: 'yellow' }],
-    ['HALF_MINUTE', { label: '30s', color: 'red' }],
-    ['ONE_MINUTE', { label: '60s', color: 'black' }],
+    ['QUARTER_MINUTE', { label: '15s', seconds: 15, color: 'yellow' }],
+    ['HALF_MINUTE', { label: '30s', seconds: 30, color: 'red' }],
+    ['ONE_MINUTE', { label: '60s', seconds: 60, color: 'black' }],
     ['NONE', null],
   ] as const)('maps time limit %s for both the visible and the hidden variant', (timeLimit, expected) => {
     const challenge: ChallengeBankEntry = { ...illustratedChallenge, type: 'MENTAL', timeLimit };
