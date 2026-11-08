@@ -28,6 +28,34 @@ def read_prompt(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
+def load_pipeline(model: Path, offload: str):
+    import torch
+    from diffusers import QwenImage21Pipeline
+
+    pipe = QwenImage21Pipeline.from_pretrained(
+        str(model), dtype=torch.bfloat16, low_cpu_mem_usage=True
+    )
+    if offload == "sequential":
+        pipe.enable_sequential_cpu_offload()
+    elif offload == "model":
+        pipe.enable_model_cpu_offload()
+    else:
+        pipe.to("cuda")
+    return pipe
+
+
+def generate(pipe, prompt: str, width: int, height: int, steps: int, seed: int):
+    import torch
+
+    return pipe(
+        prompt=prompt,
+        width=width,
+        height=height,
+        num_inference_steps=steps,
+        generator=torch.Generator("cpu").manual_seed(seed),
+    ).images[0]
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--model", required=True, type=Path, help="Model directory")
@@ -64,28 +92,11 @@ def main() -> None:
 
     seed = args.seed if args.seed is not None else random.randrange(2**32)
 
-    import torch
-    from diffusers import QwenImage21Pipeline
-
-    pipe = QwenImage21Pipeline.from_pretrained(
-        str(args.model), dtype=torch.bfloat16, low_cpu_mem_usage=True
-    )
-    if args.offload == "sequential":
-        pipe.enable_sequential_cpu_offload()
-    elif args.offload == "model":
-        pipe.enable_model_cpu_offload()
-    else:
-        pipe.to("cuda")
+    pipe = load_pipeline(args.model, args.offload)
 
     print(f"Seed: {seed}  Size: {args.width}x{args.height}  Steps: {args.steps}")
     start = time.perf_counter()
-    image = pipe(
-        prompt=prompt,
-        width=args.width,
-        height=args.height,
-        num_inference_steps=args.steps,
-        generator=torch.Generator("cpu").manual_seed(seed),
-    ).images[0]
+    image = generate(pipe, prompt, args.width, args.height, args.steps, seed)
     print(f"Generation took {timedelta(seconds=round(time.perf_counter() - start))}")
 
     image.save(output)
