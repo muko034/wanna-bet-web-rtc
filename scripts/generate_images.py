@@ -26,7 +26,7 @@ STYLE_FILE = SCRIPTS_DIR / "style.md"
 SCENES_DIR = SCRIPTS_DIR / "scenes"
 OUT_DIR = SCRIPTS_DIR.parent / "out"
 
-DEFAULT_MODEL = "/home/jziec/ai-modeld/Qwen-Image-2.1"
+DEFAULT_MODEL = "/home/jziec/ai-models/Qwen-Image-2.1"
 SIZE = 256
 STEPS = 30
 OFFLOAD = "sequential"
