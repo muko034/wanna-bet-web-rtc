@@ -43,18 +43,46 @@ Skip the illustration when the text alone fully explains the physical action
 Illustrate when the setup, the props, or the body pose are hard to picture from the text
 (examples: coins thrown from behind the back, threading a needle).
 
-## Step 2: describe the scene (only when you illustrate)
+## Step 2: choose layout and framing (only when you illustrate)
+
+The image is a small square shown on a phone, so keep it simple.
+
+Layout:
+- "single": one frozen moment. Use this by default.
+- "two-moments": use it only when the task has a clear before and after that one frozen
+  moment cannot show (for example a coin that is flicked and then caught, a cup that is
+  stacked and then knocked over). The image then has two panels, "Panel 1" and "Panel 2".
+  Also choose the arrangement: "side-by-side" for tall poses (standing, jumping), or
+  "stacked" (panel 1 on top, panel 2 below) for motion across the image (throwing, rolling).
+  A thin divider line separates the panels. Each panel has a small numeral, "1" or "2",
+  in a thin circle in its top-left corner.
+
+Framing (for each panel):
+- "full": the whole character is visible. Use "simple hands" here. Never write "mitten".
+- "close-up": use it when only one body part matters (hands, face, feet). Crop the drawing
+  to that part. Show a sleeve cuff, a sock, or a bit of the arm or leg so the viewer knows
+  who it belongs to. Draw more detail in that part: for hands, draw the thumb and the
+  fingers as separate short rounded shapes, and say how they hold or touch the props. Do not
+  draw the rest of the body. Do not call a close-up hand "mitten" either.
+A two-moments image may mix full and close-up panels.
+
+## Step 3: describe the scene (only when you illustrate)
 
 The drawing style is fixed and defined below. It is appended to your scene text later.
 Do not repeat, restate, or contradict it. Do not write style words
 (flat, pastel, kawaii, vector, outline, white background, and so on).
+Do not write the words "layout", "framing", or "arrangement" in the scene.
 
-Write the scene as one paragraph of plain English, about 80 to 150 words:
+Write the scene as plain English, about 80 to 150 words for "single" and about 120 to 200
+words for "two-moments":
 - Start with one sentence that introduces the character: who it is (for example a young boy,
-  a girl, a grandma) and what it wears, in this form: "A young boy in a mint-green sleeveless
+  a girl, a man) and what it wears, in this form: "A young boy in a mint-green sleeveless
   top, orange-peach shorts, striped socks, and brown shoes." Choose a different character and
-  outfit for each card. Use colors from the style palette for the clothes.
-- Name the single frozen moment to draw: one attempt only.
+  outfit for each card. Use colors from the style palette for the clothes. In a two-moments
+  scene, introduce the character once, so both panels show the same character and outfit.
+- Name the single frozen moment to draw: one attempt only. For "two-moments", start each
+  panel with "Panel 1:" or "Panel 2:", say where the panels sit (left and right, or top and
+  bottom), and describe one frozen moment in each.
 - Describe the character's pose, what the hands do, and where the character looks.
 - Describe each prop with its shape, size, and color. Use colors from the style palette.
   Give size by comparison ("as big as the character's hand"), not in units.
@@ -71,13 +99,26 @@ behind their back and catch them? (2 attempts)"). The character here only shows 
 detail; do not copy it.
 A young boy in a mint-green sleeveless top, orange-peach shorts, striped socks, and brown
 shoes stands in a relaxed, slightly leaning-back pose, seen from the front, with both arms
-stretched out to the sides and bent upward at the elbows, mitten hands open and facing up.
+stretched out to the sides and bent upward at the elbows, hands open and facing up.
 Two round cream-colored coins with a small coral red star in the middle have just been thrown
 from behind the boy's back and now hang in the air above and in front of his head, one
 slightly higher than the other. A thin dotted brown line starts behind his right shoulder and
 arcs over the head to each coin, and a few short curved motion lines sit right below each
 coin. The boy looks up at the coins with a tiny surprised smile. A second, smaller dotted
 arc below shows where the coins will fall back into the open hands.
+
+Example of a two-moments scene (side-by-side, panel 1 full, panel 2 close-up) for a
+made-up challenge about flicking a coin off the back of the hand and catching it. It only
+shows the shape and the level of detail; do not copy it.
+A girl with two small pigtails in a coral-red short-sleeved top, cream-colored shorts,
+mint-green socks, and orange-peach shoes. Panel 1, on the left: the girl stands seen from the
+front with her right arm bent in front of her chest, the back of her simple hand facing up.
+A round cream-colored coin with a small coral red star lies flat on the back of that hand.
+She looks down at it with a tiny focused smile. Panel 2, on the right: a close-up of a hand
+in an orange-peach sleeve cuff, palm up and open, with the thumb and four short rounded
+fingers drawn apart. The same coin has just landed in the palm, and a few short curved motion
+lines sit beside the fingertips. A thin dotted brown line comes down from above the coin to
+the palm.
 
 ## Drawing style (appended later, do not repeat)
 
@@ -87,7 +128,9 @@ arc below shows where the coins will fall back into the open hands.
 
 Reply with JSON only, no code fences, no other text. Use exactly one of these shapes:
 {{"illustrate": false, "reason": "<one short line>"}}
-{{"illustrate": true, "scene": "<the scene paragraph>"}}
+{{"illustrate": true, "layout": "single", "framing": "full" or "close-up", "scene": "<the scene>"}}
+{{"illustrate": true, "layout": "two-moments", "arrangement": "side-by-side" or "stacked",
+  "framing": ["full" or "close-up" for panel 1, "full" or "close-up" for panel 2], "scene": "<the scene>"}}
 """
 
 
@@ -121,12 +164,33 @@ def build_user_prompt(text: str) -> str:
     return f"Challenge text:\n{text}"
 
 
+FRAMINGS = {"full", "close-up"}
+ARRANGEMENTS = {"side-by-side", "stacked"}
+
+
+def validate_layout(reply: dict) -> None:
+    """Check layout, arrangement, and framing. They steer the scene text and are not saved."""
+    layout = reply.get("layout")
+    framing = reply.get("framing")
+    if layout == "single":
+        if framing not in FRAMINGS:
+            raise ValueError(f"bad framing for a single image: {framing!r}")
+    elif layout == "two-moments":
+        if reply.get("arrangement") not in ARRANGEMENTS:
+            raise ValueError(f"bad arrangement: {reply.get('arrangement')!r}")
+        if not (isinstance(framing, list) and len(framing) == 2 and set(framing) <= FRAMINGS):
+            raise ValueError(f"bad framing for two moments: {framing!r}")
+    else:
+        raise ValueError(f"bad layout: {layout!r}")
+
+
 def parse_reply(raw: str) -> dict:
     start, end = raw.find("{"), raw.rfind("}")
     if start == -1 or end < start:
         raise ValueError(f"no JSON object in reply: {raw[:200]!r}")
     reply = json.loads(raw[start : end + 1])
     if reply.get("illustrate") is True and str(reply.get("scene", "")).strip():
+        validate_layout(reply)
         return {"illustrate": True, "scene": str(reply["scene"]).strip()}
     if reply.get("illustrate") is False and str(reply.get("reason", "")).strip():
         return {"illustrate": False, "reason": " ".join(str(reply["reason"]).split())}
