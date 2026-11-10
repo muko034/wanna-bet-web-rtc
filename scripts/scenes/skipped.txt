@@ -1,28 +1,27 @@
-006: The text fully explains the action: find three items starting with K and put them on a table.
-008: The text fully explains the action: purr a song with a straight face. There is no prop or hard-to-picture pose.
-009: The text fully explains the action, and a sequence of eye blinks cannot be shown in one frozen moment.
-053: The action is to close eyes and guess a number, so the text explains it fully and there are no props or hard poses.
-054: The text fully explains the action: wiggling ears needs no props and no special pose.
-065: The text fully explains the action: the player closes their eyes and names clothing items, so no props or pose need a picture.
-067: The task is a plain phone call with no unusual props or pose, so the text explains it fully.
-074: The text fully explains the action: the player whistles a known tune, with no props or special pose.
-075: The text fully explains the action: the player sticks out the tongue and tries to reach the nose, with no props or unusual pose.
-076: The text fully explains the task: a spoken guess of a neighbor's height, with no props or hard-to-picture body pose.
-103: Untying and retying shoelaces is a familiar action that the text fully explains.
-106: The text fully explains the action: find three items that start with 'T' and put them on a table. No hard-to-picture prop or pose.
-107: The text fully explains the action: whistle a song with a straight face, with no props or special pose.
-108: The text fully explains the action, and the key detail (mirrored letters) could only be shown with text, which the image may not contain.
-114: The text fully explains the action: saying a phrase aloud quickly, with no props or body pose to show.
-142: The text fully explains the action: take phone photos of a shoe, a toilet paper roll, and a tree.
-146: The text fully explains the action: keep your eyes open without blinking. No props or special pose need a picture.
-148: The text fully explains the action: say a phrase aloud 5 times without a mistake. There are no props or body pose to draw.
-152: Typing on a phone is easy to picture, and the exact text and casing rules cannot be drawn because the image must contain no text.
-155: Taking a selfie and getting likes is easy to picture from the text, and the likes are digital, so a drawing adds nothing.
-158: The text fully explains the action: take 10 cards from a deck, which is easy to picture.
-163: The text fully explains the action: writing a name backwards on paper. A drawing could not show the letters, because the image has no text.
-171: Standing on one leg without moving is easy to picture from the text alone.
-173: Typing a sentence on a phone is easy to picture from the text alone, and the card has no unusual prop or pose.
-177: The text fully explains the action: the player changes a ringtone on a phone, and no unusual prop or body pose needs showing.
-178: Writing down words that another player dictates is easy to picture from the text alone.
-179: The text fully explains the task, and the paper with the number would need digits in the image, which are not allowed.
-182: The text fully explains the action: stand on one leg with eyes closed.
+006: The text fully explains the action: find three items that start with 'K' and put them on the table. No hard pose or prop to picture.
+009: The text fully explains the action, and one frozen moment cannot show a sequence of eye blinks.
+053: The text fully explains the task: close your eyes and guess a number. There is no prop or body pose to show.
+054: The text already makes the action clear: the player wiggles their ears, and no props or special pose need explaining.
+067: The task is a phone call and a spoken challenge, and the text explains it fully, so a picture adds nothing.
+074: Whistling a tune is a simple action that the text already explains fully.
+075: The text already makes the action clear: the tongue reaches the nose.
+076: The text fully explains the task: one player guesses another player's height, and no props or body pose are hard to picture.
+102: The text fully explains the action: take the shirt off, turn it inside out, put it back on.
+103: The text fully explains the action: untying and retying shoelaces is easy to picture without a drawing.
+105: Sit-ups are a familiar exercise, and the text already says where the hands go.
+106: The text fully explains the action: find three items that start with 'T' and put them on a table. No hard-to-picture pose or prop.
+107: The text fully explains the action: whistle a song with a straight face. No props or hard pose to show.
+114: The text fully explains the action: saying a short phrase out loud, so a picture adds nothing.
+142: The text already makes the action clear: take three photos of three everyday objects.
+146: The text fully explains the action: the player keeps their eyes open and does not blink.
+148: The player only says a tongue twister aloud, so the text already explains the action.
+152: Typing a text on a phone is easy to picture, and the text already gives the exact letters and spacing.
+155: Taking a selfie and waiting for likes is easy to picture from the text, and the likes cannot be drawn as a physical action.
+158: Drawing cards from a deck is easy to picture from the text alone.
+163: The text fully explains the action: write your name and surname backwards on paper. A picture would need written letters, which are not allowed in the image.
+171: The text fully explains the action: standing still on one leg is easy to picture without a drawing.
+173: The text fully explains the action: typing a short message on a phone.
+177: The text fully explains the action: the player changes a ringtone in the phone settings, so a picture adds nothing.
+178: Writing a dictated sentence is easy to picture from the text alone.
+179: The text fully explains the task: another player writes a number and the player spells it out in words.
+182: The text fully explains the pose: standing on one leg with eyes closed is easy to picture without a drawing.

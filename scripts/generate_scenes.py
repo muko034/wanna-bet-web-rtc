@@ -3,7 +3,7 @@
 
 For every PHYSICAL challenge in the bank, ask Claude (one `claude -p` call) whether
 the English text is enough to picture the task. If an illustration helps, the scene
-prompt goes to scripts/scenes/NNN.txt. Otherwise the ID and reason go to
+prompt goes to scripts/scenes/NNN.md. Otherwise the ID and reason go to
 scripts/scenes/skipped.txt. scripts/style.md is appended to scene prompts later,
 so scenes must not repeat it.
 
@@ -259,7 +259,7 @@ def main() -> None:
     pending = {
         number: text
         for number, text in challenges.items()
-        if args.force or (not (SCENES_DIR / f"{number:03d}.txt").exists() and number not in skipped)
+        if args.force or (not (SCENES_DIR / f"{number:03d}.md").exists() and number not in skipped)
     }
 
     if args.dry_run:
@@ -281,7 +281,7 @@ def main() -> None:
                 failed.append(number)
                 print(f"{number:03d} FAILED: {error}", file=sys.stderr)
             return
-        scene_path = SCENES_DIR / f"{number:03d}.txt"
+        scene_path = SCENES_DIR / f"{number:03d}.md"
         with lock:
             if reply["illustrate"]:
                 scene_path.write_text(reply["scene"] + "\n", encoding="utf-8")
