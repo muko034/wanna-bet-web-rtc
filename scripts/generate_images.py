@@ -27,7 +27,7 @@ SCENES_DIR = SCRIPTS_DIR / "scenes"
 OUT_DIR = SCRIPTS_DIR.parent / "out"
 
 DEFAULT_MODEL = "/home/jziec/ai-models/Qwen-Image-2.1"
-SIZE = 256
+SIZE = 512
 STEPS = 30
 OFFLOAD = "sequential"
 
