@@ -54,8 +54,8 @@ Layout:
   stacked and then knocked over). The image then has two panels, "Panel 1" and "Panel 2".
   Also choose the arrangement: "side-by-side" for tall poses (standing, jumping), or
   "stacked" (panel 1 on top, panel 2 below) for motion across the image (throwing, rolling).
-  A thin divider line separates the panels. Each panel has a small numeral, "1" or "2",
-  in a thin circle in its top-left corner.
+  The scene text must describe the divider line and the numerals (see Step 3). The drawing
+  style does not add them.
 
 Framing (for each panel):
 - "full": the whole character is visible. Use "simple hands" here. Never write "mitten".
@@ -71,10 +71,11 @@ A two-moments image may mix full and close-up panels.
 The drawing style is fixed and defined below. It is appended to your scene text later.
 Do not repeat, restate, or contradict it. Do not write style words
 (flat, pastel, kawaii, vector, outline, white background, and so on).
+The divider line and the panel numerals of a "two-moments" scene are not style. You write them.
 Do not write the words "layout", "framing", or "arrangement" in the scene.
 
 Write the scene as plain English, about 80 to 150 words for "single" and about 120 to 200
-words for "two-moments":
+words for "two-moments" (the divider sentence included):
 - Start with one sentence that introduces the character: who it is (for example a young boy,
   a girl, a man) and what it wears, in this form: "A young boy in a mint-green sleeveless
   top, orange-peach shorts, striped socks, and brown shoes." Choose a different character and
@@ -83,6 +84,12 @@ words for "two-moments":
 - Name the single frozen moment to draw: one attempt only. For "two-moments", start each
   panel with "Panel 1:" or "Panel 2:", say where the panels sit (left and right, or top and
   bottom), and describe one frozen moment in each.
+- For "two-moments" only: add one sentence in your own words about the divider and the
+  numerals. Say that a thin brown line divides the two panels. For "side-by-side" the line is
+  vertical, between the left and the right panel. For "stacked" the line is horizontal, between
+  the top and the bottom panel. Say that a small numeral "1" in a thin circle sits in the top-left
+  corner of panel 1, and a small numeral "2" in a thin circle sits in the top-left corner of
+  panel 2. For a "single" scene, write no divider and no numeral.
 - Describe the character's pose, what the hands do, and where the character looks.
 - Describe each prop with its shape, size, and color. Use colors from the style palette.
   Give size by comparison ("as big as the character's hand"), not in units.
@@ -118,7 +125,9 @@ She looks down at it with a tiny focused smile. Panel 2, on the right: a close-u
 in an orange-peach sleeve cuff, palm up and open, with the thumb and four short rounded
 fingers drawn apart. The same coin has just landed in the palm, and a few short curved motion
 lines sit beside the fingertips. A thin dotted brown line comes down from above the coin to
-the palm.
+the palm. A thin brown vertical line divides the two panels, and a small numeral 1 in a thin
+circle sits in the top-left corner of the left panel, and a small numeral 2 in a thin circle
+sits in the top-left corner of the right panel.
 
 ## Drawing style (appended later, do not repeat)
 
