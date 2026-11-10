@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an image for every scene prompt in scripts/scenes/NNN.txt.
+"""Generate an image for every scene prompt in scripts/scenes/NNN.md.
 
 The scene text plus scripts/style.md is the prompt. Images go to out/NNN.png in the
 repo root. The model loads once. Existing images are skipped unless --force is set.
@@ -31,7 +31,7 @@ SIZE = 256
 STEPS = 30
 OFFLOAD = "sequential"
 
-SCENE_FILE = re.compile(r"\d{3}\.txt")
+SCENE_FILE = re.compile(r"\d{3}\.md")
 
 
 def parse_only(value: str) -> set[int]:
