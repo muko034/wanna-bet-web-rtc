@@ -7,6 +7,8 @@
 import { maxBetAmount } from './bet-cap';
 
 const MIN_POINTS = 1;
+/** Share of the opposing Bets the Challenger gains on YES or loses on NO. */
+const CHALLENGER_PAYOUT_RATE = 0.5;
 
 export type Prediction = 'YES' | 'NO';
 
@@ -234,6 +236,14 @@ function requireRound(state: RoundEngineState): Round {
   return state.round;
 }
 
+/** On YES the Challenger gains half the NO Bets; on NO they lose half the YES Bets. Both round down; Bets count as placed. */
+function challengerPayoutAmount(bets: Bet[], outcome: Prediction): number {
+  const opposing: Prediction = outcome === 'YES' ? 'NO' : 'YES';
+  const total = bets.filter((bet) => bet.prediction === opposing).reduce((sum, bet) => sum + bet.amount, 0);
+  const half = Math.floor(total * CHALLENGER_PAYOUT_RATE);
+  return outcome === 'YES' ? half : -half;
+}
+
 function resolveRound(state: RoundEngineState, action: ResolveRoundAction): RoundEngineResult {
   const round = requireRound(state);
   const payouts: Payout[] = [];
@@ -243,11 +253,9 @@ function resolveRound(state: RoundEngineState, action: ResolveRoundAction): Roun
     payouts.push({ playerId: bet.playerId, amount: won ? bet.amount : -bet.amount });
   }
 
-  const noLosses = round.bets
-    .filter((bet) => bet.prediction === 'NO')
-    .reduce((sum, bet) => sum + bet.amount, 0);
-  if (action.outcome === 'YES' && noLosses > 0) {
-    payouts.push({ playerId: round.challengerId, amount: noLosses });
+  const challengerAmount = challengerPayoutAmount(round.bets, action.outcome);
+  if (challengerAmount !== 0) {
+    payouts.push({ playerId: round.challengerId, amount: challengerAmount });
   }
 
   const points = { ...state.points };

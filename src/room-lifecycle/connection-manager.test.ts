@@ -1278,14 +1278,14 @@ describe('a Guest asking to join a started Game', () => {
       const { manager, sam } = await gameWhereSamLostPoints();
       manager.pauseGuest(sam.playerId);
 
-      expect(manager.defaultJoinPoints()).toBe(100);
+      expect(manager.defaultJoinPoints()).toBe(95);
     });
 
     it('ignores a player who left', async () => {
       const { manager, sam } = await gameWhereSamLostPoints();
       sam.transport.send({ type: 'leave', payload: {} });
 
-      expect(manager.defaultJoinPoints()).toBe(100);
+      expect(manager.defaultJoinPoints()).toBe(95);
     });
 
     it('is what an admit uses when no Points are given', async () => {

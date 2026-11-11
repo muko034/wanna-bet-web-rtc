@@ -27,6 +27,20 @@ it.each([
 });
 ```
 
+## Use object rows with `$field` titles when an `it.each` row carries several named fields
+
+When a row holds three or more values, or values whose roles a reader cannot guess from position (a paused set, an
+expected order, a flag), write each row as an object and interpolate its fields into the title with `$field`. The
+destructured callback parameters then name each value at the point of use, and a reordered or added field cannot shift
+the others. Keep the tuple and `%s` form for small input/output tables.
+
+```ts
+it.each([
+  { name: 'the next player is paused', paused: ['p2'], expectedOrder: ['p3', 'p1', 'p2'] },
+  { name: 'two players in a row are paused', paused: ['p2', 'p3'], expectedOrder: ['p1', 'p2', 'p3'] },
+])('rotation skips paused players when $name', ({ paused, expectedOrder }) => { /* ... */ });
+```
+
 ## Restore real timers in `afterEach` after faking them
 
 A test file that calls `vi.useFakeTimers()` pairs it with `vi.useRealTimers()` in `afterEach`, so a faked clock never
@@ -107,6 +121,19 @@ async function startedGameWithGuest(pickChallenger: (ids: string[]) => string = 
 }
 
 const { manager, guest, playerId } = await startedGameWithGuest();
+```
+
+## Build test fixtures with a `<thing>With(overrides)` function
+
+A test file that needs a state, room or player declares a file-level builder named `<thing>With` (`stateWith`,
+`roomWith`, `playerWith`). It takes `overrides: Partial<T>`, returns a complete default value with the overrides spread
+last, and is typed to return `T`. Each test then names only the fields it cares about, and the defaults stay in one
+place. This is for plain data fixtures; use a setup function for scenarios that take several async steps.
+
+```ts
+function playerWith(overrides: Partial<Player>): Player {
+  return { playerId: 'p1', name: 'Alex', points: 100, status: 'active', connected: true, ...overrides };
+}
 ```
 
 ## Assert a rendered element's presence with `expect(getBy…).toBeTruthy()` and absence with `expect(queryBy…).toBeNull()`

@@ -88,6 +88,23 @@ describe('resolveResultScreen', () => {
     expect(screen?.rows.find((row) => row.playerId === 'host-1')).toMatchObject({ deltaLabel: '+0', deltaClass: 'pos' });
   });
 
+  it('shows the Challenger loss on Outcome NO as a negative change', () => {
+    const screen = screenFor(
+      stateWith({
+        resolution: {
+          challengerId: 'host-1',
+          outcome: 'NO',
+          payouts: [
+            { playerId: 'guest-2', amount: 5 },
+            { playerId: 'host-1', amount: -10 },
+          ],
+        },
+      }),
+    );
+
+    expect(screen?.rows.find((row) => row.playerId === 'host-1')).toMatchObject({ deltaLabel: '-10', deltaClass: 'neg' });
+  });
+
   it('gives tied players the same rank and skips the following rank, keeping roster order among them', () => {
     const screen = screenFor(
       stateWith({

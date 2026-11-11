@@ -80,7 +80,7 @@ describe('autosaving the Host session', () => {
     const saved = loadHostSession(storage, 'ABCDEF');
     expect(saved?.gameState).toEqual(manager.gameState);
     expect(saved?.gameState.players).toEqual([
-      expect.objectContaining({ playerId: 'host-1', points: 100 }),
+      expect.objectContaining({ playerId: 'host-1', points: 95 }),
       expect.objectContaining({ playerId: alex.playerId, points: 90 }),
     ]);
     expect(saved?.room).toEqual(expect.objectContaining({ code: 'ABCDEF', started: true }));

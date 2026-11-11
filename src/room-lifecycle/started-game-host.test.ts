@@ -230,17 +230,18 @@ describe('starting a round from the Host', () => {
   it.each([
     [
       'YES',
-      { host: 115, alex: 120, sam: 85 },
+      { host: 107, alex: 120, sam: 85 },
       [
-        { playerId: 'host-1', amount: 15 },
+        { playerId: 'host-1', amount: 7 },
         { playerId: 'guest-1', amount: 20 },
         { playerId: 'guest-2', amount: -15 },
       ],
     ],
     [
       'NO',
-      { host: 100, alex: 80, sam: 115 },
+      { host: 90, alex: 80, sam: 115 },
       [
+        { playerId: 'host-1', amount: -10 },
         { playerId: 'guest-1', amount: -20 },
         { playerId: 'guest-2', amount: 15 },
       ],

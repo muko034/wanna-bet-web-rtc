@@ -108,16 +108,19 @@ _Avoid_: Verdict (the Host's answer is the Outcome), Judge (not a separate role)
 The judged result of a Challenge: YES (succeeded) or NO (failed). _Avoid_: Result (ambiguous with Payout results)
 
 **Resolution**:
-The process of applying an Outcome: settling every Bet and adjusting the Challenger's Points. _Avoid_: Settlement
+The process of applying an Outcome: settling every Bet and adjusting the Challenger's Points, up on YES and down on NO.
+The Challenger never sees the Bets, before or after. _Avoid_: Settlement
 
 **Payout**:
 The Points change applied to one player as a result of Resolution. Payouts are independent per player — a winning
 Bettor's gain and the Challenger's gain/loss are separate flows, not drawn from each other's losses (the game is
-**not** zero-sum). _Avoid_: Pool share, pot share (the original rules draft used pool/pot language; that model was
+**not** zero-sum). A Bettor's Payout is their Bet amount, gained or lost. The Challenger's Payout mirrors the Bets: on
+YES a gain of half the total NO Bets, on NO a loss of half the total YES Bets, each rounded down. A lost Payout goes to
+no one. _Avoid_: Pool share, pot share (the original rules draft used pool/pot language; that model was
 superseded — see below)
 
 **Points**:
-A player's score. Starts at 100, except for a Late Joiner, whose starting Points the Host sets. Floored at 1 — a Bet can never reduce a player to 0, and a player with exactly 1 Point
+A player's score. Starts at 100, except for a Late Joiner, whose starting Points the Host sets. Floored at 1 — no Payout, a Bettor's or the Challenger's, can reduce a player to 0, and a player with exactly 1 Point
 may still Bet their full 1 Point. _Avoid_: Score, chips
 
 **Leaderboard**:
@@ -127,6 +130,11 @@ removed ones; a paused player stays ranked. Reveals Points only, never Bets. _Av
 **Result Screen**:
 The screen shown to every player except a Host-paused one after a Resolution, listing each player's Points and Payout for
 the Round. Leaves on its own after a short time, or earlier when the player dismisses it. _Avoid_: Results page, round summary
+
+**Rules Sheet**:
+The short in-game explanation of how a Round works and how Points move, which any player can open from any screen of a
+started Game. Fixed text with a worked example, never showing the current Round's Bets. _Avoid_: Help, tutorial, info
+screen
 
 **Host Admin Action**:
 A moderation action only the Host can take on another player, never on themself: **Pause** (player is skipped from
