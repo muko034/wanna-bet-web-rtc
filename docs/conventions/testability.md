@@ -27,6 +27,20 @@ it.each([
 });
 ```
 
+## Use object rows with `$field` titles when an `it.each` row carries several named fields
+
+When a row holds three or more values, or values whose roles a reader cannot guess from position (a paused set, an
+expected order, a flag), write each row as an object and interpolate its fields into the title with `$field`. The
+destructured callback parameters then name each value at the point of use, and a reordered or added field cannot shift
+the others. Keep the tuple and `%s` form for small input/output tables.
+
+```ts
+it.each([
+  { name: 'the next player is paused', paused: ['p2'], expectedOrder: ['p3', 'p1', 'p2'] },
+  { name: 'two players in a row are paused', paused: ['p2', 'p3'], expectedOrder: ['p1', 'p2', 'p3'] },
+])('rotation skips paused players when $name', ({ paused, expectedOrder }) => { /* ... */ });
+```
+
 ## Restore real timers in `afterEach` after faking them
 
 A test file that calls `vi.useFakeTimers()` pairs it with `vi.useRealTimers()` in `afterEach`, so a faked clock never
