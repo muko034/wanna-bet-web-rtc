@@ -81,8 +81,8 @@ Each round, players try to predict whether the challenger will succeed at a chal
   that any player closes by tapping outside it. It shows on the round screens (betting, waiting, judging and the
   challenger's hidden card) and on the host-paused screen, and not in the lobby, on the home screen, on the result screen
   or on the game result screen. It holds a short round flow, the points rules with formulas, a note on the floor of 1
-  point and on rounding, and one fixed worked example (Anna is the challenger; Ben bets 30 YES, Cleo 50 NO and Dan 30
-  NO) showing both outcomes. It follows the player's own display language and never shows the current round's bets.
+  point and on rounding, and one fixed worked example, shown as a table (Anna is the challenger; Ben bets 30 YES, Cleo 50
+  NO and Dan 30 NO) with each player's points change on success and on fail. It follows the player's own display language and never shows the current round's bets.
 - A bettor's challenge card shows whose turn it is on a second line under the challenge type: "Anna's turn" in English,
   "Kolej na: Anna" in Polish. The name is shown as typed, with its "(n)" suffix, and a long name is cut with an
   ellipsis on one line. The challenger's own hidden card has no such line. The challenge text keeps its line breaks.

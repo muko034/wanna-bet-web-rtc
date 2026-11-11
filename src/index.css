@@ -820,6 +820,26 @@ input {
 .vb-rules-text {
   margin: 0 0 8px;
 }
+.vb-rules-table {
+  width: 100%;
+  margin-bottom: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.vb-rules-table th,
+.vb-rules-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: right;
+}
+.vb-rules-table th:first-child,
+.vb-rules-table td:first-child {
+  text-align: left;
+}
+.vb-rules-table th {
+  color: #fff;
+  font-weight: 800;
+}
 .vb-rules-list {
   margin: 0;
   padding-left: 20px;

@@ -155,9 +155,11 @@ const SHEET_COPY = [
   'rules.points.no',
   'rules.points.floor',
   'rules.example.title',
-  'rules.example.setup',
-  'rules.example.yes',
-  'rules.example.no',
+  'rules.example.player',
+  'rules.example.bet',
+  'rules.example.success',
+  'rules.example.fail',
+  'rules.example.totals',
 ] as const satisfies readonly MessageKey[];
 
 const openSheet = (language: Language) => {
@@ -178,14 +180,21 @@ describe('Rules Sheet content', () => {
     }
   });
 
-  it.each(['pl', 'en'] as const)('gives the worked example its fixed names and numbers for both Outcomes in %s', (language) => {
+  it.each(['pl', 'en'] as const)('shows the worked example as a table of fixed names, Bets and Payouts in %s', (language) => {
+    const t = textIn(language);
     renderIn(language, bettingScreen);
 
-    const sheet = openSheet(language);
+    const rows = openSheet(language)
+      .getAllByRole('row')
+      .map((row) => within(row).getAllByRole(/^(columnheader|rowheader|cell)$/).map((cell) => cell.textContent));
 
-    expect(sheet.getByText(/Anna.*Ben.*30.*Cleo.*50.*Dan.*30.*N = 80.*Y = 30/)).toBeTruthy();
-    expect(sheet.getByText(/Anna \+40.*Ben \+30.*Cleo −50.*Dan −30/)).toBeTruthy();
-    expect(sheet.getByText(/Anna −15.*Ben −30.*Cleo \+50.*Dan \+30/)).toBeTruthy();
+    expect(rows).toEqual([
+      [t('rules.example.player'), t('rules.example.bet'), t('rules.example.success'), t('rules.example.fail')],
+      ['Anna', t('rules.example.challenger'), '+40', '−15'],
+      ['Ben', `30 ${t('betting.yes')}`, '+30', '−30'],
+      ['Cleo', `50 ${t('betting.no')}`, '−50', '+50'],
+      ['Dan', `30 ${t('betting.no')}`, '−30', '+30'],
+    ]);
   });
 
   it("opens from the Challenger's hidden card", () => {

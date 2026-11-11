@@ -3,7 +3,21 @@ import type { MessageKey } from '../i18n/dictionaries';
 
 const FLOW_STEPS: MessageKey[] = ['rules.flow.challenger', 'rules.flow.bets', 'rules.flow.judge', 'rules.flow.points'];
 const POINTS_RULES: MessageKey[] = ['rules.points.bettors', 'rules.points.yes', 'rules.points.no', 'rules.points.floor'];
-const EXAMPLE_OUTCOMES: MessageKey[] = ['rules.example.yes', 'rules.example.no'];
+
+type ExampleRow = {
+  name: string;
+  bet: { amount: number; prediction: 'YES' | 'NO' } | null;
+  onSuccess: string;
+  onFail: string;
+};
+
+/** The one fixed worked example: Anna is the Challenger, so N = 80 (NO Bets) and Y = 30 (YES Bets). */
+const EXAMPLE_ROWS: ExampleRow[] = [
+  { name: 'Anna', bet: null, onSuccess: '+40', onFail: '−15' },
+  { name: 'Ben', bet: { amount: 30, prediction: 'YES' }, onSuccess: '+30', onFail: '−30' },
+  { name: 'Cleo', bet: { amount: 50, prediction: 'NO' }, onSuccess: '−50', onFail: '+50' },
+  { name: 'Dan', bet: { amount: 30, prediction: 'NO' }, onSuccess: '−30', onFail: '+30' },
+];
 
 type ButtonProps = {
   onOpen: () => void;
@@ -49,12 +63,27 @@ export function RulesSheet({ onClose }: SheetProps) {
         </section>
         <section class="vb-rules-section">
           <h3 class="vb-rules-heading">{t('rules.example.title')}</h3>
-          <p class="vb-rules-text">{t('rules.example.setup')}</p>
-          <ul class="vb-rules-list">
-            {EXAMPLE_OUTCOMES.map((key) => (
-              <li key={key}>{t(key)}</li>
-            ))}
-          </ul>
+          <table class="vb-rules-table">
+            <thead>
+              <tr>
+                <th scope="col">{t('rules.example.player')}</th>
+                <th scope="col">{t('rules.example.bet')}</th>
+                <th scope="col">{t('rules.example.success')}</th>
+                <th scope="col">{t('rules.example.fail')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {EXAMPLE_ROWS.map((row) => (
+                <tr key={row.name}>
+                  <th scope="row">{row.name}</th>
+                  <td>{row.bet ? `${row.bet.amount} ${t(row.bet.prediction === 'YES' ? 'betting.yes' : 'betting.no')}` : t('rules.example.challenger')}</td>
+                  <td>{row.onSuccess}</td>
+                  <td>{row.onFail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="vb-rules-text">{t('rules.example.totals')}</p>
         </section>
       </div>
     </div>
