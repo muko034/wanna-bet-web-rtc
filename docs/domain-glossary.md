@@ -105,10 +105,11 @@ Anything that makes a Bettor owe a Bet again (a Resume, a Late Joiner, a Redraw)
 _Avoid_: Verdict (the Host's answer is the Outcome), Judge (not a separate role)
 
 **Outcome**:
-The judged result of a Challenge: YES (succeeded) or NO (failed). _Avoid_: Result (ambiguous with Payout results)
+The judged result of a Challenge: success or fail. The wire protocol encodes it as YES (success) or NO (fail).
+_Avoid_: Result (ambiguous with Payout results)
 
 **Resolution**:
-The process of applying an Outcome: settling every Bet and adjusting the Challenger's Points, up on YES and down on NO.
+The process of applying an Outcome: settling every Bet and adjusting the Challenger's Points, up on success and down on fail.
 The Challenger never sees the Bets, before or after. _Avoid_: Settlement
 
 **Payout**:

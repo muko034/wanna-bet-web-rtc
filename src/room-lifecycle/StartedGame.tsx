@@ -26,6 +26,7 @@ import { isRemovedFromGame } from './removed-guest';
 import { RemovedScreen } from './RemovedScreen';
 import { resolveLeaderboard } from './leaderboard';
 import { LeaderboardBadge, LeaderboardSheet } from './LeaderboardSheet';
+import { RulesButton, RulesSheet } from './RulesSheet';
 import { resolveBettingPanel } from './betting-panel';
 import { deriveResultMemory, dismissResult, resolveResultScreen, type ResultMemory } from './result-screen';
 import { JoinRoom } from './JoinRoom';
@@ -226,6 +227,7 @@ export function StartedGame({
   const view = resolveStartedGameView({ code, room, guestGameStartedCode, hasStoredIdentity, reconnectPhase, hasGameState: gameState !== null, gameState, removed });
   const linkLostForMs = useLinkLostDuration(view.view === 'started' && isGuestUnresolved);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [amount, setAmount] = useState(1);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [submittedBet, setSubmittedBet] = useState<{ roundKey: string; bet: PlaceBetPayload } | null>(null);
@@ -369,6 +371,7 @@ export function StartedGame({
   useEffect(() => {
     if (resultShown) {
       setLeaderboardOpen(false);
+      setRulesOpen(false);
     }
   }, [resultShown]);
 
@@ -455,10 +458,12 @@ export function StartedGame({
           onHostAction={(action, playerId) => (action === 'pause' ? onPauseGuest : onResumeGuest)(playerId)}
           onRemoveGuest={onRemoveGuest}
         />}
+      {rulesOpen && <RulesSheet onClose={() => setRulesOpen(false)} />}
       {joinRequestOverlay}
       {dialogOverlay}
     </>
   );
+  const rulesButton = <RulesButton onOpen={() => setRulesOpen(true)} />;
 
   if (hostPausedScreen) {
     return (
@@ -466,7 +471,7 @@ export function StartedGame({
         background={hostPausedScreen.background}
         roomCode={view.roomCode}
         onHome={() => setHomeDialogOpen(true)}
-        topRight={leaderboardBadge}
+        topRight={<>{leaderboardBadge}{rulesButton}</>}
         overlay={leaderboardOverlay}
       >
         <div class="vb-giant-title">{t(hostPausedScreen.title.key, hostPausedScreen.title.params)}</div>
@@ -520,7 +525,7 @@ export function StartedGame({
       background={roundControls.kind === 'hidden' ? bettingPanel.background : roundControls.background}
       roomCode={view.roomCode}
       onHome={() => setHomeDialogOpen(true)}
-      topRight={<>{leaderboardBadge}{joinRequestsBell}</>}
+      topRight={<>{leaderboardBadge}{joinRequestsBell}{rulesButton}</>}
       toasts={<ToastLayer toasts={toasts} />}
       overlay={leaderboardOverlay}
     >

@@ -33,6 +33,24 @@ same way.
 </div>
 ```
 
+## Build an info sheet from the shared `vb-rank-sheet` blocks
+
+A bottom sheet that shows content rather than asks for a decision (the Leaderboard, the Rules Sheet) is made of the
+shared sheet blocks: a `vb-rank-sheet-backdrop` wrapper whose click closes the sheet, a `vb-rank-sheet` panel with
+`role="dialog"` and an `aria-label` that stops click propagation, then a `vb-rank-sheet-handle` and a
+`vb-rank-sheet-title`. Only the body is new: give it its own `vb-<block>-*` classes instead of a second sheet shell, so
+every sheet looks and dismisses the same way (tap outside).
+
+```tsx
+<div class="vb-rank-sheet-backdrop" onClick={onClose}>
+  <div class="vb-rank-sheet" role="dialog" aria-label={t('rules.title')} onClick={(event) => event.stopPropagation()}>
+    <div class="vb-rank-sheet-handle" />
+    <div class="vb-rank-sheet-title">{t('rules.title')}</div>
+    {/* sheet body */}
+  </div>
+</div>
+```
+
 ## Render dialogs and sheets through `PhoneShell`'s `overlay` prop
 
 A dialog or sheet (the Home dialog, the Leaderboard sheet, the Remove confirmation) is passed to `PhoneShell` as `overlay`, not rendered among its children. `overlay` sits after the stage and footer inside the phone frame, so the backdrop covers the whole screen, top bar included. Gate it on the component's open state (`open && <Dialog />`), so a closed dialog renders nothing.
