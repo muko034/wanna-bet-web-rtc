@@ -131,10 +131,12 @@ describe('roundEngineReducer', () => {
     ])('discards the Round, with its Bets, when the Challenger pauses and rotates to $name', ({ paused, expectedOrder }) => {
       const state = stateWith({ pausedPlayerIds: paused, round: round('p1', [bet('p2'), bet('p3')]) });
 
-      const { state: next } = pause(state, 'p1');
+      const { state: next, payouts } = pause(state, 'p1');
 
       expect(next.round).toBeNull();
       expect(next.playerOrder).toEqual(expectedOrder);
+      expect(next.points).toEqual(state.points);
+      expect(payouts).toEqual([]);
     });
 
     it('keeps the Challenge History when the Challenger pauses', () => {
@@ -551,6 +553,15 @@ describe('roundEngineReducer', () => {
 
         expect(next.points.p1).toBe(100 + expected);
         expect(payouts.find((payout) => payout.playerId === 'p1')?.amount ?? 0).toBe(expected);
+      });
+
+      it.each([
+        { name: 'YES', outcome: 'YES' as const, bets: [no('p3', 1)] },
+        { name: 'NO', outcome: 'NO' as const, bets: [yes('p2', 1)] },
+      ])('adds no Challenger payout when the half rounds to 0 on $name', ({ outcome, bets }) => {
+        const { payouts } = resolve(outcome, bets);
+
+        expect(payouts.some((payout) => payout.playerId === 'p1')).toBe(false);
       });
 
       it('has no cap on the Challenger gain or loss', () => {
