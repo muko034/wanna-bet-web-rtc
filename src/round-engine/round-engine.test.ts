@@ -461,7 +461,7 @@ describe('roundEngineReducer', () => {
   });
 
   describe('RESOLVE_ROUND', () => {
-    it('on Outcome YES: pays YES Bettors their Bet, charges NO Bettors their Bet, and gives the Challenger the NO Bettors\' losses, then rotates the Challenger', () => {
+    it('on Outcome YES: pays YES Bettors their Bet, charges NO Bettors their Bet, and gives the Challenger half the NO Bets, rounded down, then rotates the Challenger', () => {
       const state = stateWith({
         playerOrder: ['p1', 'p2', 'p3'],
         points: { p1: 100, p2: 100, p3: 100 },
@@ -485,15 +485,15 @@ describe('roundEngineReducer', () => {
         expect.arrayContaining([
           { playerId: 'p2', amount: 20 },
           { playerId: 'p3', amount: -15 },
-          { playerId: 'p1', amount: 15 },
+          { playerId: 'p1', amount: 7 },
         ]),
       );
-      expect(next.points).toEqual({ p1: 115, p2: 120, p3: 85 });
+      expect(next.points).toEqual({ p1: 107, p2: 120, p3: 85 });
       expect(next.round).toBeNull();
       expect(next.playerOrder).toEqual(['p2', 'p3', 'p1']);
     });
 
-    it('on Outcome NO: pays NO Bettors their Bet, charges YES Bettors their Bet, and leaves the Challenger\'s Points unchanged', () => {
+    it('on Outcome NO: pays NO Bettors their Bet, charges YES Bettors their Bet, and charges the Challenger half the YES Bets', () => {
       const state = stateWith({
         playerOrder: ['p1', 'p2', 'p3'],
         points: { p1: 100, p2: 100, p3: 100 },
@@ -517,9 +517,83 @@ describe('roundEngineReducer', () => {
         expect.arrayContaining([
           { playerId: 'p2', amount: -20 },
           { playerId: 'p3', amount: 15 },
+          { playerId: 'p1', amount: -10 },
         ]),
       );
-      expect(next.points).toEqual({ p1: 100, p2: 80, p3: 115 });
+      expect(next.points).toEqual({ p1: 90, p2: 80, p3: 115 });
+    });
+
+    describe('Challenger Payout', () => {
+      const resolve = (
+        outcome: 'YES' | 'NO',
+        bets: Bet[],
+        points: Record<string, number> = { p1: 100, p2: 100, p3: 100 },
+      ) =>
+        roundEngineReducer(
+          stateWith({ points, round: { challengerId: 'p1', challengeId: 'c1', bets, outcome: null } }),
+          { type: 'RESOLVE_ROUND', outcome },
+        );
+      const yes = (playerId: string, amount: number): Bet => ({ playerId, amount, prediction: 'YES' });
+      const no = (playerId: string, amount: number): Bet => ({ playerId, amount, prediction: 'NO' });
+
+      it.each([
+        { name: 'half the NO Bets on YES', outcome: 'YES' as const, bets: [yes('p2', 30), no('p3', 50)], expected: 25 },
+        { name: 'nothing on YES when nobody bet NO', outcome: 'YES' as const, bets: [yes('p2', 30)], expected: 0 },
+        { name: 'half the YES Bets lost on NO', outcome: 'NO' as const, bets: [yes('p2', 30), no('p3', 50)], expected: -15 },
+        { name: 'nothing on NO when nobody bet YES', outcome: 'NO' as const, bets: [no('p3', 50)], expected: 0 },
+        { name: 'nothing when there are no Bets', outcome: 'YES' as const, bets: [], expected: 0 },
+        { name: 'a gain rounded down on YES', outcome: 'YES' as const, bets: [no('p3', 15)], expected: 7 },
+        { name: 'a loss rounded down on NO', outcome: 'NO' as const, bets: [yes('p2', 15)], expected: -7 },
+        { name: 'no change when the half rounds to 0 on YES', outcome: 'YES' as const, bets: [no('p3', 1)], expected: 0 },
+        { name: 'no change when the half rounds to 0 on NO', outcome: 'NO' as const, bets: [yes('p2', 1)], expected: 0 },
+      ])('changes the Challenger by $name', ({ outcome, bets, expected }) => {
+        const { state: next, payouts } = resolve(outcome, bets);
+
+        expect(next.points.p1).toBe(100 + expected);
+        expect(payouts.find((payout) => payout.playerId === 'p1')?.amount ?? 0).toBe(expected);
+      });
+
+      it('has no cap on the Challenger gain or loss', () => {
+        const gain = resolve('YES', [no('p2', 400), no('p3', 600)], { p1: 100, p2: 1000, p3: 1000 });
+        const loss = resolve('NO', [yes('p2', 100), yes('p3', 100)], { p1: 500, p2: 1000, p3: 1000 });
+
+        expect(gain.state.points.p1).toBe(600);
+        expect(loss.state.points.p1).toBe(400);
+      });
+
+      it('never drops the Challenger below 1 Point and reports the applied change', () => {
+        const { state: next, payouts } = resolve('NO', [yes('p2', 60), yes('p3', 60)], { p1: 20, p2: 100, p3: 100 });
+
+        expect(next.points.p1).toBe(1);
+        expect(payouts).toContainEqual({ playerId: 'p1', amount: -19 });
+      });
+
+      it('counts a Bet as placed even when a Bettor at the floor of 1 loses less', () => {
+        const { state: next, payouts } = resolve('NO', [yes('p2', 1), yes('p3', 59)], { p1: 100, p2: 1, p3: 100 });
+
+        expect(payouts).toContainEqual({ playerId: 'p2', amount: 0 });
+        expect(payouts).toContainEqual({ playerId: 'p3', amount: -59 });
+        expect(next.points.p1).toBe(70);
+      });
+
+      it('leaves Bettor Payouts unchanged', () => {
+        const { payouts } = resolve('YES', [yes('p2', 20), no('p3', 15)]);
+
+        expect(payouts).toContainEqual({ playerId: 'p2', amount: 20 });
+        expect(payouts).toContainEqual({ playerId: 'p3', amount: -15 });
+      });
+
+      it('changes no Points when the Challenger is removed and the Round is discarded', () => {
+        const state = stateWith({
+          round: { challengerId: 'p1', challengeId: 'c1', bets: [yes('p2', 30), no('p3', 50)], outcome: null },
+        });
+
+        const { state: next, payouts } = roundEngineReducer(state, { type: 'REMOVE_PLAYER', playerId: 'p1' });
+
+        expect(next.round).toBeNull();
+        expect(next.points).toEqual({ p2: 100, p3: 100 });
+        expect(payouts).toEqual([]);
+      });
     });
 
     it('never drops a player below 1 Point: a 1-Point Bettor who loses their full Bet stays at 1', () => {
