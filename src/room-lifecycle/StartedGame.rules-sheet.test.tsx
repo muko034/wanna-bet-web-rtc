@@ -16,22 +16,27 @@ const host = { playerId: 'host-1', name: 'Host', points: 100, status: 'active', 
 const zed = { playerId: 'guest-1', name: 'Zed', points: 100, status: 'active', connected: true } as const;
 const yara = { playerId: 'guest-2', name: 'Yara', points: 100, status: 'active', connected: true } as const;
 
-function roundState(challengerId: string, betters: string[], players: GameState['players'] = [host, zed]): GameState {
+function roundOf(challengerId: string, betters: string[]): GameState['round'] {
+  return { challengerId, challengeId: challengeBank[0].id, bets: betters.map((playerId) => ({ playerId })), outcome: null };
+}
+
+function stateWith(overrides: Partial<GameState> = {}): GameState {
   return {
     roomId: CODE,
     status: 'active',
-    challengerId,
+    challengerId: 'guest-1',
     resolution: null,
-    round: { challengerId, challengeId: challengeBank[0].id, bets: betters.map((playerId) => ({ playerId })), outcome: null },
-    players,
+    round: roundOf('guest-1', []),
+    players: [host, zed],
+    ...overrides,
   };
 }
 
-const bettingScreen = roundState('guest-1', []);
-const waitingScreen = roundState('guest-1', ['host-1'], [host, zed, yara]);
-const judgingScreen = roundState('guest-1', ['host-1']);
-const challengerHiddenCard = roundState('host-1', []);
-const hostPausedScreen = roundState('guest-1', [], [host, zed, { ...yara, status: 'paused', pausedBy: 'host' }]);
+const bettingScreen = stateWith();
+const waitingScreen = stateWith({ round: roundOf('guest-1', ['host-1']), players: [host, zed, yara] });
+const judgingScreen = stateWith({ round: roundOf('guest-1', ['host-1']) });
+const challengerHiddenCard = stateWith({ challengerId: 'host-1', round: roundOf('host-1', []) });
+const hostPausedScreen = stateWith({ players: [host, zed, { ...yara, status: 'paused', pausedBy: 'host' }] });
 const resultScreen: GameState = { ...bettingScreen, resolution: { challengerId: 'guest-1', outcome: 'YES', payouts: [] } };
 const gameResultScreen: GameState = { ...bettingScreen, status: 'ended' };
 
