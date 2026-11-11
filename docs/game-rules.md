@@ -31,17 +31,22 @@ Each round, players try to predict whether the challenger will succeed at a chal
 - If the outcome is YES:
     - Players who predicted YES gain their bet amount.
     - Players who predicted NO lose their bet amount.
-    - The challenger gains the sum of what the NO-predicting players lost.
+    - The challenger gains half of the total the NO-predicting players bet, rounded down.
 - If the outcome is NO:
     - Players who predicted NO gain their bet amount.
     - Players who predicted YES lose their bet amount.
-    - The challenger's points do not change.
-- No player's points can ever drop below 1 as a result of a bet.
+    - The challenger loses half of the total the YES-predicting players bet, rounded down. These points go to no one.
+- The totals count the bets as placed, even when a bettor's floor of 1 means they lose less.
+- The challenger never sees the bets. Their gain or loss shows only on the result screen.
+- No player's points can ever drop below 1 as a result of a round, the challenger included. The challenger's loss has no
+  other cap.
+- A discarded round and a redraw change no points.
 
 ## Winning and losing
 - Players keep playing until the game is ended.
 - The winner is the player with the highest point total when the game ends.
-- A player can lose points if they make an incorrect prediction; the challenger never loses points directly from a round's resolution, only bettors do.
+- A player can lose points if they make an incorrect prediction. The challenger loses points when they fail, and gains
+  points when they succeed.
 
 ## Player status
 - The host may pause a player, skipping them from betting and rotation until resumed, or remove a player from the game entirely.
