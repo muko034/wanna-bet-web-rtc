@@ -123,6 +123,19 @@ async function startedGameWithGuest(pickChallenger: (ids: string[]) => string = 
 const { manager, guest, playerId } = await startedGameWithGuest();
 ```
 
+## Build test fixtures with a `<thing>With(overrides)` function
+
+A test file that needs a state, room or player declares a file-level builder named `<thing>With` (`stateWith`,
+`roomWith`, `playerWith`). It takes `overrides: Partial<T>`, returns a complete default value with the overrides spread
+last, and is typed to return `T`. Each test then names only the fields it cares about, and the defaults stay in one
+place. This is for plain data fixtures; use a setup function for scenarios that take several async steps.
+
+```ts
+function playerWith(overrides: Partial<Player>): Player {
+  return { playerId: 'p1', name: 'Alex', points: 100, status: 'active', connected: true, ...overrides };
+}
+```
+
 ## Assert a rendered element's presence with `expect(getBy…).toBeTruthy()` and absence with `expect(queryBy…).toBeNull()`
 
 A component test never calls a `getBy*` query as a bare statement to "check" that something rendered, and it does not
