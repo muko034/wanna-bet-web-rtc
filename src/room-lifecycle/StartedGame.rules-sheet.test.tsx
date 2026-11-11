@@ -162,6 +162,13 @@ const SHEET_COPY = [
   'rules.example.totals',
 ] as const satisfies readonly MessageKey[];
 
+/** The sheet's copy without its `**bold**` markers, as the text a player reads. */
+const plain = (text: string) => text.replaceAll('**', '');
+/** The bold words in a copy string. */
+const boldWords = (text: string) => [...text.matchAll(/\*\*(.+?)\*\*/g)].map((match) => match[1]);
+const hasText = (text: string) => (_: string, element: Element | null) =>
+  element?.tagName === 'LI' && element.textContent === plain(text);
+
 const openSheet = (language: Language) => {
   const t = textIn(language);
   fireEvent.click(screen.getByRole('button', { name: t('rules.open') }));
@@ -176,7 +183,8 @@ describe('Rules Sheet content', () => {
     const sheet = openSheet(language);
 
     for (const key of SHEET_COPY) {
-      expect(sheet.getByText(t(key)), key).toBeTruthy();
+      const copy = t(key);
+      expect(sheet.getByText(copy.includes('**') ? hasText(copy) : copy), key).toBeTruthy();
     }
   });
 
@@ -197,13 +205,44 @@ describe('Rules Sheet content', () => {
     ]);
   });
 
+  it.each(['pl', 'en'] as const)('bolds the marked words and no others in %s', (language) => {
+    const t = textIn(language);
+    renderIn(language, bettingScreen);
+
+    const bold = openSheet(language)
+      .getAllByText((_, element) => element?.tagName === 'STRONG')
+      .map((element) => element.textContent);
+
+    const marked = [
+      'rules.flow.challenger',
+      'rules.flow.bets',
+      'rules.flow.judge',
+      'rules.flow.points',
+      'rules.points.bettors',
+      'rules.points.yes',
+      'rules.points.no',
+    ] as const;
+    expect(bold).toEqual(marked.flatMap((key) => boldWords(t(key))));
+  });
+
+  it.each(['pl', 'en'] as const)('colours gains green and losses red in the example table in %s', (language) => {
+    renderIn(language, bettingScreen);
+
+    const cells = openSheet(language).getAllByRole('cell').filter((cell) => /^[+−]\d+$/.test(cell.textContent ?? ''));
+
+    expect(cells.length).toBe(8);
+    for (const cell of cells) {
+      expect(cell.classList.contains(cell.textContent!.startsWith('+') ? 'pos' : 'neg'), cell.textContent!).toBe(true);
+    }
+  });
+
   it("opens from the Challenger's hidden card", () => {
     const t = textIn('pl');
     renderIn('pl', challengerHiddenCard);
 
     const sheet = openSheet('pl');
 
-    expect(sheet.getByText(t('rules.points.yes'))).toBeTruthy();
+    expect(sheet.getByText(hasText(t('rules.points.yes')))).toBeTruthy();
   });
 
   it('opens from the host-paused screen', () => {
@@ -212,7 +251,7 @@ describe('Rules Sheet content', () => {
 
     const sheet = openSheet('pl');
 
-    expect(sheet.getByText(t('rules.points.no'))).toBeTruthy();
+    expect(sheet.getByText(hasText(t('rules.points.no')))).toBeTruthy();
   });
 
   it("never shows the current Round's players or Bets", () => {
@@ -226,10 +265,10 @@ describe('Rules Sheet content', () => {
   it('follows the Display Language when the player switches it', () => {
     renderIn('pl', bettingScreen);
     const sheet = openSheet('pl');
-    expect(sheet.getByText(textIn('pl')('rules.points.yes'))).toBeTruthy();
+    expect(sheet.getByText(hasText(textIn('pl')('rules.points.yes')))).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'EN' }));
 
-    expect(sheet.getByText(textIn('en')('rules.points.yes'))).toBeTruthy();
+    expect(sheet.getByText(hasText(textIn('en')('rules.points.yes')))).toBeTruthy();
   });
 });

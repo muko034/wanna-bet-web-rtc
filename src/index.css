@@ -820,6 +820,10 @@ input {
 .vb-rules-text {
   margin: 0 0 8px;
 }
+.vb-rules-section strong {
+  color: #fff;
+  font-weight: 800;
+}
 .vb-rules-table {
   width: 100%;
   margin-bottom: 8px;

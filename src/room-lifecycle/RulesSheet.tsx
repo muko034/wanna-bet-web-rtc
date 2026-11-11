@@ -7,17 +7,31 @@ const POINTS_RULES: MessageKey[] = ['rules.points.bettors', 'rules.points.yes', 
 type ExampleRow = {
   name: string;
   bet: { amount: number; prediction: 'YES' | 'NO' } | null;
-  onSuccess: string;
-  onFail: string;
+  onSuccess: number;
+  onFail: number;
 };
 
 /** The one fixed worked example: Anna is the Challenger, so N = 80 (NO Bets) and Y = 30 (YES Bets). */
 const EXAMPLE_ROWS: ExampleRow[] = [
-  { name: 'Anna', bet: null, onSuccess: '+40', onFail: '−15' },
-  { name: 'Ben', bet: { amount: 30, prediction: 'YES' }, onSuccess: '+30', onFail: '−30' },
-  { name: 'Cleo', bet: { amount: 50, prediction: 'NO' }, onSuccess: '−50', onFail: '+50' },
-  { name: 'Dan', bet: { amount: 30, prediction: 'NO' }, onSuccess: '−30', onFail: '+30' },
+  { name: 'Anna', bet: null, onSuccess: 40, onFail: -15 },
+  { name: 'Ben', bet: { amount: 30, prediction: 'YES' }, onSuccess: 30, onFail: -30 },
+  { name: 'Cleo', bet: { amount: 50, prediction: 'NO' }, onSuccess: -50, onFail: 50 },
+  { name: 'Dan', bet: { amount: 30, prediction: 'NO' }, onSuccess: -30, onFail: 30 },
 ];
+
+/** A signed Points change, coloured by its sign like the Result Screen's deltas. */
+function Delta({ points }: { points: number }) {
+  return <td class={`vb-delta ${points >= 0 ? 'pos' : 'neg'}`}>{`${points >= 0 ? '+' : '−'}${Math.abs(points)}`}</td>;
+}
+
+/** Renders `**word**` markers in a copy string as bold text. */
+function Emphasis({ text }: { text: string }) {
+  return (
+    <>
+      {text.split('**').map((part, index) => (index % 2 === 1 ? <strong key={index}>{part}</strong> : part))}
+    </>
+  );
+}
 
 type ButtonProps = {
   onOpen: () => void;
@@ -49,7 +63,9 @@ export function RulesSheet({ onClose }: SheetProps) {
           <h3 class="vb-rules-heading">{t('rules.flow.title')}</h3>
           <ol class="vb-rules-list">
             {FLOW_STEPS.map((key) => (
-              <li key={key}>{t(key)}</li>
+              <li key={key}>
+                <Emphasis text={t(key)} />
+              </li>
             ))}
           </ol>
         </section>
@@ -57,7 +73,9 @@ export function RulesSheet({ onClose }: SheetProps) {
           <h3 class="vb-rules-heading">{t('rules.points.title')}</h3>
           <ul class="vb-rules-list">
             {POINTS_RULES.map((key) => (
-              <li key={key}>{t(key)}</li>
+              <li key={key}>
+                <Emphasis text={t(key)} />
+              </li>
             ))}
           </ul>
         </section>
@@ -77,8 +95,8 @@ export function RulesSheet({ onClose }: SheetProps) {
                 <tr key={row.name}>
                   <th scope="row">{row.name}</th>
                   <td>{row.bet ? `${row.bet.amount} ${t(row.bet.prediction === 'YES' ? 'betting.yes' : 'betting.no')}` : t('rules.example.challenger')}</td>
-                  <td>{row.onSuccess}</td>
-                  <td>{row.onFail}</td>
+                  <Delta points={row.onSuccess} />
+                  <Delta points={row.onFail} />
                 </tr>
               ))}
             </tbody>
