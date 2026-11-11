@@ -77,12 +77,6 @@ Each round, players try to predict whether the challenger will succeed at a chal
   not count. A name that matches a player in the game gets a "(n)" suffix.
 - When a late joiner is admitted, every other player, the host included, sees a short notice with the late joiner's name
   and starting points. The late joiner sees no notice about themself, and a waiting or declined request produces none.
-- Once the game started, an `i` button next to the language toggle opens the rules sheet, a bottom sheet over the game
-  that any player closes by tapping outside it. It shows on the round screens (betting, waiting, judging and the
-  challenger's hidden card) and on the host-paused screen, and not in the lobby, on the home screen, on the result screen
-  or on the game result screen. It holds a short round flow, the points rules with formulas, a note on the floor of 1
-  point and on rounding, and one fixed worked example, shown as a table (Anna is the challenger; Ben bets 30 YES, Cleo 50
-  NO and Dan 30 NO) with each player's points change on success and on fail. It follows the player's own display language and never shows the current round's bets.
 - A bettor's challenge card shows whose turn it is on a second line under the challenge type: "Anna's turn" in English,
   "Kolej na: Anna" in Polish. The name is shown as typed, with its "(n)" suffix, and a long name is cut with an
   ellipsis on one line. The challenger's own hidden card has no such line. The challenge text keeps its line breaks.
