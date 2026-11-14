@@ -1,9 +1,8 @@
 id: 111
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się, w trakcie 1 minuty, 30 razy przejść z pozycji stojącej
-    w rozkroku z rękami uniesionymi nad głowę do przykuca z rękami dotykającymi podłogi?
-  en: Will the player manage to go from a standing straddle position with arms raised
-    above their head to a squat with their hands touching the floor 30 times within
-    1 minute?
+  pl: |-
+    Czy graczowi uda się w ciągu 1 minuty 30 razy przejść z pozycji stojącej w rozkroku z rękami uniesionymi nad głowę do przykucu z rękami dotykającymi podłogi i z powrotem?
+  en: |-
+    Will the player manage to go 30 times within 1 minute from a standing straddle position with arms raised above their head to a squat with hands touching the floor and back?
 timeLimit: ONE_MINUTE

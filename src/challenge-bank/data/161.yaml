@@ -2,11 +2,11 @@ id: 161
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się wrzucić piłeczkę pingpongową do leżącego na krześle pudełka od gry, tak aby piłeczka przed wpadnięciem do pudełka odbiła się raz od podłoża.
-    Piłeczka może wypaść z pudełka, ale musi najpierw się w nim znaleźć.
+    Czy graczowi uda się wrzucić piłeczkę pingpongową do pudełka od gry leżącego na krześle tak, aby przed wpadnięciem do pudełka odbiła się raz od podłogi?
     (3 udane próby z 5)
+    Piłeczka może wypaść z pudełka, ale najpierw musi do niego wpaść.
   en: |-
-    Will the player manage to throw the ping pong ball into the game box lying on the chair, so that the ball bounces once off the ground before falling into the box?
-    The ball may fall out of the box, but it must first be in it.
-    3 successful attempts out of 5
+    Will the player manage to throw a ping pong ball into a game box lying on a chair so that the ball bounces once off the floor before it lands in the box?
+    (3 successful attempts out of 5)
+    The ball may fall out of the box, but it must land in it first.
 timeLimit: NONE

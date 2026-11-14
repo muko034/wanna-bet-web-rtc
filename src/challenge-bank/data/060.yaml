@@ -2,9 +2,9 @@ id: 60
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się, przez 15 sekund, balansować butelką, do połowy wypełnioną płynem, na palcu?
-    Należy użyć 1,5 litrowej plastikowej butelki.
+    Czy graczowi uda się balansować na palcu butelką wypełnioną do połowy płynem przez 15 sekund?
+    Należy użyć 1,5-litrowej plastikowej butelki.
   en: |-
-    Will the player be able to balance a bottle, half-filled with liquid, on their finger for 15 seconds?
-    You should use a 1.5-liter plastic bottle.
+    Will the player manage to balance a bottle half-filled with liquid on their finger for 15 seconds?
+    Use a 1.5-liter plastic bottle.
 timeLimit: QUARTER_MINUTE

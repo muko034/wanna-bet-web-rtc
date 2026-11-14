@@ -2,17 +2,19 @@ id: 49
 type: MENTAL
 content:
   pl: |-
-    Czy graczowi, w ciągu 1 minuty, uda się podać 8 nowych słów z liter jednego wybranego poniżej słowa?
-    (Słowo wybiera gracz po lewej stronie. Wszystkie nowe słowa muszą coś oznaczać. Gracz ma do dyspozycji kartkę i długopis.)
+    Czy graczowi uda się w ciągu 1 minuty podać 8 nowych słów z liter jednego z poniższych słów?
+    (gracz ma kartkę i długopis)
+    Słowo wybiera gracz siedzący po lewej stronie gracza.
+    Nowe słowa muszą być prawdziwymi słowami. Każdej litery można użyć najwyżej tyle razy, ile razy występuje w wybranym słowie.
     KSIĘSTWO
     ODPOWIEDNI
     SAMOTNOŚĆ
     ŚWIADECTWO
   en: |-
-    Will the player manage to come up with 8 new words using the letters of one of the selected words below in 1 minute?
-    The word is chosen by the player on the left side.
-    All new words must mean something.
-    The player has a sheet of paper and a pen at their disposal.
+    Will the player manage to name 8 new words in 1 minute using the letters of one of the words below?
+    (the player has a sheet of paper and a pen)
+    The player sitting to the left of the player chooses the word.
+    The new words must be real words. Each letter may be used at most as many times as it appears in the chosen word.
     COMMUNICATION
     APPROPRIATE
     CELEBRATION

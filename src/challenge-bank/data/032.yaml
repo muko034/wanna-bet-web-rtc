@@ -1,6 +1,8 @@
 id: 32
 type: MENTAL
 content:
-  pl: Czy gracz wymieni 5 synonimów słowa "PIENIĄDZE" w ciągu 30 sekund?
-  en: Can the player name 5 synonyms of the word "MONEY" within 30 seconds?
+  pl: |-
+    Czy gracz wymieni 5 synonimów słowa "PIENIĄDZE" w ciągu 30 sekund?
+  en: |-
+    Will the player name 5 synonyms for the word "MONEY" within 30 seconds?
 timeLimit: HALF_MINUTE

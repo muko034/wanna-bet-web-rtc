@@ -2,10 +2,11 @@ id: 109
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się, w ciągu 1 minuty, uda się zrobić 50 przysiadów?
-    Ręce powinny być wyciągnięte przed siebie. Przysiad jest uznany za zaliczony, jeśli gracz z wyprostowanych nóg zejdzie poniżej konta 90 stopni.
+    Czy graczowi uda się zrobić 50 przysiadów w ciągu 1 minuty?
+    Ręce powinny być wyciągnięte przed siebie.
+    Przysiad jest zaliczony, jeśli gracz z wyprostowanych nóg zejdzie poniżej kąta 90 stopni w kolanach.
   en: |-
     Will the player manage to do 50 squats in 1 minute?
-    Hands should be extended in front of you.
-    A squat is considered completed if the player goes below a 90-degree angle with their legs straight.
+    The player's arms should be extended in front of them.
+    A squat counts if the player starts with straight legs and bends their knees below a 90-degree angle.
 timeLimit: ONE_MINUTE

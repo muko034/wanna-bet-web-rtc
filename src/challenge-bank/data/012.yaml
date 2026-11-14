@@ -2,9 +2,9 @@ id: 12
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się podbić, grzbietową powierzchnią dłoni, jednocześnie 2 karty płatnicze z krawędzi stołu i je złapać?
-    (2 udane próby z 5.)
+    Czy graczowi uda się podbić grzbietem dłoni jednocześnie 2 karty płatnicze z krawędzi stołu i je złapać?
+    (2 udane próby z 5)
   en: |-
-    Will the player manage to swipe the debit card from the edge of the table with the back of their hand and catch it?
-    2 successful attempts out of 5.
+    Will the player manage to flip the debit card up from the edge of the table with the back of their hand and catch it?
+    (2 successful attempts out of 5)
 timeLimit: NONE

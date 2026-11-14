@@ -1,6 +1,10 @@
 id: 54
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się poruszyć uszami?
-  en: Will the player be able to move their ears?
+  pl: |-
+    Czy graczowi uda się poruszyć uszami?
+    (bez użycia rąk)
+  en: |-
+    Will the player manage to move their ears?
+    (without using hands)
 timeLimit: NONE

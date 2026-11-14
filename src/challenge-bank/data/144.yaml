@@ -2,9 +2,11 @@ id: 144
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się narysować (w miarę) prostą linię o długości 4 cm?
-    Gracz może pomylić się o 0,5 cm.
+    Czy graczowi uda się narysować bez linijki (w miarę) prostą linię o długości 4 cm?
+    Gracz może pomylić się najwyżej o 0,5 cm.
+    Pozostali gracze mierzą linię linijką.
   en: |-
-    Will the player manage to draw a (relatively) straight line of 4 cm in length?
-    The player may be mistaken by 0.5 cm.
+    Will the player manage to draw a (fairly) straight line 4 cm long without a ruler?
+    The player may be off by up to 0.5 cm.
+    The other players measure the line with a ruler.
 timeLimit: NONE

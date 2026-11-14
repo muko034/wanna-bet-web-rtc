@@ -2,9 +2,9 @@ id: 121
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się złapać chusteczkę lub banknot upuszczony przez inną osobę, zanim spadnie na podłogę?
-    Chusteczkę lub banknot upuszcza inna osoba stojąca na krześle z ręką wyciągniętą ponad głowę.
+    Czy graczowi uda się złapać chusteczkę lub banknot, zanim spadnie na podłogę?
+    Jeden z pozostałych graczy, stojąc na krześle z ręką wyciągniętą ponad głowę, upuszcza chusteczkę lub banknot.
   en: |-
-    Will the player manage to catch the tissue or banknote dropped by another person before it falls to the floor?
-    A tissue or banknote is dropped by another person standing on a chair with their hand stretched over their head.
+    Will the player manage to catch a tissue or banknote before it falls to the floor?
+    One of the other players, standing on a chair with their hand stretched above their head, drops the tissue or banknote.
 timeLimit: NONE

@@ -2,9 +2,9 @@ id: 83
 type: MENTAL
 content:
   pl: |-
-    Czy gracz odgadnie o jakie zwierzę chodzi, zadając 10 pytań, na które można odpowiedzieć "tak" lub "nie"?
+    Czy gracz odgadnie, o jakie zwierzę chodzi, zadając najwyżej 10 pytań, na które można odpowiedzieć "tak" lub "nie"?
     Pozostali gracze powinni uzgodnić nazwę zwierzęcia przed obstawianiem.
   en: |-
-    Will the player guess which animal is being referred to by asking 10 questions that can be answered with 'yes' or 'no'?
-    The other players should agree on the name of the animal before placing bets.
+    Will the player guess which animal it is by asking at most 10 yes-or-no questions?
+    The other players should agree on the animal before placing bets.
 timeLimit: NONE

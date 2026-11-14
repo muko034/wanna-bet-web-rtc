@@ -1,8 +1,8 @@
 id: 178
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się bezbłędnie napisać tekst składający się z 10-15 słów, który
-    podyktuję mu inny gracz?
-  en: Will the player manage to accurately write a text consisting of 10-15 words
-    that another player will dictate to them?
+  pl: |-
+    Czy graczowi uda się bezbłędnie napisać tekst składający się z 10-15 słów, który podyktuje mu jeden z pozostałych graczy?
+  en: |-
+    Will the player manage to write, without any mistakes, a text of 10-15 words that one of the other players dictates to them?
 timeLimit: NONE

@@ -1,6 +1,8 @@
 id: 135
 type: MENTAL
 content:
-  pl: Czy graczowi uda się, w ciągu 30 sekund, podać 10 stacji radiowych?
-  en: Will the player manage to name 10 radio stations in 30 seconds?
+  pl: |-
+    Czy graczowi uda się podać 10 stacji radiowych w ciągu 30 sekund?
+  en: |-
+    Will the player manage to name 10 radio stations in 30 seconds?
 timeLimit: HALF_MINUTE

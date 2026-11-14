@@ -2,9 +2,9 @@ id: 141
 type: MENTAL
 content:
   pl: |-
-    Czy graczowi uda się odgadnie ile obserwujących na Instagramie ma osoba po lewej stronie?
-    Gracz może pomylić się o 10%
+    Czy graczowi uda się odgadnąć, ile obserwujących na Instagramie ma osoba siedząca po jego lewej stronie?
+    (dopuszczalny błąd: do 10%)
   en: |-
-    Will the player manage to guess how many followers the person on the left has on Instagram?
-    The player can make a mistake of 10%
+    Will the player manage to guess how many Instagram followers the person sitting on their left has?
+    (margin of error: up to 10%)
 timeLimit: NONE

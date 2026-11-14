@@ -6,5 +6,5 @@ content:
     Gracz ma na przygotowanie samolotu 1 minutę.
   en: |-
     Will the player manage to make a paper plane that flies at least 4 meters?
-    The player has 1 minute to prepare the airplane.
+    The player has 1 minute to make the plane.
 timeLimit: ONE_MINUTE

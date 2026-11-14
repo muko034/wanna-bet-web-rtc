@@ -3,10 +3,10 @@ type: PHYSICAL
 content:
   pl: |-
     Czy graczowi uda się usiąść na podłodze i wstać, utrzymując jednocześnie piłeczkę na grzbiecie dłoni?
-    Piłeczka nie może upaść.
     (2 próby)
+    Piłeczka nie może upaść.
   en: |-
-    Will the player manage to sit on the floor and stand up while keeping the ball on the back of their hand?
-    The ball cannot fall.
+    Will the player manage to sit on the floor and stand up while keeping a small ball on the back of their hand?
     (2 attempts)
+    The ball must not fall.
 timeLimit: NONE

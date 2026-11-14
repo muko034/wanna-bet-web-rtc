@@ -2,15 +2,18 @@ id: 138
 type: MENTAL
 content:
   pl: |-
-    Czy graczowi uda się, w ciągu 30 sekund, stworzyć 5 innych słów, używając liter z podanego słowa?
-    Pozostali gracze wybierają jedno z poniższych słów (bądź inne) przed fazą obstawiania. Gracz ma do dyspozycji kartkę i długopis w trakcie wykonywania zadania.
+    Czy graczowi uda się w ciągu 30 sekund ułożyć 5 innych słów z liter podanego słowa?
+    (każdej litery można użyć tyle razy, ile razy występuje w słowie)
+    Pozostali gracze wybierają jedno z poniższych słów (lub inne) przed fazą obstawiania.
+    Podczas zadania gracz ma do dyspozycji kartkę i długopis.
     MASKARADA
     PRZESTĘPSTWO
     EUTROFIZACJA
   en: |-
-    Will the player be able to create 5 other words within 30 seconds using the letters from the given word?
-    The other players choose one of the words below (or another) before the betting phase.
-    The player has a sheet of paper and a pen at their disposal while completing the task.
+    Will the player manage to make 5 other words from the letters of the given word within 30 seconds?
+    (each letter can be used as many times as it appears in the word)
+    The other players choose one of the words below (or another word) before the betting phase.
+    The player has a sheet of paper and a pen during the task.
     MASQUERADE
     CONSIDERATION
     EUTROPHICATION

@@ -1,6 +1,8 @@
 id: 15
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się, stojąc na jednej nodze, pocałować się w stopę?
-  en: Will the player succeed in kissing their foot while standing on one leg?
+  pl: |-
+    Czy graczowi uda się, stojąc na jednej nodze, pocałować się w stopę?
+  en: |-
+    Will the player manage to kiss their own foot while standing on one leg?
 timeLimit: NONE

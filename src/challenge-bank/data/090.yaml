@@ -1,7 +1,8 @@
 id: 90
 type: MENTAL
 content:
-  pl: Czy gracz, w ciągu 30 sekund, wymieni nazwy 4 zawodów, które zaczynają się od
-    litery "P"?
-  en: Can the player name 4 professions that start with the letter 'P' within 30 seconds?
+  pl: |-
+    Czy gracz wymieni w ciągu 30 sekund 4 zawody zaczynające się na literę „P”?
+  en: |-
+    Will the player name 4 professions that start with the letter "P" within 30 seconds?
 timeLimit: HALF_MINUTE

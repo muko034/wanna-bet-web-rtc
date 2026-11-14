@@ -2,10 +2,11 @@ id: 11
 type: MENTAL
 content:
   pl: |-
-    Czy graczowi uda się odgadnąć, ile waży osoba po jego prawej stronie?
+    Czy graczowi uda się odgadnąć wagę gracza siedzącego po jego prawej stronie?
     (+/- 5 kg)
-    Zawodnik, którego dotyczy pytanie, powinien zapisać swoją wagę, zanim będzie ona odgadywana.
+    Gracz siedzący po prawej stronie zapisuje swoją wagę przed obstawianiem.
   en: |-
-    Will the player manage to guess how much the person to their right weighs (+/- 5 kg)?
-    The person on right should write down the answer before betting.
+    Will the player manage to guess the weight of the player sitting to their right?
+    (+/- 5 kg)
+    The player sitting to the right writes down their weight before betting.
 timeLimit: NONE

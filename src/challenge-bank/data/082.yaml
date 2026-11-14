@@ -1,6 +1,8 @@
 id: 82
 type: MENTAL
 content:
-  pl: Czy gracz wymieni, w ciągu 30 sekund, nazwiska 5 znanych siatkarzy?
-  en: Will the player name 5 famous volleyball players within 30 seconds?
+  pl: |-
+    Czy gracz w ciągu 30 sekund wymieni nazwiska 5 znanych siatkarzy?
+  en: |-
+    Will the player name 5 famous volleyball players within 30 seconds?
 timeLimit: HALF_MINUTE

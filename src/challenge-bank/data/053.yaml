@@ -2,11 +2,11 @@ id: 53
 type: PHYSICAL
 content:
   pl: |-
-    (Zanim zadanie zostanie przeczytane gracz powinien zamknąć oczy.)
-    Czy gracz jest w stanie odgadnąć, ile punktów ma do tej pory osoba po jego prawej stronie?
-    Gracz może się pomylić maksymalnie o 3 punkty
+    Czy gracz odgadnie, ile punktów ma do tej pory gracz siedzący po jego prawej stronie?
+    (dopuszczalny błąd: maksymalnie 3 punkty)
+    Pozostali gracze czytają zadanie, gdy gracz ma zamknięte oczy. Gracz nie otwiera oczu, dopóki nie poda odpowiedzi.
   en: |-
-    Before the task is read, the player should close their eyes.
-    Is the player able to guess how many points the person to their right has so far?
-    The player can make a mistake of a maximum of 3 points.
+    Will the player guess how many points the player sitting to their right has so far?
+    (allowed error: up to 3 points)
+    The other players read the task while the player has their eyes closed. The player keeps their eyes closed until they give an answer.
 timeLimit: NONE

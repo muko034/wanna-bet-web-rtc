@@ -3,8 +3,8 @@ type: PHYSICAL
 content:
   pl: |-
     Czy graczowi uda się zagwizdać "Szła dzieweczka...", nie uśmiechając się?
-    (2 próby).
+    (2 próby)
   en: |-
     Will the player manage to whistle "Szła dzieweczka..." without smiling?
-    (2 trials).
+    (2 attempts)
 timeLimit: NONE

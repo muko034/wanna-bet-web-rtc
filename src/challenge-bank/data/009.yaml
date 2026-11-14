@@ -1,9 +1,10 @@
 id: 9
 type: PHYSICAL
 content:
-  pl: "Czy graczowi uda się zamrugać (bez przerwy) następującą sekwencję oczami: \n\
-    obydwoma, lewe, prawe, prawe, lewe, obydwa, lewe, prawe?"
+  pl: |-
+    Czy graczowi uda się bez przerwy zamrugać oczami w tej kolejności:
+    oba, lewe, prawe, prawe, lewe, oba, lewe, prawe?
   en: |-
-    Will the player manage to blink (continuously) the following sequence with their eyes:
+    Will the player manage to blink their eyes in this order without pausing:
     both, left, right, right, left, both, left, right?
 timeLimit: NONE

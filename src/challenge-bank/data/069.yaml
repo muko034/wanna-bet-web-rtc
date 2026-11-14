@@ -2,9 +2,9 @@ id: 69
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się wyrzucić monetę w powietrzę, zrobić cały obrót wokół własnej osi i złapać ją w dłoń?
-    (3 udane próby z 5.)
+    Czy graczowi uda się wyrzucić monetę w powietrze, zrobić pełny obrót wokół własnej osi i złapać ją w dłoń?
+    (3 udane próby z 5)
   en: |-
-    Will the player manage to toss the coin into the air, make a full turn around its own axis, and catch it in their hand?
-    3 successful attempts out of 5.
+    Will the player manage to toss a coin into the air, make a full turn on the spot, and catch it in their hand?
+    (3 successful attempts out of 5)
 timeLimit: NONE

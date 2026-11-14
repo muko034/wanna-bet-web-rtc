@@ -3,10 +3,10 @@ type: PHYSICAL
 content:
   pl: |-
     Czy graczowi uda się zrzucić ze stopy but na krzesło oddalone o 2 metry?
-    But nie może spaść z krzesła.
     (3 próby)
+    But nie może spaść z krzesła.
   en: |-
-    Will the player manage to throw the shoe off his foot onto a chair 2 meters away?
-    But cannot fall off the chair.
+    Will the player manage to kick their shoe off their foot onto a chair 2 meters away?
     (3 attempts)
+    The shoe must not fall off the chair.
 timeLimit: NONE

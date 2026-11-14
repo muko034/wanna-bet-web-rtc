@@ -3,10 +3,10 @@ type: PHYSICAL
 content:
   pl: |-
     Czy graczowi uda się wrzucić długopis do kubka leżącego w odległości ok. 1 metra?
-    Długopis musi pozostać w kubku - nie może z niego wypaść.
-    (4 próby.)
+    (4 próby)
+    Długopis musi pozostać w kubku – nie może z niego wypaść.
   en: |-
-    Will the player manage to throw the pen into the cup placed about 1 meter away?
-    The pen must stay in the cup - it cannot fall out of it.
+    Will the player manage to throw a pen into a cup placed about 1 meter away?
     (4 attempts)
+    The pen must stay in the cup and must not fall out.
 timeLimit: NONE

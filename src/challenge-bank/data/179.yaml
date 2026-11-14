@@ -3,8 +3,8 @@ type: PHYSICAL
 content:
   pl: |-
     Czy graczowi uda się bezbłędnie zapisać słownie liczbę 6-cyfrową?
-    Liczbę zapisuję na kartce inny gracz.
+    Liczbę zapisuje na kartce jeden z pozostałych graczy.
   en: |-
-    Will the player manage to accurately spell out a 6-digit number in words?
-    I write the number down on a piece of paper for another player.
+    Will the player manage to write a 6-digit number in words without mistakes?
+    One of the other players writes the number on a piece of paper.
 timeLimit: HALF_MINUTE

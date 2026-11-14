@@ -2,9 +2,9 @@ id: 77
 type: MENTAL
 content:
   pl: |-
-    Czy gracz odgadnie, o jaki kraj chodzi, zadając 10 pytań o możliwych odpowiedziach "tak" lub "nie"?
-    Pozostali gracze powinni wybrać kraj przed rozpoczęciem obstawiania.
+    Czy gracz odgadnie, o jaki kraj chodzi, zadając najwyżej 10 pytań, na które można odpowiedzieć tylko „tak” lub „nie”?
+    Przed obstawianiem pozostali gracze wybierają kraj w tajemnicy przed graczem.
   en: |-
-    Will the player guess which country it is by asking 10 questions with possible answers of 'yes' or 'no'?
-    The other players should choose a country before betting.
+    Will the player guess the country by asking at most 10 yes-or-no questions?
+    Before betting, the other players choose a country and keep it secret from the player.
 timeLimit: NONE

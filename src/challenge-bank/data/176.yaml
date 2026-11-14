@@ -6,6 +6,5 @@ content:
     Książka nie może spaść. Gracz nie może jej przytrzymywać rękami.
   en: |-
     Will the player manage to do 10 squats with a book on their head?
-    The book cannot fall.
-    The player cannot hold it with their hands.
+    The book cannot fall. The player cannot hold it with their hands.
 timeLimit: NONE

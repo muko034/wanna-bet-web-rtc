@@ -2,12 +2,15 @@ id: 48
 type: MENTAL
 content:
   pl: |-
-    Czy gracz, w ciągu 30 sekund, rozwiąże w pamięci poniższe zadanie arytmetyczne?
+    Czy gracz rozwiąże w pamięci poniższe zadanie arytmetyczne w ciągu 30 sekund?
     XY x Z - 1234 = ?
-    (Osoba, która czyta zadanie powinna zastąpić litery "XYZ" dowolnymi cyframi, spisać je na kartce i pokazać graczowi wykonującemu zadanie. Ten może patrzeć się na kartkę, ale nie może ni na niej pisać.)
+    Pozostali gracze zastępują litery X, Y i Z dowolnymi cyframi, zapisują działanie na kartce i pokazują je graczowi.
+    Gracz może patrzeć na kartkę, ale nie może na niej pisać.
+    Czas liczy się od chwili pokazania kartki.
   en: |-
     Will the player solve the following arithmetic problem in their head within 30 seconds?
     XY x Z - 1234 = ?
-    The person reading the task should replace the letters 'XYZ' with any digits, write them down on a piece of paper, and show them to the player completing the task.
-    This one can look at the page, but cannot write on it.
+    The other players replace the letters X, Y and Z with any digits, write the problem on a piece of paper, and show it to the player.
+    The player may look at the paper but may not write on it.
+    The time starts when the player sees the paper.
 timeLimit: HALF_MINUTE

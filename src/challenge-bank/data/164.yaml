@@ -2,9 +2,11 @@ id: 164
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się w ciągu 15 sekund dmuchać w małą, papierową piłeczkę tak, aby doleciała nie dalej niż 5 cm od krawędzi stołu oddalonej o 1,5 metra?
+    Czy graczowi uda się w ciągu 15 sekund tak dmuchać w małą papierową piłeczkę, aby zatrzymała się nie dalej niż 5 cm od krawędzi stołu?
+    Na starcie piłeczka leży 1,5 metra od krawędzi stołu.
     Piłeczka nie może spaść ze stołu.
   en: |-
-    Will the player manage to blow a small paper ball within 15 seconds so that it lands no more than 5 cm from the edge of the table which is 1.5 meters away?
+    Will the player manage to blow on a small paper ball within 15 seconds so that it stops no more than 5 cm from the edge of the table?
+    At the start, the ball lies 1.5 meters from the edge of the table.
     The ball cannot fall off the table.
 timeLimit: QUARTER_MINUTE

@@ -2,9 +2,9 @@ id: 113
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się utrzymać w placach przez 30 sekund zapaloną zapałkę.
-    Jeśli zapałka zgaśnie próba jest nieudana.
+    Czy graczowi uda się utrzymać w palcach zapaloną zapałkę przez 30 sekund?
+    Jeśli zapałka zgaśnie, próba jest nieudana.
   en: |-
-    Will the player manage to keep a lit match in place for 30 seconds?
+    Will the player manage to hold a lit match in their fingers for 30 seconds?
     If the match goes out, the attempt is unsuccessful.
 timeLimit: HALF_MINUTE

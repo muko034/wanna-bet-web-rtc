@@ -2,9 +2,9 @@ id: 147
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się podrzucić monetę / piłeczkę lub inny niewielki przedmiot lewą ręką, a następnie złapać go tą samą ręką, tak żeby przedmiot ten dotknął sufitu?
+    Czy graczowi uda się podrzucić lewą ręką monetę, piłeczkę lub inny niewielki przedmiot tak, żeby dotknął sufitu, a następnie złapać go tą samą ręką?
     (3 udane próby z 5)
   en: |-
-    Will the player succeed in tossing a coin / ball or another small object with their left hand, and then catching it with the same hand so that the object touches the ceiling?
-    3 successful attempts out of 5
+    Will the player manage to toss a coin, a ball, or another small object with their left hand so that it touches the ceiling, and then catch it with the same hand?
+    (3 successful attempts out of 5)
 timeLimit: NONE

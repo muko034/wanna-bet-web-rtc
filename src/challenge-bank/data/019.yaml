@@ -2,9 +2,9 @@ id: 19
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się zrobić przysiad stojąc na piętach?
-    (2 udane próby z 3.)
+    Czy graczowi uda się zrobić przysiad, stojąc na piętach?
+    (2 udane próby z 3)
   en: |-
-    Will the player be able to do a squat while standing on their heels?
-    2 successful attempts out of 3.
+    Will the player manage to do a squat while standing on their heels?
+    (2 successful attempts out of 3)
 timeLimit: NONE

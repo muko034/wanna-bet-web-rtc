@@ -2,11 +2,11 @@ id: 66
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się zakręcić monetą, tak aby ta kręcił się przez co najmniej 15 sekund?
+    Czy graczowi uda się zakręcić monetą tak, aby kręciła się przez co najmniej 15 sekund?
+    (2 próby)
     Odliczanie należy przerwać, gdy moneta całkowicie znieruchomieje.
-    (2 próby.)
   en: |-
-    Will the player manage to flip the coin so that it spins for at least 15 seconds?
-    The countdown must be stopped when the coin comes to a complete standstill.
+    Will the player manage to spin a coin so that it keeps spinning for at least 15 seconds?
     (2 attempts)
+    Stop the countdown when the coin comes to a complete stop.
 timeLimit: QUARTER_MINUTE

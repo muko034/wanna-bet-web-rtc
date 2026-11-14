@@ -1,6 +1,8 @@
 id: 44
 type: MENTAL
 content:
-  pl: Czy gracz, w ciągu 30 sekund, wymieni 5 słynnych polskich generałów?
-  en: Will the player name the titles of 5 Polish generals?
+  pl: |-
+    Czy gracz w ciągu 30 sekund wymieni 5 słynnych polskich generałów?
+  en: |-
+    Will the player name 5 famous Polish generals in 30 seconds?
 timeLimit: HALF_MINUTE

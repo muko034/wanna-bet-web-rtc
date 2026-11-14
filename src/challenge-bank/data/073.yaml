@@ -1,6 +1,8 @@
 id: 73
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się, w ciągu 1 minuty, zrobić 5 przysiadów na lewej nodze?
-  en: Will the player be able to do 5 squats on their left leg in 1 minute?
+  pl: |-
+    Czy graczowi uda się zrobić 5 przysiadów na lewej nodze w ciągu 1 minuty?
+  en: |-
+    Will the player manage to do 5 squats on their left leg in 1 minute?
 timeLimit: ONE_MINUTE

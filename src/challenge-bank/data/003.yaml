@@ -2,11 +2,11 @@ id: 3
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się, z odległości 2. metrów, trafić kostką do kubka?
-    Po trafieniu, kostka może wyskoczyć z kubka.
+    Czy graczowi uda się trafić kostką do kubka z odległości 2 metrów?
     (3 udane próby z 7)
+    Trafienie liczy się, nawet jeśli kostka potem wyskoczy z kubka.
   en: |-
-    Will the player manage to hit the cup with the dice from a distance of 2 meters?
-    After hitting, the die may jump out of the cup.
+    Will the player manage to throw a die into the cup from a distance of 2 meters?
     (3 successful attempts out of 7)
+    A hit counts even if the die then bounces out of the cup.
 timeLimit: NONE

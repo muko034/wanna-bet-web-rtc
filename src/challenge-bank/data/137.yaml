@@ -2,9 +2,9 @@ id: 137
 type: MENTAL
 content:
   pl: |-
-    Czy graczowi uda się odgadnąć ile stron ma wybrana przez innych graczy książka / gazeta / magazyn?
-    Gracz może pomylić się o 10%.
+    Czy graczowi uda się odgadnąć, ile stron ma książka / gazeta / magazyn wybrane przez pozostałych graczy?
+    Odpowiedź gracza może różnić się od prawdziwej liczby stron maksymalnie o 10%.
   en: |-
-    Will the player be able to guess how many pages the book / newspaper / magazine chosen by other players has?
-    The player can be mistaken by 10%.
+    Will the player manage to guess how many pages are in the book / newspaper / magazine chosen by the other players?
+    The player's answer may differ from the real number of pages by up to 10%.
 timeLimit: NONE

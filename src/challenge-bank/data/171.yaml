@@ -5,6 +5,6 @@ content:
     Czy graczowi uda się stać na jednej nodze przez minutę?
     Gracz nie może się przemieszczać.
   en: |-
-    Will the player be able to stand on one leg for a minute?
-    The player cannot move.
+    Will the player manage to stand on one leg for a minute?
+    The player must not move from the spot.
 timeLimit: ONE_MINUTE

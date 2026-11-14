@@ -1,8 +1,8 @@
 id: 13
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się zetknąć palce dwóch dłoni za plecami, unosząc jedną rękę
-    nad głowę, a drugą trzymając za plecami?
-  en: Will the player be able to touch the fingers of two hands behind their back,
-    raising one hand above their head while keeping the other behind their back?
+  pl: |-
+    Czy graczowi uda się zetknąć palce obu dłoni za plecami, sięgając jedną ręką od góry przez ramię, a drugą od dołu?
+  en: |-
+    Will the player manage to touch the fingers of both hands behind their back, reaching one hand over the shoulder from above and the other from below?
 timeLimit: NONE

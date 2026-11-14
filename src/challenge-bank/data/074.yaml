@@ -1,6 +1,10 @@
 id: 74
 type: PHYSICAL
 content:
-  pl: Czy graczowi uda się zagwizdać hymn Polski?
-  en: Will the player be able to whistle the Polish anthem?
+  pl: |-
+    Czy graczowi uda się zagwizdać hymn Polski?
+    (pierwsza zwrotka i refren)
+  en: |-
+    Will the player manage to whistle the Polish national anthem?
+    (first verse and chorus)
 timeLimit: NONE

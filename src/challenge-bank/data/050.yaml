@@ -1,8 +1,8 @@
 id: 50
 type: MENTAL
 content:
-  pl: Czy gracz, w ciągu 30 sekund, wymieni 5 imion żeńskich zaczynających się na
-    literę "S"?
-  en: Will the player, within 30 seconds, name 5 female names starting with the letter
-    'S'?
+  pl: |-
+    Czy gracz w ciągu 30 sekund wymieni 5 różnych imion żeńskich zaczynających się na literę „S”?
+  en: |-
+    Will the player list 5 different female names starting with the letter "S" within 30 seconds?
 timeLimit: HALF_MINUTE

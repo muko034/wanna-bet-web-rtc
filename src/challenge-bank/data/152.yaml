@@ -2,11 +2,11 @@ id: 152
 type: PHYSICAL
 content:
   pl: |-
-    Czy graczowi uda się w ciągu 30 sekund napisać 10 razy "AbCd" w oknie wiadomości w telefonie?
-    Gracz musi napisać "A" i "C" dużą literą i postawić spację między każdym wyrażeniem, tj.:
+    Czy graczowi uda się w ciągu 30 sekund napisać 10 razy "AbCd" w oknie wiadomości na telefonie?
+    Gracz musi napisać "A" i "C" wielką literą, a "b" i "d" małą, ze spacją między kolejnymi wyrażeniami, tj.:
     AbCd AbCd AbCd AbCd ...
   en: |-
-    Will the player manage to write 'AbCd' 10 times in the message window on the phone within 30 seconds?
-    The player must write 'A' and 'C' in uppercase and put a space between each expression, i.e.:
+    Will the player manage to type 'AbCd' 10 times in a message window on a phone within 30 seconds?
+    The player must type 'A' and 'C' in uppercase and 'b' and 'd' in lowercase, with a space between each one, like this:
     AbCd AbCd AbCd AbCd ...
 timeLimit: HALF_MINUTE

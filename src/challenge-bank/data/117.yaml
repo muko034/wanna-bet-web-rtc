@@ -1,11 +1,12 @@
 id: 117
 type: PHYSICAL
 content:
-  pl: "Czy graczowi uda się, z odległości dwóch metrów, wrzucić 2 karty do gry do\
-    \ pudełka? \nObie karty muszą być wyrzucone jednocześnie, tą samą ręką.\n(5 pró\
-    b)"
+  pl: |-
+    Czy graczowi uda się z odległości dwóch metrów wrzucić 2 karty do gry do pudełka?
+    (5 prób)
+    Obie karty muszą być rzucone jednocześnie, tą samą ręką.
   en: |-
-    Will the player manage to throw 2 playing cards into the box from a distance of two meters?
-    Both cards must be thrown away at the same time, with the same hand.
+    Will the player manage to throw 2 playing cards into a box from a distance of two meters?
     (5 attempts)
+    Both cards must be thrown at the same time, with the same hand.
 timeLimit: NONE
