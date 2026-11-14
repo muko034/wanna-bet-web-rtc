@@ -1,3 +1,4 @@
+import { withBase } from '../base-path';
 import type { ChallengeBankEntry } from '../challenge-bank/challenge-bank.schema';
 import type { Message } from '../i18n/dictionaries';
 import type { GameState } from '../protocol/messages';
@@ -78,6 +79,6 @@ export function resolveChallengeCard({
     kind: 'visible',
     text: challenge.content[displayLanguage],
     ...(challenger ? { challengerName: challenger.name } : {}),
-    ...(challenge.illustration ? { illustration: challenge.illustration } : {}),
+    ...(challenge.illustration ? { illustration: withBase(challenge.illustration) } : {}),
   };
 }

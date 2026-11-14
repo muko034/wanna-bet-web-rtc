@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { withBase } from '../base-path';
 import type { GameState } from '../protocol/messages';
 import type { ChallengeBankEntry } from '../challenge-bank/challenge-bank.schema';
 import { resolveChallengeCard } from './challenge-card';
@@ -11,7 +12,7 @@ const illustratedChallenge: ChallengeBankEntry = {
     en: 'English challenge text',
   },
   timeLimit: 'NONE',
-  illustration: '/images/challenge-1.png',
+  illustration: 'images/challenge-1.png',
 };
 
 function stateWith(overrides: Partial<GameState> = {}): GameState {
@@ -70,7 +71,7 @@ describe('resolveChallengeCard', () => {
       challengeType: 'PHYSICAL',
       timeLimit: null,
       text: 'English challenge text',
-      illustration: '/images/challenge-1.png',
+      illustration: withBase('images/challenge-1.png'),
       challengerName: 'Alex',
     });
   });

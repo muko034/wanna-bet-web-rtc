@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { withBase } from '../base-path';
 import { challengeBank } from '../challenge-bank/challenge-bank';
 import { FakeTransport } from '../transport/fake-transport';
 import { GuestProtocol } from '../protocol/guest-protocol';
@@ -90,7 +91,7 @@ describe('starting a round from the Host', () => {
       challengeType: challengeBank[0].type,
       timeLimit: null,
       text: challengeBank[0].content.en,
-      ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
+      ...(challengeBank[0].illustration ? { illustration: withBase(challengeBank[0].illustration) } : {}),
       challengerName: 'Alex',
     });
 
@@ -104,7 +105,7 @@ describe('starting a round from the Host', () => {
       challengeType: challengeBank[0].type,
       timeLimit: null,
       text: challengeBank[0].content.en,
-      ...(challengeBank[0].illustration ? { illustration: challengeBank[0].illustration } : {}),
+      ...(challengeBank[0].illustration ? { illustration: withBase(challengeBank[0].illustration) } : {}),
       challengerName: 'Alex',
     });
   });

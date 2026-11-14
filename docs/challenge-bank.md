@@ -12,7 +12,7 @@ type ChallengeBankEntry = {
     en: string;                            // English wording
   };
   timeLimit: 'NONE' | 'QUARTER_MINUTE' | 'HALF_MINUTE' | 'ONE_MINUTE'; // informational only, not enforced (ADR 0004)
-  illustration?: string;                   // optional asset reference; shared unchanged across both languages
+  illustration?: string;                   // optional PNG path relative to public/, no leading "/"; shared unchanged across both languages
 };
 ```
 
