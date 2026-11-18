@@ -1,0 +1,10 @@
+id: 218
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund przenieść 5 ziarenek suchego ryżu ze stołu do szklanki, trzymając 2 wykałaczki jak pałeczki?
+    (tylko 1 ręka)
+  en: |-
+    Will the player manage to move 5 grains of uncooked rice from the table into a glass in 30 seconds, using 2 toothpicks as chopsticks?
+    (1 hand only)
+timeLimit: HALF_MINUTE

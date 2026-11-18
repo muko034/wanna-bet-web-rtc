@@ -1,0 +1,12 @@
+id: 210
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz zgadnie, z dokładnością do 2, ile kroków stopa za stopą zajmie mu przejście pokoju od ściany do ściany?
+    Gracz najpierw mówi liczbę na głos, a potem przechodzi pokój.
+    Niepełny ostatni krok nie wlicza się do całkowitej liczby kroków.
+  en: |-
+    Will the player guess, within 2, how many heel-to-toe steps it takes to cross the room from wall to wall?
+    The player says the number out loud first, then walks it.
+    A partial last step does not count as a step.
+timeLimit: NONE

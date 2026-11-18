@@ -1,0 +1,10 @@
+id: 208
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund wymienić 5 znanych osób, których imię i nazwisko zaczynają się na tę samą literę?
+    (Tylko prawdziwe osoby)
+  en: |-
+    Will the player name 5 famous people whose first name and surname start with the same letter, within 30 seconds?
+    (Real people only)
+timeLimit: HALF_MINUTE

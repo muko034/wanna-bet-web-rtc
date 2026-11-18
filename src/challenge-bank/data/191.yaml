@@ -1,0 +1,10 @@
+id: 191
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się, stojąc na jednej nodze z zamkniętymi oczami, zdjąć skarpetkę z uniesionej stopy i założyć ją z powrotem?
+    Uniesiona stopa nie może dotknąć podłogi. Nie wolno się o nic opierać ani otwierać oczu.
+  en: |-
+    Will the player manage to stand on one leg with eyes closed, take the sock off the raised foot, and put it back on?
+    The raised foot must not touch the floor. No leaning on anything, and no opening the eyes.
+timeLimit: NONE

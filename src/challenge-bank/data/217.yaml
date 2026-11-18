@@ -1,0 +1,12 @@
+id: 217
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się w 15 sekund odpowiedzieć, ile razy pojawi się cyfra 1, gdy zapiszesz wszystkie liczby od 1 do 20?
+    (1 odpowiedź)
+    Tej linii nie czytajcie na głos: poprawna odpowiedź to 12.
+  en: |-
+    Will the player answer within 15 seconds: how many times does the digit 1 appear when you write all numbers from 1 to 20?
+    (1 answer)
+    Do not read this line out loud: the correct answer is 12.
+timeLimit: QUARTER_MINUTE

@@ -1,0 +1,10 @@
+id: 216
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się napisać na kartce swoje imię i nazwisko, a jednocześnie drugą ręką równo bębnić w stół?
+    Ręka, która bębni, nie może się zatrzymać, a napis musi być czytelny.
+  en: |-
+    Will the player manage to write their first and last name on paper while the other hand drums a steady beat on the table?
+    The drumming hand must not stop, and the name must be readable.
+timeLimit: NONE

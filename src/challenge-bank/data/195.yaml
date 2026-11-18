@@ -1,0 +1,12 @@
+id: 195
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się przekazać monetę za plecami z ręki sięgającej znad barku do ręki sięgającej od dołu, po obu stronach?
+    (1 raz z każdą ręką na górze)
+    Jeśli moneta spadnie, gracz przegrywa.
+  en: |-
+    Will the player pass a coin behind their back, from a hand reaching over the shoulder to a hand reaching up from below, on both sides?
+    (1 time with each hand on top)
+    If the coin falls, the player fails.
+timeLimit: NONE

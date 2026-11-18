@@ -1,0 +1,12 @@
+id: 215
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się na stojąco 3 razy założyć i zdjąć parę skarpetek w 30 sekund?
+    Bez siadania i bez opierania się o cokolwiek.
+    Każda skarpetka musi być naciągnięta aż za piętę.
+  en: |-
+    Will the player manage, standing up, to put on and take off a pair of socks 3 times in 30 seconds?
+    No sitting and no leaning on anything.
+    Each sock must go on fully, past the heel.
+timeLimit: HALF_MINUTE

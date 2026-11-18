@@ -1,0 +1,10 @@
+id: 206
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz z zamkniętymi oczami poda główny kolor koszulki, bluzy lub koszuli 3 pozostałych graczy?
+    Pozostali gracze sami wybierają te 3 osoby.
+  en: |-
+    Will the player, with eyes closed, name the main colour of the top worn by 3 other players?
+    The other players choose the 3 people.
+timeLimit: NONE

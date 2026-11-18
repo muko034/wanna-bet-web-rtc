@@ -1,0 +1,10 @@
+id: 203
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz przeliteruje od tyłu swoje imię i nazwisko, litera po literze, bez ani jednej pomyłki w 30 sekund?
+    Pozostali gracze najpierw zapisują je na kartce, żeby sprawdzać.
+  en: |-
+    Will the player spell their own first name and surname backwards, letter by letter, with no mistake in 30 seconds?
+    The other players write the name down first to check.
+timeLimit: HALF_MINUTE

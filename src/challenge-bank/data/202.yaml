@@ -1,0 +1,10 @@
+id: 202
+type: PHYSICAL
+content:
+  pl: |-
+    Czy gracz utrzyma pełną butelkę 1,5 l w wyprostowanej ręce wyciągniętej w bok, stojąc przy tym na 1 nodze przez 1 minutę?
+    (Ręka poniżej barku albo druga stopa na podłodze = porażka)
+  en: |-
+    Will the player hold a full 1.5 L bottle out to the side with a straight arm, while standing on 1 leg, for 1 minute?
+    (Arm below shoulder height or other foot on the floor = fail)
+timeLimit: ONE_MINUTE

@@ -1,0 +1,12 @@
+id: 189
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się rozsunąć dłonie dokładnie na 1 metr, bez żadnej pomocy?
+    (z dokładnością do 5 cm)
+    Pozostali gracze mierzą odstęp między palcami wskazującymi.
+  en: |-
+    Will the player manage to hold their hands exactly 1 metre apart, with no help?
+    (within 5 cm)
+    The other players measure the gap between the index fingers.
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 190
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz w 15 sekund ułoży według daty powstania, od najstarszego: YouTube, Wikipedię, iPhone'a i Facebooka?
+    Odpowiedź: Wikipedia (2001), Facebook (2004), YouTube (2005), iPhone (2007).
+  en: |-
+    Will the player, within 15 seconds, order these by launch date, oldest first: YouTube, Wikipedia, iPhone, Facebook?
+    Answer: Wikipedia (2001), Facebook (2004), YouTube (2005), iPhone (2007).
+timeLimit: QUARTER_MINUTE

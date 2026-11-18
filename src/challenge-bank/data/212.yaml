@@ -1,0 +1,10 @@
+id: 212
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund wymienić 5 zespołów lub wykonawców, którzy mają w nazwie liczbę?
+    Liczba zapisana słownie też się liczy.
+  en: |-
+    Will the player manage to name 5 bands or artists with a number in their name in 30 seconds?
+    Numbers written as words count too.
+timeLimit: HALF_MINUTE

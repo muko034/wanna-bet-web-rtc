@@ -1,0 +1,12 @@
+id: 207
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund ułożyć jedną ręką wieżę z 10 monet, cały czas wybijając rytm „We Will Rock You”?
+    (tupnięcie, tupnięcie, klepnięcie w udo drugą ręką)
+    Jeśli rytm choć raz się urwie, gracz przegrywa.
+  en: |-
+    Will the player stack 10 coins into a tower with one hand in 30 seconds, while keeping the "We Will Rock You" beat going?
+    (stomp, stomp, slap the thigh with the other hand)
+    If the beat stops even once, the player fails.
+timeLimit: HALF_MINUTE

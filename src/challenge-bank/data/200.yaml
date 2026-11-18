@@ -1,0 +1,10 @@
+id: 200
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund wymienić 5 filmów z liczbą w tytule?
+    Numery kolejnych części, jak w „Rocky 2”, się nie liczą.
+  en: |-
+    Will the player name 5 films with a number in the title in 30 seconds?
+    Sequel numbers, like 'Rocky 2', do not count.
+timeLimit: HALF_MINUTE

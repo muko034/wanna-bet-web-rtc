@@ -1696,5 +1696,275 @@ export const challengeBank: ChallengeBankEntry[] = [
       "en": "Will the player name 4 of Leonardo da Vinci's inventions in 30 seconds?"
     },
     "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "189",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się rozsunąć dłonie dokładnie na 1 metr, bez żadnej pomocy?\n(z dokładnością do 5 cm)\nPozostali gracze mierzą odstęp między palcami wskazującymi.",
+      "en": "Will the player manage to hold their hands exactly 1 metre apart, with no help?\n(within 5 cm)\nThe other players measure the gap between the index fingers."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "190",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz w 15 sekund ułoży według daty powstania, od najstarszego: YouTube, Wikipedię, iPhone'a i Facebooka?\nOdpowiedź: Wikipedia (2001), Facebook (2004), YouTube (2005), iPhone (2007).",
+      "en": "Will the player, within 15 seconds, order these by launch date, oldest first: YouTube, Wikipedia, iPhone, Facebook?\nAnswer: Wikipedia (2001), Facebook (2004), YouTube (2005), iPhone (2007)."
+    },
+    "timeLimit": "QUARTER_MINUTE"
+  },
+  {
+    "id": "191",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się, stojąc na jednej nodze z zamkniętymi oczami, zdjąć skarpetkę z uniesionej stopy i założyć ją z powrotem?\nUniesiona stopa nie może dotknąć podłogi. Nie wolno się o nic opierać ani otwierać oczu.",
+      "en": "Will the player manage to stand on one leg with eyes closed, take the sock off the raised foot, and put it back on?\nThe raised foot must not touch the floor. No leaning on anything, and no opening the eyes."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "192",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się powtórzyć od tyłu 7 słów podanych przez pozostałych graczy?\nPozostali gracze po kolei mówią po 1 zwykłym rzeczowniku, aż będzie ich 7.\nKażde słowo pada tylko raz. 1 błąd oznacza porażkę.",
+      "en": "Will the player repeat 7 words from the other players in reverse order?\nThe other players take turns saying 1 everyday noun each, until there are 7.\nEach word is said only once. 1 mistake is a fail."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "193",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się odgadnąć łączny wiek wszystkich pozostałych graczy, z dokładnością do 5 lat?\nBez pytań, bez kartki i długopisu. Potem pozostali gracze sumują swój prawdziwy wiek.",
+      "en": "Will the player guess the combined age of all the other players, within 5 years?\nNo questions and no pen or paper. Then the other players add up their real ages."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "194",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się zawiązać supeł na sznurówce tylko 1 ręką w 30 sekund?\nBez pomocy drugiej ręki, zębów, ciała ani stołu.\nSupeł musi się utrzymać po mocnym pociągnięciu.",
+      "en": "Will the player tie a knot in a shoelace using only 1 hand within 30 seconds?\nNo help from the other hand, teeth, body or table.\nThe knot must hold when pulled tight."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "195",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się przekazać monetę za plecami z ręki sięgającej znad barku do ręki sięgającej od dołu, po obu stronach?\n(1 raz z każdą ręką na górze)\nJeśli moneta spadnie, gracz przegrywa.",
+      "en": "Will the player pass a coin behind their back, from a hand reaching over the shoulder to a hand reaching up from below, on both sides?\n(1 time with each hand on top)\nIf the coin falls, the player fails."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "196",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz, odwrócony plecami do stołu, poda dokładną liczbę kubków, szklanek i butelek, które na nim stoją?\nPuste też się liczą.",
+      "en": "Will the player turn their back to the table and say exactly how many cups, glasses and bottles are on it?\nEmpty ones count too."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "197",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz powie „stop” po 1 minucie +- 5 sekund?\nGracz nie widzi żadnego zegara.",
+      "en": "Will the player say \"stop\" 1 minute after the start?\n(5 seconds either way)\nThe player cannot see any clock."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "198",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund zbudować wieżę z 6 butów, używając tylko jednej ręki?\nWieża musi stać sama przez 5 sekund.",
+      "en": "Will the player manage to build a tower of 6 shoes in 30 seconds, using only one hand?\nThe tower must stand on its own for 5 seconds."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "199",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się przez 30 sekund opowiadać fabułę znanego sobie filmu, wybranego przez pozostałych graczy, ani razu nie mówiąc „i”?\nGracz nie może milczeć dłużej niż 3 sekundy.",
+      "en": "Will the player manage to retell the plot of a film the player knows, chosen by the other players, for 30 seconds without saying \"and\"?\nThe player cannot go silent for more than 3 seconds."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "200",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund wymienić 5 filmów z liczbą w tytule?\nNumery kolejnych części, jak w „Rocky 2”, się nie liczą.",
+      "en": "Will the player name 5 films with a number in the title in 30 seconds?\nSequel numbers, like 'Rocky 2', do not count."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "201",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz w 30 sekund wymieni 5 państw, których stolica zaczyna się na tę samą literę co nazwa państwa?\n(na przykład: Szwecja – Sztokholm)",
+      "en": "Will the player name 5 countries whose capital starts with the same letter as the country in 30 seconds?\n(for example: Sweden – Stockholm)"
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "202",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy gracz utrzyma pełną butelkę 1,5 l w wyprostowanej ręce wyciągniętej w bok, stojąc przy tym na 1 nodze przez 1 minutę?\n(Ręka poniżej barku albo druga stopa na podłodze = porażka)",
+      "en": "Will the player hold a full 1.5 L bottle out to the side with a straight arm, while standing on 1 leg, for 1 minute?\n(Arm below shoulder height or other foot on the floor = fail)"
+    },
+    "timeLimit": "ONE_MINUTE"
+  },
+  {
+    "id": "203",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz przeliteruje od tyłu swoje imię i nazwisko, litera po literze, bez ani jednej pomyłki w 30 sekund?\nPozostali gracze najpierw zapisują je na kartce, żeby sprawdzać.",
+      "en": "Will the player spell their own first name and surname backwards, letter by letter, with no mistake in 30 seconds?\nThe other players write the name down first to check."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "204",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund rozdzielić potasowaną talię 52 kart na stos czerwonych i stos czarnych?",
+      "en": "Will the player manage to sort a shuffled deck of 52 cards into a red pile and a black pile in 30 seconds?"
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "205",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund podwajać na głos liczbę, zaczynając od 7, aż przekroczy 10000?\nKażda błędna liczba oznacza porażkę.",
+      "en": "Will the player manage to start at 7 and keep doubling it out loud until passing 10000 within 30 seconds?\nAny wrong number means a fail."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "206",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz z zamkniętymi oczami poda główny kolor koszulki, bluzy lub koszuli 3 pozostałych graczy?\nPozostali gracze sami wybierają te 3 osoby.",
+      "en": "Will the player, with eyes closed, name the main colour of the top worn by 3 other players?\nThe other players choose the 3 people."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "207",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund ułożyć jedną ręką wieżę z 10 monet, cały czas wybijając rytm „We Will Rock You”?\n(tupnięcie, tupnięcie, klepnięcie w udo drugą ręką)\nJeśli rytm choć raz się urwie, gracz przegrywa.",
+      "en": "Will the player stack 10 coins into a tower with one hand in 30 seconds, while keeping the \"We Will Rock You\" beat going?\n(stomp, stomp, slap the thigh with the other hand)\nIf the beat stops even once, the player fails."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "208",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund wymienić 5 znanych osób, których imię i nazwisko zaczynają się na tę samą literę?\n(Tylko prawdziwe osoby)",
+      "en": "Will the player name 5 famous people whose first name and surname start with the same letter, within 30 seconds?\n(Real people only)"
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "209",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się ułożyć te 5 wydarzeń od najwcześniejszego: wyjście Nelsona Mandeli z więzienia, pierwsza książka o Harrym Potterze, upadek muru berlińskiego, katastrofa w Czarnobylu, rozpad ZSRR?\n(30 sekund)",
+      "en": "Will the player put these 5 events in order, earliest first: Nelson Mandela leaves prison, the first Harry Potter book, the fall of the Berlin Wall, the Chernobyl disaster, the break-up of the Soviet Union?\n(30 seconds)"
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "210",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz zgadnie, z dokładnością do 2, ile kroków stopa za stopą zajmie mu przejście pokoju od ściany do ściany?\nGracz najpierw mówi liczbę na głos, a potem przechodzi pokój.\nNiepełny ostatni krok nie wlicza się do całkowitej liczby kroków.",
+      "en": "Will the player guess, within 2, how many heel-to-toe steps it takes to cross the room from wall to wall?\nThe player says the number out loud first, then walks it.\nA partial last step does not count as a step."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "211",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund podnieść długopis palcami stopy i unieść go tak wysoko, żeby chwycić go zębami?\nGracz siedzi na podłodze. Rękami wolno trzymać nogę, ale nie długopis.",
+      "en": "Will the player manage to pick up a pen with their toes and lift it high enough to grab it with their teeth within 30 seconds?\nThe player sits on the floor. Hands may hold the leg, but not the pen."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "212",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund wymienić 5 zespołów lub wykonawców, którzy mają w nazwie liczbę?\nLiczba zapisana słownie też się liczy.",
+      "en": "Will the player manage to name 5 bands or artists with a number in their name in 30 seconds?\nNumbers written as words count too."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "213",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy gracz zgadnie, ile stron ma książka wybrana przez pozostałych graczy, z dokładnością do 40 stron, bez otwierania jej?\nLiczy się numer ostatniej strony.",
+      "en": "Will the player guess how many pages a book chosen by the other players has, within 40 pages, without opening it?\nThe last page number counts."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "214",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się wrzucić zwiniętą skarpetkę do garnka na podłodze, rzucając tyłem przez głowę z 3 dużych kroków?\n(3 próby)",
+      "en": "Will the player land a rolled-up sock in a pot on the floor, thrown backwards over their head from 3 big steps away?\n(3 attempts)"
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "215",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się na stojąco 3 razy założyć i zdjąć parę skarpetek w 30 sekund?\nBez siadania i bez opierania się o cokolwiek.\nKażda skarpetka musi być naciągnięta aż za piętę.",
+      "en": "Will the player manage, standing up, to put on and take off a pair of socks 3 times in 30 seconds?\nNo sitting and no leaning on anything.\nEach sock must go on fully, past the heel."
+    },
+    "timeLimit": "HALF_MINUTE"
+  },
+  {
+    "id": "216",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się napisać na kartce swoje imię i nazwisko, a jednocześnie drugą ręką równo bębnić w stół?\nRęka, która bębni, nie może się zatrzymać, a napis musi być czytelny.",
+      "en": "Will the player manage to write their first and last name on paper while the other hand drums a steady beat on the table?\nThe drumming hand must not stop, and the name must be readable."
+    },
+    "timeLimit": "NONE"
+  },
+  {
+    "id": "217",
+    "type": "MENTAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 15 sekund odpowiedzieć, ile razy pojawi się cyfra 1, gdy zapiszesz wszystkie liczby od 1 do 20?\n(1 odpowiedź)\nTej linii nie czytajcie na głos: poprawna odpowiedź to 12.",
+      "en": "Will the player answer within 15 seconds: how many times does the digit 1 appear when you write all numbers from 1 to 20?\n(1 answer)\nDo not read this line out loud: the correct answer is 12."
+    },
+    "timeLimit": "QUARTER_MINUTE"
+  },
+  {
+    "id": "218",
+    "type": "PHYSICAL",
+    "content": {
+      "pl": "Czy graczowi uda się w 30 sekund przenieść 5 ziarenek suchego ryżu ze stołu do szklanki, trzymając 2 wykałaczki jak pałeczki?\n(tylko 1 ręka)",
+      "en": "Will the player manage to move 5 grains of uncooked rice from the table into a glass in 30 seconds, using 2 toothpicks as chopsticks?\n(1 hand only)"
+    },
+    "timeLimit": "HALF_MINUTE"
   }
 ];

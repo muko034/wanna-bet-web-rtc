@@ -1,0 +1,10 @@
+id: 214
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się wrzucić zwiniętą skarpetkę do garnka na podłodze, rzucając tyłem przez głowę z 3 dużych kroków?
+    (3 próby)
+  en: |-
+    Will the player land a rolled-up sock in a pot on the floor, thrown backwards over their head from 3 big steps away?
+    (3 attempts)
+timeLimit: NONE

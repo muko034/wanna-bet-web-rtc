@@ -1,0 +1,10 @@
+id: 209
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się ułożyć te 5 wydarzeń od najwcześniejszego: wyjście Nelsona Mandeli z więzienia, pierwsza książka o Harrym Potterze, upadek muru berlińskiego, katastrofa w Czarnobylu, rozpad ZSRR?
+    (30 sekund)
+  en: |-
+    Will the player put these 5 events in order, earliest first: Nelson Mandela leaves prison, the first Harry Potter book, the fall of the Berlin Wall, the Chernobyl disaster, the break-up of the Soviet Union?
+    (30 seconds)
+timeLimit: HALF_MINUTE

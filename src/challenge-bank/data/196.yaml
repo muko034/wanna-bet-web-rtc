@@ -1,0 +1,10 @@
+id: 196
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz, odwrócony plecami do stołu, poda dokładną liczbę kubków, szklanek i butelek, które na nim stoją?
+    Puste też się liczą.
+  en: |-
+    Will the player turn their back to the table and say exactly how many cups, glasses and bottles are on it?
+    Empty ones count too.
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 213
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz zgadnie, ile stron ma książka wybrana przez pozostałych graczy, z dokładnością do 40 stron, bez otwierania jej?
+    Liczy się numer ostatniej strony.
+  en: |-
+    Will the player guess how many pages a book chosen by the other players has, within 40 pages, without opening it?
+    The last page number counts.
+timeLimit: NONE

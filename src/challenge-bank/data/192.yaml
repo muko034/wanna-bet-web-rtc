@@ -1,0 +1,12 @@
+id: 192
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się powtórzyć od tyłu 7 słów podanych przez pozostałych graczy?
+    Pozostali gracze po kolei mówią po 1 zwykłym rzeczowniku, aż będzie ich 7.
+    Każde słowo pada tylko raz. 1 błąd oznacza porażkę.
+  en: |-
+    Will the player repeat 7 words from the other players in reverse order?
+    The other players take turns saying 1 everyday noun each, until there are 7.
+    Each word is said only once. 1 mistake is a fail.
+timeLimit: NONE

@@ -1,0 +1,10 @@
+id: 199
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się przez 30 sekund opowiadać fabułę znanego sobie filmu, wybranego przez pozostałych graczy, ani razu nie mówiąc „i”?
+    Gracz nie może milczeć dłużej niż 3 sekundy.
+  en: |-
+    Will the player manage to retell the plot of a film the player knows, chosen by the other players, for 30 seconds without saying "and"?
+    The player cannot go silent for more than 3 seconds.
+timeLimit: HALF_MINUTE

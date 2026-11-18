@@ -1,0 +1,10 @@
+id: 193
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się odgadnąć łączny wiek wszystkich pozostałych graczy, z dokładnością do 5 lat?
+    Bez pytań, bez kartki i długopisu. Potem pozostali gracze sumują swój prawdziwy wiek.
+  en: |-
+    Will the player guess the combined age of all the other players, within 5 years?
+    No questions and no pen or paper. Then the other players add up their real ages.
+timeLimit: NONE

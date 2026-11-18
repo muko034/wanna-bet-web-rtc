@@ -1,0 +1,10 @@
+id: 205
+type: MENTAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund podwajać na głos liczbę, zaczynając od 7, aż przekroczy 10000?
+    Każda błędna liczba oznacza porażkę.
+  en: |-
+    Will the player manage to start at 7 and keep doubling it out loud until passing 10000 within 30 seconds?
+    Any wrong number means a fail.
+timeLimit: HALF_MINUTE

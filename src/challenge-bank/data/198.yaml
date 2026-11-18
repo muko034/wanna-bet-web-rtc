@@ -1,0 +1,10 @@
+id: 198
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund zbudować wieżę z 6 butów, używając tylko jednej ręki?
+    Wieża musi stać sama przez 5 sekund.
+  en: |-
+    Will the player manage to build a tower of 6 shoes in 30 seconds, using only one hand?
+    The tower must stand on its own for 5 seconds.
+timeLimit: HALF_MINUTE

@@ -1,0 +1,8 @@
+id: 204
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się w 30 sekund rozdzielić potasowaną talię 52 kart na stos czerwonych i stos czarnych?
+  en: |-
+    Will the player manage to sort a shuffled deck of 52 cards into a red pile and a black pile in 30 seconds?
+timeLimit: HALF_MINUTE

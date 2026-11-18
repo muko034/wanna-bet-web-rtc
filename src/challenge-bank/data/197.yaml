@@ -1,0 +1,11 @@
+id: 197
+type: MENTAL
+content:
+  pl: |-
+    Czy gracz powie „stop” po 1 minucie +- 5 sekund?
+    Gracz nie widzi żadnego zegara.
+  en: |-
+    Will the player say "stop" 1 minute after the start?
+    (5 seconds either way)
+    The player cannot see any clock.
+timeLimit: NONE

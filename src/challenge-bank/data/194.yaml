@@ -1,0 +1,12 @@
+id: 194
+type: PHYSICAL
+content:
+  pl: |-
+    Czy graczowi uda się zawiązać supeł na sznurówce tylko 1 ręką w 30 sekund?
+    Bez pomocy drugiej ręki, zębów, ciała ani stołu.
+    Supeł musi się utrzymać po mocnym pociągnięciu.
+  en: |-
+    Will the player tie a knot in a shoelace using only 1 hand within 30 seconds?
+    No help from the other hand, teeth, body or table.
+    The knot must hold when pulled tight.
+timeLimit: HALF_MINUTE
